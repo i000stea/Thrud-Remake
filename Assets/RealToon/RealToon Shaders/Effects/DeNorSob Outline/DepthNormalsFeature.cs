@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -56,7 +56,7 @@ namespace RealToon.Effects
 
                 ref CameraData cameraData = ref renderingData.cameraData;
                 Camera camera = cameraData.camera;
-                if (cameraData.isStereoEnabled)
+                if (cameraData.xr.enabled)
                     context.StartMultiEye(camera);
 
 

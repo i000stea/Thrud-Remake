@@ -490,7 +490,7 @@ DOTS_LiBleSki(input.indices, input.weights, input.positionOS.xyz, input.normalOS
 				half3 lightColor = (half3)1.0;
 			#endif
 
-			uint meshRenderingLayers = GetMeshRenderingLightLayer();
+			uint meshRenderingLayers = GetMeshRenderingLayer();
 
 			#ifndef N_F_OFLMB_ON
 				#ifdef _ADDITIONAL_LIGHTS
@@ -833,7 +833,7 @@ DOTS_LiBleSki(input.indices, input.weights, input.positionOS.xyz, input.normalOS
 				_RTD_MVCOL = input.vertexColor.rgb;
 			}
 
-			uint meshRenderingLayers = GetMeshRenderingLightLayer();
+			uint meshRenderingLayers = GetMeshRenderingLayer();
 
 
 

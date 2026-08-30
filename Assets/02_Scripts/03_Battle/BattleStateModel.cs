@@ -1,0 +1,155 @@
+using QFramework;
+using UnityEngine;
+
+namespace TeaGame
+{
+   /// <summary>
+   /// 战斗状态模型。
+   /// 所有角色控制系统共享的运行时状态都保存在这里，
+   /// 这样输入、移动、瞄准、武器与表现系统就可以围绕同一份数据协作。
+   /// </summary>
+   public sealed class BattleStateModel : AbstractModel
+   {
+      /// <summary>
+      /// 当前战斗控制器。
+      /// </summary>
+      public PlayerControl Controller;
+
+      /// <summary>
+      /// 当前战斗角色运行时数据集合。
+      /// </summary>
+      public BattleRoleRuntimeData[] BattleDatas = System.Array.Empty<BattleRoleRuntimeData>();
+
+      /// <summary>
+      /// 每帧输入快照。
+      /// 输入系统只负责写入，其他系统只负责读取。
+      /// </summary>
+      public readonly BattleInputSnapshot Input = new();
+
+      /// <summary>
+      /// 移动系统运行时状态。
+      /// 包括缓存推力、翻滚方向、冲刺准备态等。
+      /// </summary>
+      public readonly BattleMovementState Movement = new();
+
+      /// <summary>
+      /// 当前选中的角色索引。
+      /// </summary>
+      public int SelectedRoleIndex;
+
+      /// <summary>
+      /// 当前是否处于控制接管状态。
+      /// 例如过场动画、暂停、技能演出等都可能接管控制。
+      /// </summary>
+      public bool ControlTakenOver;
+
+      /// <summary>
+      /// 相机俯仰角缓存。
+      /// </summary>
+      public float CameraPitch;
+
+      /// <summary>
+      /// 当前实际使用的视场角。
+      /// </summary>
+      public float CurrentFov;
+
+      /// <summary>
+      /// 当前锁定的敌人目标。
+      /// </summary>
+      public IBattleEnemyTarget LockEnemy;
+
+      /// <summary>
+      /// 锁敌目标在 UI 中的目标位置。
+      /// </summary>
+      public Vector2 ScreenTarget;
+
+      /// <summary>
+      /// 锁敌插值速度倍率。
+      /// 根据准星距目标的远近动态调整。
+      /// </summary>
+      public float LockSpeedMultiplier = 1f;
+
+      /// <summary>
+      /// 当前正在操控的角色数据。
+      /// 若当前没有有效角色，则返回 null。
+      /// </summary>
+      public BattleRoleRuntimeData CurrentBattleData
+      {
+         get
+         {
+            if (BattleDatas == null || BattleDatas.Length == 0) return null;
+            var safeIndex = Mathf.Clamp(SelectedRoleIndex, 0, BattleDatas.Length - 1);
+            return BattleDatas[safeIndex];
+         }
+      }
+
+      protected override void OnInit()
+      {
+      }
+   }
+
+   /// <summary>
+   /// 每帧输入快照。
+   /// 该对象将 Unity 输入系统和战斗逻辑解耦，使后续更容易切换到新输入系统。
+   /// </summary>
+   public sealed class BattleInputSnapshot
+   {
+      /// <summary>鼠标水平移动量。</summary>
+      public float MouseX;
+
+      /// <summary>鼠标垂直移动量。</summary>
+      public float MouseY;
+
+      /// <summary>水平移动输入。</summary>
+      public float MoveHorizontal;
+
+      /// <summary>前后移动输入。</summary>
+      public float MoveVertical;
+
+      /// <summary>上下移动输入。</summary>
+      public float MoveDepth;
+
+      /// <summary>是否存在有效移动输入。</summary>
+      public bool HasMoveInput;
+
+      /// <summary>是否持续按住冲刺键。</summary>
+      public bool SprintHeld;
+
+      /// <summary>本帧是否按下冲刺键。</summary>
+      public bool SprintPressed;
+
+      /// <summary>是否持续按住开火键。</summary>
+      public bool FireHeld;
+   }
+
+   /// <summary>
+   /// 移动系统运行时状态。
+   /// </summary>
+   public sealed class BattleMovementState
+   {
+      /// <summary>
+      /// 当前帧缓存的世界空间推力。
+      /// </summary>
+      public Vector3 CachedForce;
+
+      /// <summary>
+      /// 翻滚方向。
+      /// </summary>
+      public Vector2 RollForce = Vector2.up;
+
+      /// <summary>
+      /// 是否处于“翻滚后允许进入冲刺”的准备状态。
+      /// </summary>
+      public bool ReadySprint;
+
+      /// <summary>
+      /// 当前是否已经进入冲刺状态。
+      /// </summary>
+      public bool Sprinting;
+
+      /// <summary>
+      /// 上一次执行翻滚的时间。
+      /// </summary>
+      public float LastRollTime = -999f;
+   }
+}

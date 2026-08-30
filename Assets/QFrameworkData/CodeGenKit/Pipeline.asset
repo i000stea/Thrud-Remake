@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 621f3f918dd5423d93a746ad8fc9082d, type: 3}
+  m_Name: Pipeline
+  m_EditorClassIdentifier: 
+  CurrentTask:
+    ShowLog: 0
+    Status: 1
+    GameObject: {fileID: 0}
+    From: 0
+    NameToFullName: []
+    BindInfos:
+    - TypeName: Transform
+      PathToRoot: ControlXAxis
+      MemberName: ControlXAxis
+    - TypeName: Transform
+      PathToRoot: ControlXAxis/ControlYAxis
+      MemberName: ControlYAxis
+    - TypeName: Camera
+      PathToRoot: ControlXAxis/ControlYAxis/Control_Camera
+      MemberName: Control_Camera
+    - TypeName: Canvas
+      PathToRoot: ControlXAxis/ControlYAxis/MainCanvas
+      MemberName: MainCanvas
+    - TypeName: RectTransform
+      PathToRoot: ControlXAxis/ControlYAxis/MainCanvas/Cross_LockEnemy
+      MemberName: Cross_LockEnemy
+    - TypeName: UnityEngine.UI.Image
+      PathToRoot: ControlXAxis/ControlYAxis/MainCanvas/StatusBar/Health/Health_Main
+      MemberName: Health_Main
+    - TypeName: TMPro.TextMeshProUGUI
+      PathToRoot: ControlXAxis/ControlYAxis/MainCanvas/StatusBar/Health/Health_Value
+      MemberName: Health_Value
+    - TypeName: Transform
+      PathToRoot: ViewRotateAxis
+      MemberName: ViewRotateAxis
+    - TypeName: Transform
+      PathToRoot: ViewRotateAxis/Roles
+      MemberName: Roles
+    - TypeName: Transform
+      PathToRoot: ViewRotateAxis/WeaponAxis
+      MemberName: WeaponAxis
+    - TypeName: Transform
+      PathToRoot: ViewRotateAxis/WeaponAxis/WepLookatTarget
+      MemberName: WepLookatTarget
+    - TypeName: Transform
+      PathToRoot: AwakeTimeline
+      MemberName: AwakeTimeline
+    ScriptsFolder: Assets\02_Scripts\03_Battle
+    ClassName: PlayerControl
+    Namespace: TeaGame
+    MainCode: 
+    DesignerCode: 
