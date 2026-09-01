@@ -26,4 +26,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/01_Scenes/5BattleScene-Test1.unity
     guid: 4c73c0d82a7d070479f143287b47cf7d
+  - enabled: 1
+    path: Assets/01_Scenes/BattleGraybox.unity
+    guid: 5e21a089dab1b3741a55a04216ccce90
   m_configObjects: {}

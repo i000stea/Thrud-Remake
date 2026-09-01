@@ -1378,7 +1378,6 @@ GameObject:
   - component: {fileID: 2318320704533282568}
   - component: {fileID: 2318320704533282575}
   - component: {fileID: 333498376}
-  - component: {fileID: 2508559883799120530}
   - component: {fileID: 1419291806047520098}
   - component: {fileID: 6240305357958277411}
   m_Layer: 0
@@ -1454,55 +1453,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &2508559883799120530
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2318320704533282569}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 57f1f59bf4b3e714ca0c138a3f5bb20f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  useNew: 1
-  scale: 1
-  ControlTakeOff: 0
-  config:
-    camera: {fileID: 1720673463428922918}
-    rb: {fileID: 2318320704533282575}
-    horizontalAxis: {fileID: 9083594429641626010}
-    pitchingAxis: {fileID: 5713977487223001317}
-    forword: {fileID: 5713977487223001317}
-    showViewAxis: {fileID: 2318320704242562891}
-    roleParent: {fileID: 3512349366370038483}
-    wepParent: {fileID: 9220361602020810085}
-    DepthFromWorld: 0
-    moveForce: 70
-    rollMultiForce: 50
-    sprintMultiForce: 2
-    rollForce: {x: -1, y: 0}
-    RollCD: 0.5
-    onReadySprint: 0
-    rollAfterSprintDelay: 0.7
-    mouseSensitivity: 500
-    mainFov: 60
-    sprintFov: 90
-    fovLerpSpeed: 10
-    rotationSpeed: 20
-    selectRoleIndedx: 0
-    lockEnemy: {fileID: 0}
-    weaponForword: {fileID: 8769880738983302467}
-    lockEnemySpeed: 15
-    lockSpeedMulti: 1
-    enemyLockDistance: 175
-  canvasConfig:
-    faceCanvas: {fileID: 24460063050624675}
-    lockEnemyArm: {fileID: 1715050979}
-    onHealth: {fileID: 4429583134600204298}
-    onHealthText: {fileID: 7849757925618691299}
-  entityBattleDatas: []
 --- !u!114 &1419291806047520098
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1527,15 +1477,8 @@ MonoBehaviour:
   initialRoleIndex: 0
   dataRepository: {fileID: 0}
   legacyDataStore: {fileID: 0}
-  forwardReference: {fileID: 0}
-  showViewAxis: {fileID: 0}
-  roleParent: {fileID: 0}
   environmentEffectController: {fileID: 0}
   playerConfig: {fileID: 11400000, guid: 56bc4c872b1395c4db54cbafb2e92888, type: 2}
-  movementConfig: {fileID: 0}
-  cameraConfig: {fileID: 0}
-  viewConfig: {fileID: 0}
-  aimConfig: {fileID: 0}
   ControlXAxis: {fileID: 9083594429641626010}
   ControlYAxis: {fileID: 5713977487223001317}
   Control_Camera: {fileID: 1720673463428922918}
