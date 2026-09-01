@@ -20,5 +20,12 @@ namespace TeaGame.App
 
       /// <summary>是否显示全局 Loading 遮罩。默认 true。</summary>
       public bool ShowLoading = true;
+
+      /// <summary>
+      /// 是否保留旧玩法场景（不卸载）。
+      /// 默认 false：切换后卸载旧玩法场景（决策 D20）；
+      /// 置 true 时按需保留（如主城常驻等场景），由调用方显式声明。
+      /// </summary>
+      public bool KeepPrevious;
    }
 }
