@@ -168,6 +168,18 @@ public sealed class SceneFlow : MonoBehaviour
 - **编译验证通过**（Assembly-CSharp exit=0，Assembly-CSharp-Editor exit=0）
 - **待用户执行**：Unity 编辑器执行 `Thrud/Setup ConfigScene`（已简化：建场景 + GameRoot + LoadingGroup + 置 Build Settings[0]），Play 验证启动链路
 
+### 执行记录（2026-09-01，Loading 过渡修复 / 场景重命名）
+
+- **问题**：场景切换瞬间完成，`0ConfigScene` 的 LoadingGroup 从未渐显（Loading Canvas 初始 alpha=0，旧 SceneFlow 未驱动 CanvasGroup）
+- **修复**（`SceneFlow.cs` 重写 + `SceneRequest.cs` 加 `KeepPrevious`）：
+  - 采用**旧版 LoadingControl 时序**：遮罩渐显（0.5s easeOutCubic）→ `allowSceneActivation=false` 预加载至 0.9 → 进度文本"加载中 X%" → **保持 ≥1s**（`minHoldDuration`）→ 激活场景并 `SetActiveScene` → 卸载旧玩法场景（`KeepPrevious=true` 时保留）→ 遮罩渐隐（0.5s easeInCubic）→ 隐藏遮罩
+  - `EnsureLoadingGroupReady`：场景内置 LoadingGroup 优先，未配置时从 `Resources/Prefabs/LoadingGroup` 回退实例化（C4 后移除回退）；自动解析第一个子对象 CanvasGroup + 子级 `TMP_Text` 进度文本
+  - 卸载保护：入口场景（`SceneAnchor.GetEntrySceneName()`）永驻；目标场景保留
+- **场景重命名（用户操作，已提交）**：`0LoginScene→1LoginScene`、`1MainScene→2MainScene`、`2GachaScene→3GachaScene`、`3BattleScene→4BattleScene`、`4BattleScene-Test0/1→5BattleScene-Test0/1`；新增 `0ConfigScene` 为入口；`AppBootstrapper.firstSceneName=1LoginScene`；Build Settings 同步（ConfigScene 置 [0]）
+- **编译验证通过**（Assembly-CSharp exit=0）
+- 提交：`24affbd`（SceneFlow 过渡改进）、`69106ef`（场景重命名 + 适配）
+- **验证方法**：从 0ConfigScene Play → 点击"开始"按钮，预期：LoadingGroup 渐显 → 加载进度 → 保持 ≥1s → 激活 2MainScene → 渐隐；若遮罩未出现，检查 ConfigScene 中 SceneFlow 的 `loadingGroupRoot` 是否已绑定且 CanvasGroup alpha 初始为 0
+
 ## 风险与注意
 
 - 场景切换统一走 additive，禁止单场景 `LoadScene`（会卸载 ConfigScene）；代码审查重点检查
