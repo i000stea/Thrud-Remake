@@ -1,4 +1,4 @@
-// Generate Id:a2cfaa0b-91d3-4950-88e0-140a69df2897
+// Generate Id:a5d7d905-d987-4d97-9106-680ac07cc622
 using UnityEngine;
 
 namespace TeaGame.Login

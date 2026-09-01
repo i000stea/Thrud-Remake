@@ -23,7 +23,7 @@ public class DevMessageDisplay : MonoBehaviour
    private void Update()
    {
       Debug.Log(Application.targetFrameRate);
-
+       
       m_frames++;
       if (Time.realtimeSinceStartup - m_lastUpdateShowTime >= m_updateTime)
       {

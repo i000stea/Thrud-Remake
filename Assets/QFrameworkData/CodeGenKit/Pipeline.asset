@@ -19,44 +19,20 @@ MonoBehaviour:
     From: 0
     NameToFullName: []
     BindInfos:
-    - TypeName: Transform
-      PathToRoot: ControlXAxis
-      MemberName: ControlXAxis
-    - TypeName: Transform
-      PathToRoot: ControlXAxis/ControlYAxis
-      MemberName: ControlYAxis
-    - TypeName: Camera
-      PathToRoot: ControlXAxis/ControlYAxis/Control_Camera
-      MemberName: Control_Camera
-    - TypeName: Canvas
-      PathToRoot: ControlXAxis/ControlYAxis/MainCanvas
-      MemberName: MainCanvas
-    - TypeName: RectTransform
-      PathToRoot: ControlXAxis/ControlYAxis/MainCanvas/Cross_LockEnemy
-      MemberName: Cross_LockEnemy
     - TypeName: UnityEngine.UI.Image
-      PathToRoot: ControlXAxis/ControlYAxis/MainCanvas/StatusBar/Health/Health_Main
-      MemberName: Health_Main
-    - TypeName: TMPro.TextMeshProUGUI
-      PathToRoot: ControlXAxis/ControlYAxis/MainCanvas/StatusBar/Health/Health_Value
-      MemberName: Health_Value
-    - TypeName: Transform
-      PathToRoot: ViewRotateAxis
-      MemberName: ViewRotateAxis
-    - TypeName: Transform
-      PathToRoot: ViewRotateAxis/Roles
-      MemberName: Roles
-    - TypeName: Transform
-      PathToRoot: ViewRotateAxis/WeaponAxis
-      MemberName: WeaponAxis
-    - TypeName: Transform
-      PathToRoot: ViewRotateAxis/WeaponAxis/WepLookatTarget
-      MemberName: WepLookatTarget
-    - TypeName: Transform
-      PathToRoot: AwakeTimeline
-      MemberName: AwakeTimeline
-    ScriptsFolder: Assets\02_Scripts\03_Battle
-    ClassName: PlayerControl
-    Namespace: TeaGame
+      PathToRoot: MainCanvas/awakeMask
+      MemberName: awakeMask
+    - TypeName: TeaFramework.TeaBaseButton
+      PathToRoot: MainCanvas/startButton
+      MemberName: startButton
+    - TypeName: UnityEngine.Video.VideoPlayer
+      PathToRoot: _videoPlayer
+      MemberName: _videoPlayer
+    - TypeName: UnityEngine.AudioSource
+      PathToRoot: _audioSource
+      MemberName: _audioSource
+    ScriptsFolder: Assets\02_Scripts\01_Login
+    ClassName: LoginViewController
+    Namespace: TeaGame.Login
     MainCode: 
     DesignerCode: 
