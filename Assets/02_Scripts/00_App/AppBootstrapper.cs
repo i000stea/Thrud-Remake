@@ -15,6 +15,11 @@ namespace TeaGame.App
       [SerializeField] private GameScene firstScene = GameScene.Login;
 
       /// <summary>
+      /// 场景引用表（由 ConfigScene 场景注入；未配置时兜底加载）。
+      /// </summary>
+      [SerializeField] private SceneRefTable sceneRefTable;
+
+      /// <summary>
       /// 场景切换控制器引用。
       /// </summary>
       private SceneFlow mSceneFlow;
@@ -22,9 +27,17 @@ namespace TeaGame.App
       /// <summary>
       /// 全局初始化。
       /// 当前为骨架占位：日志/埋点（TelemetryLog，M0 接入）、全局配置加载（C4 迁入后接管）。
+      /// 注入场景引用表实例，供全局静态访问。
       /// </summary>
       private void Awake()
       {
+         if (sceneRefTable == null)
+         {
+            sceneRefTable = SceneRefTable.Get();
+         }
+
+         SceneRefTable.SetCurrent(sceneRefTable);
+
          mSceneFlow = GetComponent<SceneFlow>();
          if (mSceneFlow == null)
          {
@@ -39,7 +52,8 @@ namespace TeaGame.App
       /// </summary>
       private void Start()
       {
-         if (SceneManager.GetActiveScene().name != SceneNames.ConfigScene)
+         var configSceneName = sceneRefTable != null ? sceneRefTable.ConfigSceneName : null;
+         if (configSceneName != null && SceneManager.GetActiveScene().name != configSceneName)
          {
             Debug.Log("[AppBootstrapper] 当前非入口场景，跳过首个场景加载（由 ConfigSceneGuard 拉起）。");
             return;

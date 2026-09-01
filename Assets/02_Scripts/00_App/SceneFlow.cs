@@ -8,9 +8,16 @@ namespace TeaGame.App
    /// 场景切换控制器（常驻于 ConfigScene）。
    /// 负责所有玩法场景的 additive 加载、卸载与 active scene 管理。
    /// 切换策略（决策 D20）：卸载旧玩法场景，ConfigScene 永驻。
+   /// 场景引用经 <see cref="SceneRefTable"/> 获取，名称/路径不写死。
    /// </summary>
    public sealed class SceneFlow : MonoBehaviour
    {
+      /// <summary>
+      /// 场景引用表（场景资产引用与路径的权威来源）。
+      /// 未注入时兜底 <see cref="SceneRefTable.Get"/>（Resources 加载）。
+      /// </summary>
+      [SerializeField] private SceneRefTable sceneRefTable;
+
       /// <summary>
       /// 全局 Loading 遮罩根节点（由 ConfigScene 场景内置，C4 后接管）。
       /// 若未配置，回退从 Resources 实例化 LoadingGroup（过渡实现）。
@@ -34,6 +41,19 @@ namespace TeaGame.App
       {
          get => loadingGroupRoot;
          set => loadingGroupRoot = value;
+      }
+
+      /// <summary>
+      /// 场景引用表（供外部校验）。
+      /// </summary>
+      public SceneRefTable SceneRefTable => sceneRefTable;
+
+      private void Awake()
+      {
+         if (sceneRefTable == null)
+         {
+            sceneRefTable = SceneRefTable.Get();
+         }
       }
 
       /// <summary>
@@ -74,7 +94,15 @@ namespace TeaGame.App
          ShowLoading(request.ShowLoading);
          yield return null; // 等一帧让遮罩生效
 
-         var path = SceneNames.GetPath(request.Scene);
+         var path = sceneRefTable != null ? sceneRefTable.GetPath(request.Scene) : null;
+         if (string.IsNullOrEmpty(path))
+         {
+            Debug.LogError($"[SceneFlow] 场景 {request.Scene} 路径为空，请检查 SceneRefTable 配置。");
+            HideLoading();
+            mSwitching = false;
+            yield break;
+         }
+
          var operation = SceneManager.LoadSceneAsync(path, LoadSceneMode.Additive);
 
          if (operation == null)
@@ -112,14 +140,17 @@ namespace TeaGame.App
 
       /// <summary>
       /// 卸载除 ConfigScene 与目标场景之外的全部已加载场景。
+      /// ConfigScene 名称从场景引用表读取，不写死。
       /// </summary>
       private IEnumerator UnloadPlayScenes(Scene keepScene)
       {
+         var configSceneName = sceneRefTable != null ? sceneRefTable.ConfigSceneName : string.Empty;
+
          for (var i = SceneManager.sceneCount - 1; i >= 0; i--)
          {
             var scene = SceneManager.GetSceneAt(i);
             if (!scene.isLoaded) continue;
-            if (scene.name == SceneNames.ConfigScene) continue;
+            if (!string.IsNullOrEmpty(configSceneName) && scene.name == configSceneName) continue;
             if (scene == keepScene) continue;
 
             var operation = SceneManager.UnloadSceneAsync(scene);

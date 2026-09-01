@@ -159,6 +159,19 @@ public sealed class SceneFlow : MonoBehaviour
 - SceneFlow 细节：卸载旧玩法场景（保留 ConfigScene）、active scene 管理、切换互斥（切换中忽略新请求）、LoadingGroup 场景内置优先 + Resources 回退（过渡，C4 移除回退）
 - 守卫细节：编辑器直接 Play 玩法场景时自动 additive 加载 ConfigScene；AppBootstrapper 仅在 ConfigScene 为 active 入口时加载首个玩法场景，由守卫拉起时不打扰当前场景
 
+### 执行记录（2026-09-01，SceneRefTable 改造 / 决策 D24）
+
+- **废弃 `SceneNames` 硬编码常量**，新增 `SceneRefTable`（ScriptableObject，`Assets/Resources/SceneRefTable.asset`）：
+  - 每个条目 = `GameScene` 逻辑枚举 ↔ `SceneAsset` 引用（**GUID 锚定**，重命名/移动场景文件不失效）↔ 自动同步的路径字符串
+  - `SceneAsset` 字段 `#if UNITY_EDITOR` 包裹；运行时只读已序列化的路径，打包后引用字段自动消失、路径保留
+  - `OnValidate` 自动同步路径：场景资产重命名/移动后，路径随引用自动刷新，**代码零改动**
+  - ConfigScene 用独立字段（它是入口/常驻层，不属于玩法场景切换目标）
+- `SceneFlow` / `AppBootstrapper` / `ConfigSceneGuard` 全部改为表驱动：场景路径、ConfigScene 名称均从表读取；表实例由 AppBootstrapper 注入（`SetCurrent`），未注入时 Resources 兜底（过渡，热更接入后迁移）
+- 新增编辑器工具 **`Thrud/Setup SceneRefTable`**：确保表资产存在 → 扫描 `Assets/01_Scenes` 按文件名映射填充条目（一次性初始化便利）→ 同步 Build Settings（表内场景全部加入、ConfigScene 强制 [0]、保留表外已启用场景）
+- `ConfigSceneCreator` 同步改造：创建 GameRoot 时经 SerializedObject 注入表引用到 `AppBootstrapper`/`SceneFlow`
+- **编译验证通过**（Assembly-CSharp exit=0，Assembly-CSharp-Editor exit=0）
+- **待用户执行**：Unity 编辑器执行 `Thrud/Setup SceneRefTable`（生成表资产并填充），再执行 `Thrud/Setup ConfigScene` 生成场景并置 [0]
+
 ## 风险与注意
 
 - 场景切换统一走 additive，禁止单场景 `LoadScene`（会卸载 ConfigScene）；代码审查重点检查
