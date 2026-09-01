@@ -232,7 +232,7 @@ namespace TeaGame
 
    /// <summary>
    /// 表现系统。
-   /// 负责角色实例装配、角色显隐、动画参数、相机 FOV、展示模型跟随和武器朝向刷新。
+   /// 负责角色实例装配、角色显隐、动画参数、相机 FOV、展示模型跟随、武器朝向刷新与玩家血条表现。
    /// </summary>
    public sealed class BattleViewSystem : AbstractSystem
    {
@@ -240,11 +240,21 @@ namespace TeaGame
       private BattleStateModel State => Architecture.GetModel<BattleStateModel>();
       private IUnRegister mRoleSwitchUnregister;
       private IUnRegister mRollUnregister;
+      private IUnRegister mPlayerDamagedUnregister;
+      private IUnRegister mPlayerDiedUnregister;
+
+      /// <summary>
+      /// 血条满血时的宽度缓存。
+      /// Health_Main 为 Sliced 类型左锚点血条，受击时按比例改宽度（沿用旧版 P_VisualEffect 方案）。
+      /// </summary>
+      private float mHealthFullWidth;
 
       protected override void OnInit()
       {
          mRoleSwitchUnregister = Architecture.RegisterEvent<BattleRoleSwitchedEvent>(_ => ApplyRoleSwitch());
          mRollUnregister = Architecture.RegisterEvent<BattleRollTriggeredEvent>(e => PlayRoll(e.RollForce));
+         mPlayerDamagedUnregister = Architecture.RegisterEvent<BattlePlayerDamagedEvent>(_ => RefreshPlayerHealth());
+         mPlayerDiedUnregister = Architecture.RegisterEvent<BattlePlayerDiedEvent>(_ => RefreshPlayerHealth());
       }
 
       protected override void OnDeinit()
@@ -253,6 +263,10 @@ namespace TeaGame
          mRoleSwitchUnregister = null;
          mRollUnregister?.UnRegister();
          mRollUnregister = null;
+         mPlayerDamagedUnregister?.UnRegister();
+         mPlayerDamagedUnregister = null;
+         mPlayerDiedUnregister?.UnRegister();
+         mPlayerDiedUnregister = null;
       }
 
       /// <summary>
@@ -283,11 +297,43 @@ namespace TeaGame
          }
 
          ApplyRoleSwitch();
+         RefreshPlayerHealth();
 
          var currentAnimator = State.CurrentBattleData?.RoleAnimator;
          if (currentAnimator)
          {
             currentAnimator.SetTrigger("GameStart");
+         }
+      }
+
+      /// <summary>
+      /// 刷新玩家血条表现（满血宽度 → 按当前血量比例缩放宽度）。
+      /// 由受击/死亡事件驱动，避免每帧刷新产生字符串拼接分配。
+      /// </summary>
+      private void RefreshPlayerHealth()
+      {
+         var controller = State.Controller;
+         if (!controller) return;
+
+         var maxHealth = Mathf.Max(1f, State.PlayerMaxHealth);
+         var ratio = Mathf.Clamp01(State.PlayerCurrentHealth / maxHealth);
+
+         var healthImage = controller.Health_Main;
+         if (healthImage)
+         {
+            if (mHealthFullWidth <= 0f)
+            {
+               mHealthFullWidth = healthImage.rectTransform.sizeDelta.x;
+            }
+
+            var size = healthImage.rectTransform.sizeDelta;
+            size.x = mHealthFullWidth * ratio;
+            healthImage.rectTransform.sizeDelta = size;
+         }
+
+         if (controller.Health_Value)
+         {
+            controller.Health_Value.text = $"{Mathf.RoundToInt(State.PlayerCurrentHealth)}/{Mathf.RoundToInt(maxHealth)}";
          }
       }
 
@@ -474,27 +520,65 @@ namespace TeaGame
    /// <summary>
    /// 锁敌系统。
    /// 负责在所有已注册敌人中搜索合适的锁定目标，并驱动准星插值。
+   /// T1.1 半自动：准星接近自动吸附（FindLockEnemy）+ Tab 在可见目标间循环切换/取消（TrySwitchLockedTarget）。
    /// </summary>
    public sealed class BattleAimSystem : AbstractSystem
    {
       private IArchitecture Architecture => BattleArchitecture.Interface;
       private BattleStateModel State => Architecture.GetModel<BattleStateModel>();
 
+      /// <summary>
+      /// 是否处于 Tab 手动锁定状态。
+      /// 手动锁定期间不重新自动吸附，直到目标失效或再次切换。
+      /// </summary>
+      private bool mManualLocked;
+
+      /// <summary>
+      /// 下一次允许切换锁定的时间点。
+      /// </summary>
+      private float mSwitchCooldownUntil;
+
       protected override void OnInit()
       {
       }
 
       /// <summary>
-      /// 在固定帧中搜索锁敌目标。
+      /// 在固定帧中搜索锁敌目标，并处理 Tab 切换/取消。
       /// </summary>
       public void TickFixedUpdate()
       {
          var controller = State.Controller;
          if (!controller) return;
 
+         // T1.1：Tab 循环切换/取消锁定（半自动）
+         if (Input.GetKeyDown(controller.PlayerConfig.LockSwitchKey)
+             && Time.time >= mSwitchCooldownUntil)
+         {
+            mSwitchCooldownUntil = Time.time + controller.PlayerConfig.LockSwitchCooldown;
+            TrySwitchLockedTarget(1);
+         }
+
          var previousEnemy = State.LockEnemy;
-         State.LockEnemy = FindLockEnemy(controller, out var screenTarget);
-         State.ScreenTarget = screenTarget;
+
+         if (mManualLocked)
+         {
+            // 手动锁定：保持当前目标，直到目标失效（死亡/出屏/超距）后回到自动吸附
+            if (!IsValidLockTarget(State.LockEnemy, controller))
+            {
+               mManualLocked = false;
+               State.LockEnemy = null;
+            }
+            else
+            {
+               State.ScreenTarget = ProjectEnemyToCanvas(State.LockEnemy, controller);
+            }
+         }
+
+         if (!mManualLocked)
+         {
+            State.LockEnemy = FindLockEnemy(controller, out var screenTarget);
+            State.ScreenTarget = screenTarget;
+         }
 
          if (previousEnemy != State.LockEnemy)
          {
@@ -503,6 +587,105 @@ namespace TeaGame
                EnemyTransform = State.LockEnemy?.LockPoint
             });
          }
+      }
+
+      /// <summary>
+      /// Tab 循环切换锁定目标。
+      /// direction=1 切换到下一个，-1 切换到上一个。
+      /// 无候选目标时取消锁定；只有一个候选且已是当前目标时也视为取消。
+      /// </summary>
+      public void TrySwitchLockedTarget(int direction)
+      {
+         if (State.ControlTakenOver) return;
+
+         var controller = State.Controller;
+         if (!controller) return;
+
+         var candidates = CollectLockCandidates(controller);
+         if (candidates.Count == 0)
+         {
+            mManualLocked = false;
+            State.LockEnemy = null;
+            return;
+         }
+
+         var currentIndex = -1;
+         if (State.LockEnemy != null)
+         {
+            for (var i = 0; i < candidates.Count; i++)
+            {
+               if (candidates[i] == State.LockEnemy)
+               {
+                  currentIndex = i;
+                  break;
+               }
+            }
+         }
+
+         var nextIndex = currentIndex < 0
+            ? (direction > 0 ? 0 : candidates.Count - 1)
+            : (currentIndex + direction + candidates.Count) % candidates.Count;
+
+         if (currentIndex >= 0 && nextIndex == currentIndex)
+         {
+            // 只有当前一个候选 → 取消锁定
+            mManualLocked = false;
+            State.LockEnemy = null;
+            return;
+         }
+
+         mManualLocked = true;
+         State.LockEnemy = candidates[nextIndex];
+         State.ScreenTarget = ProjectEnemyToCanvas(State.LockEnemy, controller);
+      }
+
+      /// <summary>
+      /// 收集当前可见且在吸附距离内的候选目标（Tab 切换用，事件驱动非每帧）。
+      /// </summary>
+      private System.Collections.Generic.List<IBattleEnemyTarget> CollectLockCandidates(PlayerControl controller)
+      {
+         var candidates = new System.Collections.Generic.List<IBattleEnemyTarget>(4);
+         var camera = controller.Control_Camera;
+         var canvas = controller.MainCanvas;
+         if (!camera || !canvas) return candidates;
+
+         foreach (var enemy in BattleEnemyRegistry.EnumerateTargets())
+         {
+            if (enemy == null || !enemy.CanBeLocked || !enemy.LockPoint) continue;
+
+            if (ProjectEnemyToCanvas(enemy, controller).magnitude >= controller.PlayerConfig.LockAssistDistance) continue;
+
+            candidates.Add(enemy);
+         }
+
+         return candidates;
+      }
+
+      /// <summary>
+      /// 判断目标是否仍可作为有效锁定对象（存在、可锁定、在吸附距离内）。
+      /// </summary>
+      private bool IsValidLockTarget(IBattleEnemyTarget enemy, PlayerControl controller)
+      {
+         if (enemy == null || !enemy.CanBeLocked || !enemy.LockPoint) return false;
+         return ProjectEnemyToCanvas(enemy, controller).magnitude < controller.PlayerConfig.LockAssistDistance;
+      }
+
+      /// <summary>
+      /// 把敌人的锁定点投影到 Canvas 本地坐标。
+      /// </summary>
+      private Vector2 ProjectEnemyToCanvas(IBattleEnemyTarget enemy, PlayerControl controller)
+      {
+         var camera = controller.Control_Camera;
+         var canvas = controller.MainCanvas;
+         if (!camera || !canvas || enemy?.LockPoint == null) return Vector2.zero;
+
+         var screenPosition = camera.WorldToScreenPoint(enemy.LockPoint.position);
+         RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvas.transform as RectTransform,
+            screenPosition,
+            camera,
+            out var canvasPosition);
+         return canvasPosition;
       }
 
       /// <summary>
@@ -564,7 +747,7 @@ namespace TeaGame
                out var canvasPosition);
 
             var canvasDistance = canvasPosition.magnitude;
-            if (canvasDistance >= controller.PlayerConfig.EnemyLockDistance) continue;
+            if (canvasDistance >= controller.PlayerConfig.LockAssistDistance) continue;
 
             var worldDistance = Vector3.Distance(controller.transform.position, enemy.RootTransform.position);
             if (worldDistance <= selectedDistance / 2f

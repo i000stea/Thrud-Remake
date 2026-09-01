@@ -82,12 +82,28 @@ namespace TeaGame
 
       [Header("锁敌参数")]
       /// <summary>
+      /// 半自动吸附判定屏幕距离（px）。
+      /// 目标进入该距离内自动吸附锁定；Tab 切换候选目标也以该范围为界。
+      /// </summary>
+      public float LockAssistDistance = 200f;
+
+      /// <summary>
+      /// 切换锁定目标的冷却时间（秒），防止 Tab 连续切换过快。
+      /// </summary>
+      public float LockSwitchCooldown = 0.3f;
+
+      /// <summary>
+      /// PC 端锁定切换键（半自动：在可见目标间循环切换/取消）。
+      /// </summary>
+      public KeyCode LockSwitchKey = KeyCode.Tab;
+
+      /// <summary>
       /// 锁敌准星与武器朝向的基础追踪速度。
       /// </summary>
       public float LockEnemySpeed = 10f;
 
       /// <summary>
-      /// UI 空间下允许锁敌的最大距离。
+      /// UI 空间下允许锁敌的最大距离（保留，旧版/兼容参考；新版吸附距离见 LockAssistDistance）。
       /// </summary>
       public float EnemyLockDistance = 175f;
    }

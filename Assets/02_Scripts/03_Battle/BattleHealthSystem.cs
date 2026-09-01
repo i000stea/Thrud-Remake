@@ -56,6 +56,15 @@ namespace TeaGame
          if (State.PlayerCurrentHealth <= 0f)
          {
             State.ControlTakenOver = true;
+
+            // 让控制器的序列化字段同步为接管状态。
+            // PlayerControl.Update 每帧会用自身字段覆盖 State.ControlTakenOver，
+            // 不同步的话死亡接管会被立即写回 false，导致角色死亡后仍可操作。
+            if (State.Controller)
+            {
+               State.Controller.ControlTakeOff = true;
+            }
+
             Architecture.SendEvent(new BattlePlayerDiedEvent());
          }
       }
