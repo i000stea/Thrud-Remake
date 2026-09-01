@@ -51,8 +51,29 @@ namespace TeaGame
       /// <summary>战斗环境特效控制器。</summary>
       public BattleEnvironmentEffectController EnvironmentEffectController => environmentEffectController;
 
+      /// <summary>
+      /// 运行时默认玩家配置兜底。
+      /// 当场景/预制体未配置 <see cref="playerConfig"/> 时创建一次，避免空引用导致战斗初始化崩溃。
+      /// </summary>
+      private static BattlePlayerConfig sFallbackPlayerConfig;
+
       /// <summary>战斗玩家配置。</summary>
-      public BattlePlayerConfig PlayerConfig => playerConfig;
+      public BattlePlayerConfig PlayerConfig
+      {
+         get
+         {
+            if (playerConfig) return playerConfig;
+
+            if (sFallbackPlayerConfig == null)
+            {
+               sFallbackPlayerConfig = ScriptableObject.CreateInstance<BattlePlayerConfig>();
+               sFallbackPlayerConfig.name = "DefaultBattlePlayerConfig(RuntimeFallback)";
+               Debug.LogWarning($"[{name}] 未配置 BattlePlayerConfig，已创建运行时默认配置兜底。请在场景/预制体上指定配置资产。");
+            }
+
+            return sFallbackPlayerConfig;
+         }
+      }
 
       /// <summary>
       /// QFramework 归属架构。
@@ -178,7 +199,7 @@ namespace TeaGame
          var outputForce = fwd.TransformDirection(new Vector3(sideForce, 0f, forwardForce));
          var localDepth = new Vector3(0f, depthForce, 0f);
 
-         if (!playerConfig.DepthFromWorld)
+         if (!PlayerConfig.DepthFromWorld)
          {
             localDepth = fwd.TransformDirection(localDepth);
          }
@@ -216,7 +237,7 @@ namespace TeaGame
       /// </summary>
       public float GetCurrentLockSpeed(float multiplier)
       {
-         return playerConfig.LockEnemySpeed * Mathf.Max(1f, multiplier);
+         return PlayerConfig.LockEnemySpeed * Mathf.Max(1f, multiplier);
       }
 
       /// <summary>

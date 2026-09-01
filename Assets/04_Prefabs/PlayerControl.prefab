@@ -1531,6 +1531,7 @@ MonoBehaviour:
   showViewAxis: {fileID: 0}
   roleParent: {fileID: 0}
   environmentEffectController: {fileID: 0}
+  playerConfig: {fileID: 11400000, guid: 56bc4c872b1395c4db54cbafb2e92888, type: 2}
   movementConfig: {fileID: 0}
   cameraConfig: {fileID: 0}
   viewConfig: {fileID: 0}
