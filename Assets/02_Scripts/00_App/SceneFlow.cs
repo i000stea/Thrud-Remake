@@ -13,6 +13,12 @@ namespace TeaGame.App
    public sealed class SceneFlow : MonoBehaviour
    {
       /// <summary>
+      /// 全局场景切换控制器实例。
+      /// 常驻于 ConfigScene，任何模块可经此请求场景切换。
+      /// </summary>
+      public static SceneFlow Instance { get; private set; }
+
+      /// <summary>
       /// 全局 Loading 遮罩根节点（由 ConfigScene 场景内置，C4 后接管）。
       /// 若未配置，回退从 Resources 实例化 LoadingGroup（过渡实现）。
       /// </summary>
@@ -27,6 +33,22 @@ namespace TeaGame.App
       /// 是否正在切换中，防止并发切换请求导致场景状态错乱。
       /// </summary>
       private bool mSwitching;
+
+      private void Awake()
+      {
+         if (Instance == null)
+         {
+            Instance = this;
+         }
+      }
+
+      private void OnDestroy()
+      {
+         if (Instance == this)
+         {
+            Instance = null;
+         }
+      }
 
       /// <summary>
       /// 全局 Loading 遮罩根节点（编辑器与运行时均可设置）。
