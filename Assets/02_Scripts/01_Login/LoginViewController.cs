@@ -1,26 +1,21 @@
 using DG.Tweening;
 using QFramework;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace TeaGame.Login
 {
    /// <summary>
-   /// 登录场景表现控制器（场景装配器）。
+   /// 登录场景表现控制器（场景装配器，UIKit CodeGen 绑定 UI 字段）。
    /// 职责：绑定场景 UI（遮罩/音频/开始按钮）、入场演出、按钮事件转发到 LoginSystem。
    /// 逻辑与数据在 LoginSystem/LoginModel，本类只做表现层，符合 QFramework 分层。
+   /// UI 字段（awakeMask/startButton/_audioSource）由 Designer 生成（CodeGenKit）。
    /// </summary>
-   public sealed class LoginViewController : MonoBehaviour, IController
+   public partial class LoginViewController : ViewController
    {
       [Header("演出参数")]
       [SerializeField] private float lerpTime = 1f;
       [SerializeField] private float volumeTarget = 0.7f;
       [SerializeField] private AnimationCurve lerpCurve;
-
-      [Header("场景引用")]
-      [SerializeField] private Image mask;
-      [SerializeField] private AudioSource audioSource;
-      [SerializeField] private Button startButton;
 
       [Header("登录目标")]
       [SerializeField] private string mainSceneKey = "2MainScene";
@@ -30,13 +25,16 @@ namespace TeaGame.Login
       /// </summary>
       private IUnRegister mCompletedUnregister;
 
+      /// <summary>
+      /// 登录模块架构（QFramework；RegisterEvent/GetSystem 均走架构）。
+      /// </summary>
       private IArchitecture Architecture => LoginArchitecture.Interface;
 
       private void Awake()
       {
          if (startButton != null)
          {
-            startButton.onClick.AddListener(OnStartButtonClicked);
+            startButton.clickEvent.AddListener(OnStartButtonClicked);
          }
 
          PlayEntryPerformance();
@@ -57,7 +55,7 @@ namespace TeaGame.Login
       {
          if (startButton != null)
          {
-            startButton.onClick.RemoveListener(OnStartButtonClicked);
+            startButton.clickEvent.RemoveListener(OnStartButtonClicked);
          }
       }
 
@@ -66,16 +64,16 @@ namespace TeaGame.Login
       /// </summary>
       private void PlayEntryPerformance()
       {
-         if (mask != null)
+         if (awakeMask != null)
          {
-            mask.DOColor(new Color(0f, 0f, 0f, 0f), lerpTime).SetEase(lerpCurve);
+            awakeMask.DOColor(new Color(0f, 0f, 0f, 0f), lerpTime).SetEase(lerpCurve);
          }
 
-         if (audioSource != null)
+         if (_audioSource != null)
          {
-            audioSource.volume = 0f;
-            audioSource.Play();
-            audioSource.DOFade(volumeTarget, lerpTime).SetEase(lerpCurve);
+            _audioSource.volume = 0f;
+            _audioSource.Play();
+            _audioSource.DOFade(volumeTarget, lerpTime).SetEase(lerpCurve);
          }
       }
 
@@ -92,15 +90,10 @@ namespace TeaGame.Login
       /// </summary>
       private void OnLoginCompleted(LoginCompletedEvent e)
       {
-         if (audioSource != null)
+         if (_audioSource != null)
          {
-            audioSource.DOFade(0f, 0.8f).SetEase(lerpCurve);
+            _audioSource.DOFade(0f, 0.8f).SetEase(lerpCurve);
          }
-      }
-
-      IArchitecture IBelongToArchitecture.GetArchitecture()
-      {
-         return LoginArchitecture.Interface;
       }
    }
 }
