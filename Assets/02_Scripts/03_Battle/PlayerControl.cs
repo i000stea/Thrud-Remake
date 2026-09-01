@@ -83,6 +83,7 @@ namespace TeaGame
       private void Start()
       {
          Architecture.GetSystem<BattleRoleSystem>().Initialize(this);
+         Architecture.GetSystem<BattleHealthSystem>().Initialize();
          Architecture.GetSystem<BattleViewSystem>().InitializeView();
          SyncRuntimeBridge();
       }

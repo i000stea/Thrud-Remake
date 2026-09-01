@@ -44,6 +44,18 @@ namespace TeaGame
       public bool ControlTakenOver;
 
       /// <summary>
+      /// 玩家最大生命值。
+      /// 由健康系统在战斗初始化时从配置读取并写入。
+      /// </summary>
+      public float PlayerMaxHealth = 100f;
+
+      /// <summary>
+      /// 玩家当前生命值。
+      /// 受击时由健康系统扣减，归零后触发死亡流程。
+      /// </summary>
+      public float PlayerCurrentHealth = 100f;
+
+      /// <summary>
       /// 相机俯仰角缓存。
       /// </summary>
       public float CameraPitch;

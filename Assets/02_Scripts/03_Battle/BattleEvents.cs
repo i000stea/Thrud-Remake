@@ -55,4 +55,18 @@ namespace TeaGame
       /// </summary>
       public int Damage;
    }
+
+   /// <summary>
+   /// 玩家死亡事件。
+   /// 当玩家当前生命值归零时，由健康系统派发该事件，
+   /// 用于触发失败流程（关卡状态机）、死亡演出与埋点记录。
+   /// </summary>
+   public struct BattlePlayerDiedEvent
+   {
+      /// <summary>
+      /// 玩家死亡时所在的波次编号。
+      /// 由关卡流程在后续阶段写入，首版默认为 0。
+      /// </summary>
+      public int WaveIndex;
+   }
 }

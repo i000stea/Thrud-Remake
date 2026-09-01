@@ -19,6 +19,7 @@ namespace TeaGame
          this.RegisterModel(new BattleStateModel());
 
          this.RegisterSystem(new BattleRoleSystem());
+         this.RegisterSystem(new BattleHealthSystem());
          this.RegisterSystem(new BattleInputSystem());
          this.RegisterSystem(new BattleMovementSystem());
          this.RegisterSystem(new BattleViewSystem());
