@@ -140,15 +140,24 @@ public sealed class SceneFlow : MonoBehaviour
 
 ## 实施任务（后续按序执行）
 
-| 任务 | 说明 | 依赖 |
-|------|------|------|
-| C1 新建 ConfigScene + GameRoot 骨架 | 空场景 + GameRoot + AppBootstrapper 占位 | 无 |
-| C2 Build Settings 调整 | ConfigScene 置 [0]，其余保持 additive | C1 |
-| C3 SceneFlow 实现 | 请求对象、加载/卸载/active 管理、LoadingGroup 接线 | C2 |
-| C4 迁移全局对象 | StoreBattleRoleData / BattleRoleRepository / LoadingGroup / UIRoot 入 ConfigScene | C3 |
-| C5 编辑器守卫 | ConfigSceneGuard + SceneNames | C4 |
-| C6 场景链路改造 | Login/Main/Gacha/Battle 切换改造为 additive 请求模式 | C3 |
-| C7 架构文档同步 | 更新本文件与 01 架构文档到实际实现 | C6 |
+| 任务 | 说明 | 依赖 | 状态 |
+|------|------|------|------|
+| C1 新建 ConfigScene + GameRoot 骨架 | 空场景 + GameRoot + AppBootstrapper 占位 | 无 | 代码/工具完成，场景文件待执行菜单生成 |
+| C2 Build Settings 调整 | ConfigScene 置 [0]，其余保持 additive | C1 | 工具完成（菜单一键置 [0]） |
+| C3 SceneFlow 实现 | 请求对象、加载/卸载/active 管理、LoadingGroup 接线 | C2 | 已完成（编译通过） |
+| C4 迁移全局对象 | StoreBattleRoleData / BattleRoleRepository / LoadingGroup / UIRoot 入 ConfigScene | C3 | 待执行 |
+| C5 编辑器守卫 | ConfigSceneGuard + SceneNames | C4 | 已完成（代码随 C1 落地） |
+| C6 场景链路改造 | Login/Main/Gacha/Battle 切换改造为 additive 请求模式 | C3 | 待执行 |
+| C7 架构文档同步 | 更新本文件与 01 架构文档到实际实现 | C6 | 待执行 |
+
+### 执行记录（2026-09-01，C1-C3）
+
+- 新增运行时代码 `Assets/02_Scripts/00_App/`：`GameScene.cs`、`SceneNames.cs`、`SceneRequest.cs`、`SceneFlow.cs`、`AppBootstrapper.cs`、`ConfigSceneGuard.cs`（命名空间 `TeaGame.App`）
+- 新增编辑器工具 `Assets/02_Scripts/00_App/Editor/ConfigSceneCreator.cs`：菜单 **`Thrud/Setup ConfigScene`** 一键完成——新建 ConfigScene 空场景 → 创建 GameRoot（挂 AppBootstrapper + SceneFlow）→ 实例化 LoadingGroup 预制件并接给 SceneFlow → 保存场景 → 置入 Build Settings[0]
+- **编译验证通过**（Unity Roslyn：Assembly-CSharp exit=0，Assembly-CSharp-Editor exit=0）
+- **待用户执行**：在 Unity 编辑器菜单运行 `Thrud/Setup ConfigScene` 生成场景文件并置 [0]，然后 Play 验证启动链路（ConfigScene 加载 → additive 加载 Login）
+- SceneFlow 细节：卸载旧玩法场景（保留 ConfigScene）、active scene 管理、切换互斥（切换中忽略新请求）、LoadingGroup 场景内置优先 + Resources 回退（过渡，C4 移除回退）
+- 守卫细节：编辑器直接 Play 玩法场景时自动 additive 加载 ConfigScene；AppBootstrapper 仅在 ConfigScene 为 active 入口时加载首个玩法场景，由守卫拉起时不打扰当前场景
 
 ## 风险与注意
 
