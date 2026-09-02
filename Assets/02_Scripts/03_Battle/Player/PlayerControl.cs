@@ -259,23 +259,18 @@ namespace TeaGame
       /// <summary>
       /// 把当前战斗上下文同步到桥接层。
       /// 旧武器、旧敌人 UI、伤害飘字等临时兼容逻辑会从这里读取战斗状态。
-      /// 锁定时瞄准参考为锁定目标；未锁定时退化为"视角正前"虚拟瞄准点（WepLookatTarget），
-      /// 让旧版武器在未锁定时也能跟随鼠标俯仰（射击方向与视角一致）。
+      /// 仅锁定时提供 LockPoint：legacy 武器平滑吸附锁定目标；
+      /// 未锁定保持 null，legacy 武器姿态自动回正（localRotation → 0,0,0），
+      /// 未锁定弹道方向由 WeaponSystem 的 FreeAimRotation（=相机旋转）承担。
       /// </summary>
       private void SyncRuntimeBridge()
       {
          var state = Architecture.GetModel<BattleStateModel>();
-         var lockTarget = state.LockEnemy?.LockPoint;
-         if (!lockTarget)
-         {
-            lockTarget = WepLookatTarget ? WepLookatTarget : null;
-         }
-
          BattleRuntimeBridge.UpdateState(
             this,
             Control_Camera,
             transform,
-            lockTarget,
+            state.LockEnemy?.LockPoint,
             GetCurrentLockSpeed(state.LockSpeedMultiplier),
             environmentEffectController);
       }

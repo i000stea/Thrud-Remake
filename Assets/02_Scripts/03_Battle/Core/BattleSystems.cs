@@ -1,5 +1,4 @@
 using QFramework;
-using TeaFramework;
 using UnityEngine;
 
 namespace TeaGame
@@ -240,13 +239,6 @@ namespace TeaGame
    {
       private IArchitecture Architecture => BattleArchitecture.Interface;
       private BattleStateModel State => Architecture.GetModel<BattleStateModel>();
-
-      /// <summary>
-      /// 未锁定（未瞄准）时虚拟瞄准点（WepLookatTarget）的距离。
-      /// 取足够大的值以消除武器挂点与准星之间的视差——武器瞄准线几乎平行于视角正前方。
-      /// </summary>
-      private const float UnlockedAimDistance = 999f;
-
       private IUnRegister mRoleSwitchUnregister;
       private IUnRegister mRollUnregister;
       private IUnRegister mPlayerDamagedUnregister;
@@ -504,9 +496,8 @@ namespace TeaGame
       }
 
       /// <summary>
-      /// 刷新用于调试和表现的武器观察目标点。
-      /// 锁定时指向锁定目标；未锁定时指向视角正前方（相机 forward，距离 UnlockedAimDistance=999），
-      /// 使武器朝向与射击方向跟随鼠标俯仰（与移动"视角正前"模式一致），并消除武器-准星视差。
+      /// 刷新用于调试和表现的武器观察目标点（未锁定观察点距离 10，仅表现/调试用，
+      /// 不再参与武器朝向与弹道——未锁定弹道方向由 FreeAimRotation=相机旋转承担）。
       /// </summary>
       private void UpdateLookTarget(PlayerControl controller)
       {
@@ -520,78 +511,31 @@ namespace TeaGame
          {
             var cameraTransform = controller.Control_Camera.transform;
             controller.WepLookatTarget.position =
-               cameraTransform.position + cameraTransform.forward * UnlockedAimDistance;
+               cameraTransform.position + cameraTransform.forward * 10f;
          }
          else if (controller.ControlXAxis)
          {
             controller.WepLookatTarget.position =
                controller.ControlXAxis.position
-               + controller.ControlXAxis.forward * UnlockedAimDistance;
+               + controller.ControlXAxis.forward * 10f;
          }
       }
 
       /// <summary>
       /// 刷新当前武器的朝向。
-      /// 锁定时：legacy 武器由自身 Update 平滑吸附锁定目标；新版组件走 RefreshAim 平滑吸附。
-      /// 未锁定时：武器**直接对齐视角正前**（不平滑），并停用 legacy 组件的自朝向
-      /// （旧组件 Update 会把它平滑拉回，造成与视角不同步）。
+      /// 锁定时：legacy 武器由自身 Update 平滑吸附锁定目标（经 Bridge 提供 LockPoint），
+      /// 新版组件走 RefreshAim 平滑吸附。
+      /// 未锁定时：武器姿态回正（legacy 自朝向把 localRotation 收敛到 0,0,0；
+      /// 新版组件 RefreshAim(null) 同理）——未锁定弹道方向由 FreeAimRotation（=相机旋转）承担，
+      /// 因此子弹仍打向准星/视角正前，而武器模型不指向远处点。
       /// </summary>
       private void UpdateWeaponAim(PlayerControl controller)
       {
          var weaponView = State.CurrentBattleData?.WeaponView;
          if (weaponView == null) return;
 
-         var weaponRoot = weaponView.RootTransform;
-         if (!weaponRoot) return;
-
-         var lockPoint = State.LockEnemy?.LockPoint;
-         var legacyView = weaponView as LegacyBattleWeaponViewAdapter;
-
-         if (lockPoint)
-         {
-            // 锁定时：legacy 恢复自朝向平滑（其 Update 每帧执行）；新版组件由本系统平滑吸附
-            if (legacyView != null)
-            {
-               var legacyComponent = legacyView.LegacyComponent;
-               if (legacyComponent && !legacyComponent.enabled)
-               {
-                  legacyComponent.enabled = true;
-               }
-
-               return;
-            }
-
-            weaponView.RefreshAim(lockPoint, controller.GetCurrentLockSpeed(State.LockSpeedMultiplier));
-            return;
-         }
-
-         // 未锁定：停用 legacy 自朝向，改为直接对齐视角
-         if (legacyView != null)
-         {
-            var legacyComponent = legacyView.LegacyComponent;
-            if (legacyComponent && legacyComponent.enabled)
-            {
-               legacyComponent.enabled = false;
-            }
-         }
-
-         Transform aimPoint = null;
-         if (controller.WepLookatTarget)
-         {
-            aimPoint = controller.WepLookatTarget;
-         }
-         else if (controller.Control_Camera)
-         {
-            aimPoint = controller.Control_Camera.transform;
-         }
-
-         if (aimPoint == null) return;
-
-         var aimDirection = aimPoint.position - weaponRoot.position;
-         if (aimDirection.sqrMagnitude < 0.0001f) return;
-
-         // 直接设置，不做 Lerp（未锁定响应即视角）
-         weaponRoot.rotation = ClampLookRotation(aimDirection, 89f);
+         var lookTarget = State.LockEnemy?.LockPoint;
+         weaponView.RefreshAim(lookTarget, controller.GetCurrentLockSpeed(State.LockSpeedMultiplier));
       }
 
       /// <summary>
@@ -961,6 +905,14 @@ namespace TeaGame
          {
             weaponMode.ReloadDuration = config.WeaponReloadTime;
          }
+
+         // 自由瞄准发射基准：未锁定时取相机旋转（武器姿态回正 0,0,0，子弹仍打向准星/视角正前）；
+         // 锁定时置空，子弹按武器实际朝向（吸附锁定目标）发射
+         var controller = State.Controller;
+         var aimCamera = controller ? controller.Control_Camera : null;
+         weaponMode.FreeAimRotation = State.LockEnemy == null && aimCamera
+            ? aimCamera.transform.rotation
+            : (Quaternion?)null;
 
          // 推进换弹进度，计时结束补满弹匣并派发完成事件（占位：控制台日志）
          if (weaponMode.TickReload())

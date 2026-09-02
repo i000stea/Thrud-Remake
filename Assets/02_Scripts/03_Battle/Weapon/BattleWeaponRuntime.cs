@@ -137,13 +137,6 @@ namespace TeaGame
          mComponent = component;
       }
 
-      /// <summary>
-      /// 底层旧版武器组件。
-      /// ViewSystem 在"未锁定"时需停用其自朝向（旧组件 Update 会把武器平滑拉回），
-      /// 改为由 ViewSystem 直接对齐视角；锁定时再恢复其自朝向。
-      /// </summary>
-      public Weapon_ObjectComponent LegacyComponent => mComponent;
-
       public Transform RootTransform => mComponent ? mComponent.transform : null;
       public Transform FirePoint => mComponent ? mComponent.showPoint : null;
       public GameObject BulletPrefab => mComponent ? mComponent.bulletPrefab : null;
@@ -218,6 +211,14 @@ namespace TeaGame
       /// 下一次允许开火的时间点。
       /// </summary>
       protected float CanFireTime;
+
+      /// <summary>
+      /// 自由瞄准发射基准旋转（未锁定时由武器系统写入相机旋转）。
+      /// 为空（锁定吸附）时子弹按武器实际朝向（FirePoint）发射。
+      /// 武器模型本身在未锁定时保持挂点回正（0,0,0），弹道方向由此基准旋转决定，
+      /// 从而保证"子弹打向准星/视角正前"而武器视觉不歪向远处点。
+      /// </summary>
+      public Quaternion? FreeAimRotation { get; set; }
 
       /// <summary>
       /// 子弹飞行速度。
@@ -368,10 +369,12 @@ namespace TeaGame
       {
          if (WeaponView?.BulletPrefab == null || WeaponView.FirePoint == null) return;
 
+         var baseRotation = FreeAimRotation ?? WeaponView.FirePoint.rotation;
+
          var bulletObject = SpawnBulletPrefab(
             WeaponView.BulletPrefab,
             WeaponView.FirePoint.position,
-            WeaponView.FirePoint.rotation,
+            baseRotation,
             WeaponData.damage);
 
          if (!bulletObject) return;
@@ -627,7 +630,8 @@ namespace TeaGame
       {
          if (WeaponView?.FirePoint == null) return;
 
-         var ray = new Ray(WeaponView.FirePoint.position, WeaponView.FirePoint.forward);
+         var fireForward = FreeAimRotation.HasValue ? FreeAimRotation.Value.forward : WeaponView.FirePoint.forward;
+         var ray = new Ray(WeaponView.FirePoint.position, fireForward);
          const float maxDistance = 100f;
 
          var hitPoint = ray.origin + ray.direction * maxDistance;
