@@ -22,6 +22,14 @@ namespace TeaGame
       /// </summary>
       public bool DepthFromWorld = false;
 
+      [Header("视角移动模式")]
+      /// <summary>
+      /// 前进方向是否跟随视角正前方（默认开启）。
+      /// 开启：WASD 的"前"以相机正前方（含俯仰）为基准，适合空域飞行/自由射击，
+      /// 鼠标上下看时移动与射击方向一致；关闭：仅以水平 yaw 轴为基准（旧行为，移动恒水平）。
+      /// </summary>
+      public bool MoveForwardFollowView = true;
+
       /// <summary>
       /// 基础移动力。
       /// </summary>

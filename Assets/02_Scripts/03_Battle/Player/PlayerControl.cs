@@ -201,19 +201,26 @@ namespace TeaGame
 
       /// <summary>
       /// 将输入方向转换为世界空间移动向量。
+      /// 前进方向默认跟随视角正前方（含俯仰）；侧向与 Q/E 上下始终以水平 yaw 轴为基准，
+      /// 保证鼠标上下（俯仰）不影响左右平移与升降（开关见 BattlePlayerConfig.MoveForwardFollowView）。
       /// </summary>
       public Vector3 TransformMoveDirection(float sideForce, float depthForce, float forwardForce)
       {
-         var fwd = ControlXAxis ? ControlXAxis : transform;
-         var outputForce = fwd.TransformDirection(new Vector3(sideForce, 0f, forwardForce));
-         var localDepth = new Vector3(0f, depthForce, 0f);
+         var yawAxis = ControlXAxis ? ControlXAxis : transform;
 
-         if (!PlayerConfig.DepthFromWorld)
+         Vector3 forwardDir;
+         if (PlayerConfig.MoveForwardFollowView && Control_Camera)
          {
-            localDepth = fwd.TransformDirection(localDepth);
+            forwardDir = Control_Camera.transform.forward;
+         }
+         else
+         {
+            forwardDir = yawAxis.forward;
          }
 
-         return outputForce + localDepth;
+         var outputForce = yawAxis.right * sideForce + forwardDir * forwardForce;
+         var depthDir = PlayerConfig.DepthFromWorld ? Vector3.up : yawAxis.up;
+         return outputForce + depthDir * depthForce;
       }
 
       /// <summary>
@@ -252,15 +259,23 @@ namespace TeaGame
       /// <summary>
       /// 把当前战斗上下文同步到桥接层。
       /// 旧武器、旧敌人 UI、伤害飘字等临时兼容逻辑会从这里读取战斗状态。
+      /// 锁定时瞄准参考为锁定目标；未锁定时退化为"视角正前"虚拟瞄准点（WepLookatTarget），
+      /// 让旧版武器在未锁定时也能跟随鼠标俯仰（射击方向与视角一致）。
       /// </summary>
       private void SyncRuntimeBridge()
       {
          var state = Architecture.GetModel<BattleStateModel>();
+         var lockTarget = state.LockEnemy?.LockPoint;
+         if (!lockTarget)
+         {
+            lockTarget = WepLookatTarget ? WepLookatTarget : null;
+         }
+
          BattleRuntimeBridge.UpdateState(
             this,
             Control_Camera,
             transform,
-            state.LockEnemy?.LockPoint,
+            lockTarget,
             GetCurrentLockSpeed(state.LockSpeedMultiplier),
             environmentEffectController);
       }

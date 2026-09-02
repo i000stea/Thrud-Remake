@@ -463,6 +463,8 @@ namespace TeaGame
 
       /// <summary>
       /// 刷新用于调试和表现的武器观察目标点。
+      /// 锁定时指向锁定目标；未锁定时指向视角正前方（相机 forward 10m），
+      /// 使武器朝向与射击方向跟随鼠标俯仰（与移动"视角正前"模式一致）。
       /// </summary>
       private void UpdateLookTarget(PlayerControl controller)
       {
@@ -471,6 +473,12 @@ namespace TeaGame
          if (State.LockEnemy != null && State.LockEnemy.LockPoint)
          {
             controller.WepLookatTarget.position = State.LockEnemy.LockPoint.position;
+         }
+         else if (controller.Control_Camera)
+         {
+            var cameraTransform = controller.Control_Camera.transform;
+            controller.WepLookatTarget.position =
+               cameraTransform.position + cameraTransform.forward * 10f;
          }
          else if (controller.ControlXAxis)
          {
@@ -482,7 +490,8 @@ namespace TeaGame
 
       /// <summary>
       /// 刷新当前武器的朝向。
-      /// 新武器组件由这里显式驱动，旧武器组件则通过适配器内部保持兼容。
+      /// 锁定时指向锁定目标；未锁定时指向视角正前方的武器观察目标点（见 UpdateLookTarget），
+      /// 保证射击方向与视角朝向一致。新武器组件由这里显式驱动，旧武器组件则通过适配器内部保持兼容。
       /// </summary>
       private void UpdateWeaponAim(PlayerControl controller)
       {
@@ -490,6 +499,11 @@ namespace TeaGame
          if (weaponView == null) return;
 
          var lookTarget = State.LockEnemy?.LockPoint;
+         if (!lookTarget)
+         {
+            lookTarget = controller.WepLookatTarget ? controller.WepLookatTarget : null;
+         }
+
          weaponView.RefreshAim(lookTarget, controller.GetCurrentLockSpeed(State.LockSpeedMultiplier));
       }
 
