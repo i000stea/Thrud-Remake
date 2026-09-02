@@ -218,28 +218,116 @@ namespace TeaGame
       protected virtual float BulletVelocity => 50f;
 
       /// <summary>
+      /// 当前弹匣剩余子弹数。
+      /// 每次开火消耗 1 发；空仓后进入换弹，换弹完成补满。
+      /// </summary>
+      public int CurrentMagazine { get; protected set; }
+
+      /// <summary>
+      /// 是否正在换弹。
+      /// 换弹期间不响应开火；由武器系统每帧驱动进度。
+      /// </summary>
+      public bool IsReloading { get; protected set; }
+
+      /// <summary>
+      /// 换弹所需时长（秒）。
+      /// 由武器系统从配置同步；T1.2 统一换弹时长，不做武器差异。
+      /// </summary>
+      public float ReloadDuration { get; set; } = 1.5f;
+
+      /// <summary>
+      /// 换弹完成的时间戳。
+      /// </summary>
+      private float mReloadEndTime;
+
+      /// <summary>
+      /// 弹匣容量上限（读武器配置）。
+      /// </summary>
+      public int MaxMagazine => Mathf.Max(0, WeaponData?.magazineSize ?? 0);
+
+      /// <summary>
       /// 将武器模式与表现层及数据配置关联起来。
+      /// 关联时同步把弹匣补满。
       /// </summary>
       public void Setup(IBattleWeaponView weaponView, WeaponItem_Data weaponData)
       {
          WeaponView = weaponView;
          WeaponData = weaponData;
+         CurrentMagazine = MaxMagazine;
+         IsReloading = false;
+         mReloadEndTime = 0f;
       }
 
       /// <summary>
       /// 尝试执行一次开火。
-      /// 该方法会先检查射速冷却，再触发枪口火焰和具体开火逻辑。
+      /// 该方法会先检查换弹状态、射速冷却与弹匣余量，
+      /// 再触发枪口火焰和具体开火逻辑；空仓时自动进入换弹。
       /// </summary>
       public virtual void PressTrigger()
       {
          if (WeaponView == null || WeaponData == null) return;
+         if (IsReloading) return;
          if (Time.time <= CanFireTime) return;
+
+         if (CurrentMagazine <= 0)
+         {
+            StartReload();
+            return;
+         }
 
          var fireInterval = WeaponData.firingRate > 0 ? 60f / WeaponData.firingRate : 0.1f;
          CanFireTime = Time.time + fireInterval;
 
+         CurrentMagazine--;
          WeaponView.PlayMuzzleFire();
          OnShootEvent();
+      }
+
+      /// <summary>
+      /// 开始换弹（空仓自动或手动触发）。
+      /// 弹匣已满或已在换弹时不重复触发。
+      /// </summary>
+      public virtual void StartReload()
+      {
+         if (IsReloading) return;
+         if (CurrentMagazine >= MaxMagazine) return;
+
+         IsReloading = true;
+         mReloadEndTime = Time.time + Mathf.Max(0.05f, ReloadDuration);
+      }
+
+      /// <summary>
+      /// 取消进行中的换弹，保持当前弹匣不变。
+      /// 用于角色切换：切走时正在换弹的角色保持空弹匣（切回时仍为空）。
+      /// </summary>
+      public void CancelReload()
+      {
+         IsReloading = false;
+         mReloadEndTime = 0f;
+      }
+
+      /// <summary>
+      /// 切换角色时补满弹匣（原版核心规则）。
+      /// 同时清除换弹残留状态。
+      /// </summary>
+      public virtual void OnRoleSwitched()
+      {
+         CancelReload();
+         CurrentMagazine = MaxMagazine;
+      }
+
+      /// <summary>
+      /// 每帧驱动换弹进度。
+      /// 计时结束后补满弹匣并返回 true，由武器系统派发完成事件。
+      /// </summary>
+      public bool TickReload()
+      {
+         if (!IsReloading) return false;
+         if (Time.time < mReloadEndTime) return false;
+
+         IsReloading = false;
+         CurrentMagazine = MaxMagazine;
+         return true;
       }
 
       /// <summary>

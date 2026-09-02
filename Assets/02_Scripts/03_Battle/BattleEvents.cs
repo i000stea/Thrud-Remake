@@ -69,4 +69,13 @@ namespace TeaGame
       /// </summary>
       public int WaveIndex;
    }
+
+   /// <summary>
+   /// 换弹完成事件。
+   /// 当换弹计时结束、弹匣被补满时由武器系统派发，
+   /// 供 HUD（T3.3）、换弹音效与动画占位消费。
+   /// </summary>
+   public struct BattleReloadCompletedEvent
+   {
+   }
 }

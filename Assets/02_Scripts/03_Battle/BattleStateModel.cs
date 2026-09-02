@@ -132,6 +132,9 @@ namespace TeaGame
 
       /// <summary>是否持续按住开火键。</summary>
       public bool FireHeld;
+
+      /// <summary>本帧是否按下换弹键。</summary>
+      public bool ReloadPressed;
    }
 
    /// <summary>

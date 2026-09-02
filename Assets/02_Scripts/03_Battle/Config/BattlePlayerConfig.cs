@@ -80,6 +80,18 @@ namespace TeaGame
       /// </summary>
       public float RotationSpeed = 5f;
 
+      [Header("武器与换弹参数")]
+      /// <summary>
+      /// 换弹时长（秒）。
+      /// T1.2 统一换弹时长，不做武器差异；武器数据中的 reload 字段留待后续版本接入。
+      /// </summary>
+      public float WeaponReloadTime = 1.5f;
+
+      /// <summary>
+      /// 手动换弹键。
+      /// </summary>
+      public KeyCode ReloadKey = KeyCode.R;
+
       [Header("锁敌参数")]
       /// <summary>
       /// 半自动吸附判定屏幕距离（px）。

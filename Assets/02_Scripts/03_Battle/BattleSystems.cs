@@ -107,6 +107,7 @@ namespace TeaGame
          input.SprintHeld = Input.GetKey(KeyCode.LeftShift);
          input.SprintPressed = Input.GetKeyDown(KeyCode.LeftShift);
          input.FireHeld = Input.GetMouseButton(0);
+         input.ReloadPressed = Input.GetKeyDown(controller.PlayerConfig.ReloadKey);
 
          if (State.ControlTakenOver) return;
 
@@ -765,26 +766,76 @@ namespace TeaGame
 
    /// <summary>
    /// 武器系统。
-   /// 负责把输入转换为当前角色武器模式的开火行为。
+   /// 每帧驱动当前角色的武器开火与换弹进度；
+   /// 角色切换时取消旧角色换弹、为新角色补满弹匣。
    /// </summary>
    public sealed class BattleWeaponSystem : AbstractSystem
    {
       private IArchitecture Architecture => BattleArchitecture.Interface;
       private BattleStateModel State => Architecture.GetModel<BattleStateModel>();
+      private IUnRegister mRoleSwitchedUnregister;
 
       protected override void OnInit()
       {
+         mRoleSwitchedUnregister = Architecture.RegisterEvent<BattleRoleSwitchedEvent>(_ => OnRoleSwitched());
+      }
+
+      protected override void OnDeinit()
+      {
+         mRoleSwitchedUnregister?.UnRegister();
+         mRoleSwitchedUnregister = null;
       }
 
       /// <summary>
-      /// 每帧检测是否需要触发开火。
+      /// 每帧驱动换弹进度并检测开火。
+      /// 顺序：同步换弹时长 → 推进换弹 → 手动换弹 → 开火。
       /// </summary>
       public void Tick()
       {
-         if (State.ControlTakenOver || !State.Input.FireHeld) return;
+         if (State.ControlTakenOver) return;
 
          var weaponMode = State.CurrentBattleData?.WeaponMode;
-         weaponMode?.PressTrigger();
+         if (weaponMode == null) return;
+
+         var config = State.Controller?.PlayerConfig;
+         if (config)
+         {
+            weaponMode.ReloadDuration = config.WeaponReloadTime;
+         }
+
+         // 推进换弹进度，计时结束补满弹匣并派发完成事件（占位：控制台日志）
+         if (weaponMode.TickReload())
+         {
+            Architecture.SendEvent(new BattleReloadCompletedEvent());
+            Debug.Log($"[T1.2] {State.CurrentBattleData?.RoleName} 换弹完成，弹匣补满。");
+         }
+
+         // 手动换弹
+         if (State.Input.ReloadPressed)
+         {
+            weaponMode.StartReload();
+         }
+
+         // 开火（换弹期间或空仓时由 PressTrigger 内部处理）
+         if (State.Input.FireHeld)
+         {
+            weaponMode.PressTrigger();
+         }
+      }
+
+      /// <summary>
+      /// 角色切换处理（切人补满弹匣，原版规则）。
+      /// 先取消所有角色进行中的换弹——切走时正在换弹的角色保持空弹匣，
+      /// 切回时仍为空；随后为新角色补满弹匣。
+      /// </summary>
+      private void OnRoleSwitched()
+      {
+         foreach (var data in State.BattleDatas)
+         {
+            data?.WeaponMode?.CancelReload();
+         }
+
+         State.CurrentBattleData?.WeaponMode?.OnRoleSwitched();
       }
    }
 }
