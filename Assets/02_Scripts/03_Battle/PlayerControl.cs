@@ -30,6 +30,15 @@ namespace TeaGame
       [Header("配置（ScriptableObject）")]
       [SerializeField] private BattlePlayerConfig playerConfig;
 
+      [Header("弹匣调试 UI（T3.3 正式 HUD 实现后移除）")]
+      [SerializeField] private UnityEngine.UI.Text weaponAmmoText;
+
+      /// <summary>
+      /// 灰盒阶段弹匣/换弹调试文本。
+      /// 由 BattleViewSystem 驱动显示"子弹 x/y"与"装填中… z%"；T3.3 正式 HUD 实现后移除。
+      /// </summary>
+      public UnityEngine.UI.Text WeaponAmmoText => weaponAmmoText;
+
       /// <summary>
       /// 当前控制器注册的事件反注册列表。
       /// </summary>

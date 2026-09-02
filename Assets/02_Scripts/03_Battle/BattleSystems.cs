@@ -250,6 +250,12 @@ namespace TeaGame
       /// </summary>
       private float mHealthFullWidth;
 
+      /// <summary>弹匣调试文本缓存（变化时才重建字符串，避免每帧 GC）。</summary>
+      private int mAmmoLastMagazine = int.MinValue;
+      private int mAmmoLastMaxMagazine = int.MinValue;
+      private bool mAmmoLastReloading;
+      private int mAmmoLastProgressStep = int.MinValue;
+
       protected override void OnInit()
       {
          mRoleSwitchUnregister = Architecture.RegisterEvent<BattleRoleSwitchedEvent>(_ => ApplyRoleSwitch());
@@ -351,6 +357,58 @@ namespace TeaGame
          UpdateShowView(controller);
          UpdateLookTarget(controller);
          UpdateWeaponAim(controller);
+         RefreshWeaponAmmo();
+      }
+
+      /// <summary>
+      /// 刷新弹匣/换弹调试文本（T3.3 正式 HUD 实现后移除）。
+      /// 文本控件序列化在 PlayerControl.prefab 中（WeaponAmmoUI）；
+      /// 仅在数值变化时重建字符串，避免每帧字符串拼接产生 GC。
+      /// </summary>
+      private void RefreshWeaponAmmo()
+      {
+         var text = State.Controller?.WeaponAmmoText;
+         if (!text) return;
+
+         var mode = State.CurrentBattleData?.WeaponMode;
+         if (mode == null)
+         {
+            SetAmmoText(text, "");
+            return;
+         }
+
+         var magazine = mode.CurrentMagazine;
+         var maxMagazine = mode.MaxMagazine;
+         var reloading = mode.IsReloading;
+         var progressStep = Mathf.RoundToInt(mode.ReloadProgress * 20f);
+
+         if (magazine == mAmmoLastMagazine
+             && maxMagazine == mAmmoLastMaxMagazine
+             && reloading == mAmmoLastReloading
+             && progressStep == mAmmoLastProgressStep)
+         {
+            return;
+         }
+
+         mAmmoLastMagazine = magazine;
+         mAmmoLastMaxMagazine = maxMagazine;
+         mAmmoLastReloading = reloading;
+         mAmmoLastProgressStep = progressStep;
+
+         SetAmmoText(text, reloading
+            ? $"装填中… {progressStep * 5}%"
+            : $"子弹 {magazine}/{maxMagazine}");
+      }
+
+      /// <summary>
+      /// 仅在内容变化时写入调试文本。
+      /// </summary>
+      private static void SetAmmoText(UnityEngine.UI.Text text, string content)
+      {
+         if (text.text != content)
+         {
+            text.text = content;
+         }
       }
 
       /// <summary>

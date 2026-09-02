@@ -331,6 +331,20 @@ namespace TeaGame
       }
 
       /// <summary>
+      /// 换弹进度（0-1）。
+      /// 未在换弹时返回 1；换弹中按剩余时间计算，供调试 UI 与后续 HUD 使用。
+      /// </summary>
+      public float ReloadProgress
+      {
+         get
+         {
+            if (!IsReloading) return 1f;
+            var duration = Mathf.Max(0.05f, ReloadDuration);
+            return Mathf.Clamp01(1f - (mReloadEndTime - Time.time) / duration);
+         }
+      }
+
+      /// <summary>
       /// 由子类实现的具体开火逻辑。
       /// 默认行为为发射一发子弹。
       /// </summary>
