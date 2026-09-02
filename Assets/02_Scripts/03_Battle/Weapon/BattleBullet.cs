@@ -38,19 +38,11 @@ namespace TeaGame
       private float mAutoReturnTime;
 
       /// <summary>
-      /// 子弹上一帧位置（碰撞前位置）。
-      /// 用于在命中时向碰撞体求"进入侧表面点"，避免子弹高速穿过碰撞体后，
-      /// 特效出现在敌人后侧/相机看不到的位置。
-      /// </summary>
-      private Vector3 mLastPosition;
-
-      /// <summary>
       /// 供对象池取出后的组件状态重置。
       /// </summary>
       public void OnPoolSpawn()
       {
          mCanHit = true;
-         mLastPosition = transform.position;
       }
 
       /// <summary>
@@ -63,18 +55,15 @@ namespace TeaGame
          mCanHit = true;
          mArmed = true;
          mAutoReturnTime = Time.time + Mathf.Max(0.01f, lifeSeconds);
-         mLastPosition = transform.position;
       }
 
       /// <summary>
-      /// 未命中子弹超时自动回池；同时记录本帧位置供命中表面点推算。
+      /// 未命中子弹超时自动回池。
       /// 旧路径子弹未武装，Update 直接返回，保持零开销。
       /// </summary>
       private void Update()
       {
          if (!mArmed) return;
-
-         mLastPosition = transform.position;
          if (Time.time < mAutoReturnTime) return;
 
          mArmed = false;
@@ -120,26 +109,7 @@ namespace TeaGame
 
          if (hitEffectPrefab)
          {
-            // 以子弹"进入前"位置向碰撞体求表面点，特效落在子弹来向（通常是相机可见侧），
-            // 避免子弹高速穿过碰撞体后 ClosestPoint(当前位置) 落在敌人后侧而看不到
-            var effectPoint = transform.position;
-            if (other)
-            {
-               var probePosition = mLastPosition;
-               var surfacePoint = other.ClosestPoint(probePosition);
-
-               var outward = probePosition - surfacePoint; // 指向子弹来向（外部/相机侧）
-               if (outward.sqrMagnitude > 0.0001f)
-               {
-                  // 沿来向外推一点，避免特效嵌进碰撞体表面内部
-                  effectPoint = surfacePoint + outward.normalized * 0.15f;
-               }
-               else
-               {
-                  effectPoint = surfacePoint;
-               }
-            }
-
+            var effectPoint = other ? ResolveEntrySurfacePoint(other) : transform.position;
             var effectObject = BattleObjectPool.Spawn(hitEffectPrefab, effectPoint, Quaternion.identity);
             if (effectObject)
             {
@@ -148,6 +118,31 @@ namespace TeaGame
          }
 
          BattleObjectPool.Despawn(gameObject);
+      }
+
+      /// <summary>
+      /// 求子弹真正击中碰撞体的表面点。
+      /// OnTriggerEnter 回调发生时，子弹可能已高速穿过碰撞体到达后侧，
+      /// 直接取当前位置会得到背面点（特效被敌人挡住、相机看不到）。
+      /// 做法：沿子弹飞行方向倒退一段距离到碰撞体前（体外），再对该碰撞体打射线，
+      /// 取射线与碰撞体的首个交点为真实命中表面点，并向子弹来向外推少许避免特效嵌进表面。
+      /// </summary>
+      private Vector3 ResolveEntrySurfacePoint(Collider other)
+      {
+         var fireDirection = transform.forward;
+
+         const float backDistance = 2f;   // 倒退距离：需大于子弹单物理步位移 + 穿入深度
+         const float rayMaxDistance = 4f;
+
+         var rayOrigin = transform.position - fireDirection * backDistance;
+         if (other.Raycast(new Ray(rayOrigin, fireDirection), out var hitInfo, rayMaxDistance))
+         {
+            // 沿来向（体表外/通常为相机侧）外推，保证特效可见
+            return hitInfo.point - fireDirection * 0.1f;
+         }
+
+         // 极端情况（掠射未命中射线）：退回体前最近点
+         return other.ClosestPoint(rayOrigin);
       }
    }
 }
