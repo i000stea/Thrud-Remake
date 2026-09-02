@@ -630,7 +630,9 @@ namespace TeaGame
       {
          if (WeaponView?.FirePoint == null) return;
 
-         var fireForward = FreeAimRotation.HasValue ? FreeAimRotation.Value.forward : WeaponView.FirePoint.forward;
+         var fireForward = FreeAimRotation.HasValue
+            ? FreeAimRotation.Value * Vector3.forward
+            : WeaponView.FirePoint.forward;
          var ray = new Ray(WeaponView.FirePoint.position, fireForward);
          const float maxDistance = 100f;
 
