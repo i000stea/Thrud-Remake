@@ -57,10 +57,18 @@ namespace TeaGame
       public static int TotalInstantiatedCount { get; private set; }
 
       /// <summary>
-      /// 从池中取一个实例。
+      /// 从池中取一个实例（父节点为池根）。
       /// 若对应分桶为空，先预热一批（首次取用时会集中 Instantiate，之后走复用）。
       /// </summary>
       public static GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation)
+      {
+         return Spawn(prefab, position, rotation, null);
+      }
+
+      /// <summary>
+      /// 从池中取一个实例并挂到指定父节点下（用于 UI 飘字等需要特定父层级的对象）。
+      /// </summary>
+      public static GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation, Transform parent)
       {
          if (!prefab) return null;
 
@@ -79,7 +87,7 @@ namespace TeaGame
          }
 
          var pooledTransform = instance.transform;
-         pooledTransform.SetParent(sRoot, false);
+         pooledTransform.SetParent(parent ? parent : sRoot, false);
          pooledTransform.SetPositionAndRotation(position, rotation);
 
          instance.SetActive(true);

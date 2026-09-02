@@ -17,6 +17,12 @@ namespace TeaGame
       public float Damage = 1f;
 
       /// <summary>
+      /// 命中点特效预制体（T1.4，灰盒闪烁球占位）。
+      /// 命中时从对象池取出并在命中处显示，短暂后自动回池。
+      /// </summary>
+      [SerializeField] private GameObject hitEffectPrefab;
+
+      /// <summary>
       /// 是否武装（仅对象池新路径为 true）。
       /// </summary>
       private bool mArmed;
@@ -78,7 +84,7 @@ namespace TeaGame
          if (battleEnemy)
          {
             battleEnemy.ApplyDamage(Damage);
-            OnHit();
+            OnHit(other);
             return;
          }
 
@@ -86,20 +92,31 @@ namespace TeaGame
          if (legacyEnemy)
          {
             legacyEnemy.BeHit(Damage);
-            OnHit();
+            OnHit(other);
             return;
          }
 
-         OnHit();
+         OnHit(other);
       }
 
       /// <summary>
-      /// 命中后的统一处理：立即回收到对象池。
+      /// 命中后的统一处理：生成命中点特效并立即回收到对象池。
       /// </summary>
-      private void OnHit()
+      private void OnHit(Collider other)
       {
          mCanHit = false;
          mArmed = false;
+
+         if (hitEffectPrefab)
+         {
+            var hitPoint = other ? other.ClosestPoint(transform.position) : transform.position;
+            var effectObject = BattleObjectPool.Spawn(hitEffectPrefab, hitPoint, Quaternion.identity);
+            if (effectObject)
+            {
+               BattleObjectPool.ReturnAfter(effectObject, 0.3f);
+            }
+         }
+
          BattleObjectPool.Despawn(gameObject);
       }
    }

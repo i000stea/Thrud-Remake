@@ -23,14 +23,9 @@ namespace TeaGame
       [SerializeField][Range(1f, 10f)] private float distanceMaxScope = 3f;
 
       /// <summary>
-      /// 正在显示的飘字对象。
+      /// 正在显示的飘字对象（用于 LateUpdate 统一朝向相机）。
       /// </summary>
       private readonly List<GameObject> mShowingTexts = new();
-
-      /// <summary>
-      /// 已回收到对象池中的飘字对象。
-      /// </summary>
-      private readonly List<GameObject> mTextPool = new();
 
       /// <summary>
       /// 用于复用的等待对象，避免每次协程都分配新实例。
@@ -44,7 +39,7 @@ namespace TeaGame
       {
          mLifeTimeWait = new WaitForSeconds(damageTextShowTime);
          mShowingTexts.Clear();
-         mTextPool.Clear();
+         BattleObjectPool.WarmUp(damageTextPrefab, 8);
       }
 
       /// <summary>
@@ -65,7 +60,7 @@ namespace TeaGame
       }
 
       /// <summary>
-      /// 创建或复用一个伤害飘字。
+      /// 创建或复用一个伤害飘字（对象取自 BattleObjectPool，T1.3 统一池）。
       /// </summary>
       /// <param name="worldPosition">飘字生成位置。</param>
       /// <param name="damage">显示的伤害值。</param>
@@ -73,9 +68,8 @@ namespace TeaGame
       {
          if (!damageTextPrefab || !damageTextParent) return;
 
-         var textObject = GetDamageTextObject();
-         textObject.SetActive(true);
-         textObject.transform.position = worldPosition;
+         var textObject = BattleObjectPool.Spawn(damageTextPrefab, worldPosition, Quaternion.identity, damageTextParent);
+         if (!textObject) return;
 
          var childTransform = textObject.transform.GetChild(0);
          SetRandomOffset(childTransform);
@@ -90,29 +84,6 @@ namespace TeaGame
          }
 
          StartCoroutine(DamageTextLife(textObject));
-      }
-
-      /// <summary>
-      /// 取得一个可用的飘字对象。
-      /// 优先复用对象池，其次复用最早的显示对象，最后才会实例化新对象。
-      /// </summary>
-      private GameObject GetDamageTextObject()
-      {
-         if (mTextPool.Count > 0)
-         {
-            var pooledObject = mTextPool[0];
-            mTextPool.RemoveAt(0);
-            return pooledObject;
-         }
-
-         if (mShowingTexts.Count > 160)
-         {
-            var reusedObject = mShowingTexts[0];
-            mShowingTexts.RemoveAt(0);
-            return reusedObject;
-         }
-
-         return Instantiate(damageTextPrefab, damageTextParent);
       }
 
       /// <summary>
@@ -154,12 +125,7 @@ namespace TeaGame
          yield return mLifeTimeWait;
 
          mShowingTexts.Remove(damageTextObject);
-         if (!mTextPool.Contains(damageTextObject))
-         {
-            mTextPool.Add(damageTextObject);
-         }
-
-         damageTextObject.SetActive(false);
+         BattleObjectPool.Despawn(damageTextObject);
       }
    }
 }
