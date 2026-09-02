@@ -240,6 +240,13 @@ namespace TeaGame
    {
       private IArchitecture Architecture => BattleArchitecture.Interface;
       private BattleStateModel State => Architecture.GetModel<BattleStateModel>();
+
+      /// <summary>
+      /// 未锁定（未瞄准）时虚拟瞄准点（WepLookatTarget）的距离。
+      /// 取足够大的值以消除武器挂点与准星之间的视差——武器瞄准线几乎平行于视角正前方。
+      /// </summary>
+      private const float UnlockedAimDistance = 999f;
+
       private IUnRegister mRoleSwitchUnregister;
       private IUnRegister mRollUnregister;
       private IUnRegister mPlayerDamagedUnregister;
@@ -498,8 +505,8 @@ namespace TeaGame
 
       /// <summary>
       /// 刷新用于调试和表现的武器观察目标点。
-      /// 锁定时指向锁定目标；未锁定时指向视角正前方（相机 forward 10m），
-      /// 使武器朝向与射击方向跟随鼠标俯仰（与移动"视角正前"模式一致）。
+      /// 锁定时指向锁定目标；未锁定时指向视角正前方（相机 forward，距离 UnlockedAimDistance=999），
+      /// 使武器朝向与射击方向跟随鼠标俯仰（与移动"视角正前"模式一致），并消除武器-准星视差。
       /// </summary>
       private void UpdateLookTarget(PlayerControl controller)
       {
@@ -513,13 +520,13 @@ namespace TeaGame
          {
             var cameraTransform = controller.Control_Camera.transform;
             controller.WepLookatTarget.position =
-               cameraTransform.position + cameraTransform.forward * 10f;
+               cameraTransform.position + cameraTransform.forward * UnlockedAimDistance;
          }
          else if (controller.ControlXAxis)
          {
             controller.WepLookatTarget.position =
                controller.ControlXAxis.position
-               + controller.ControlXAxis.forward * 10f;
+               + controller.ControlXAxis.forward * UnlockedAimDistance;
          }
       }
 
