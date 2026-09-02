@@ -1,4 +1,5 @@
 using QFramework;
+using TeaFramework;
 using UnityEngine;
 
 namespace TeaGame
@@ -444,21 +445,55 @@ namespace TeaGame
 
       /// <summary>
       /// 刷新展示模型旋转。
+      /// 模型整体朝向跟随视角（含俯仰，ClampLookRotation 限制最大俯仰避免穿地/倒立）；
+      /// 无相机时退回水平 yaw 跟随。
       /// </summary>
       private void UpdateShowView(PlayerControl controller)
       {
          var showViewAxis = controller.ViewRotateAxis;
-         var fwd = controller.ControlXAxis;
-         if (!showViewAxis || !fwd) return;
+         if (!showViewAxis) return;
+
+         Quaternion viewRotation;
+         if (controller.Control_Camera)
+         {
+            viewRotation = ClampLookRotation(controller.Control_Camera.transform.forward, 80f);
+         }
+         else if (controller.ControlXAxis)
+         {
+            viewRotation = controller.ControlXAxis.rotation;
+         }
+         else
+         {
+            return;
+         }
 
          var targetRotation = Quaternion.Lerp(
             showViewAxis.rotation,
-            fwd.rotation,
+            viewRotation,
             Time.deltaTime * controller.PlayerConfig.RotationSpeed);
 
          var eulerAngles = targetRotation.eulerAngles;
          eulerAngles.z = 0f;
          showViewAxis.rotation = Quaternion.Euler(eulerAngles);
+      }
+
+      /// <summary>
+      /// 由任意方向构造"只含 yaw+pitch、无 roll"的旋转，并把俯仰限制在 [-maxPitch, maxPitch]。
+      /// 用于模型/武器朝向跟随视角；避免 LookRotation 在垂直看向时退化。
+      /// </summary>
+      private static Quaternion ClampLookRotation(Vector3 direction, float maxPitch)
+      {
+         var normalized = direction.normalized;
+         var flat = new Vector3(normalized.x, 0f, normalized.z);
+         if (flat.sqrMagnitude < 0.0001f)
+         {
+            return Quaternion.identity;
+         }
+
+         var pitchRad = Mathf.Asin(Mathf.Clamp(normalized.y, -1f, 1f));
+         var pitchDeg = Mathf.Clamp(pitchRad * Mathf.Rad2Deg, -maxPitch, maxPitch);
+         var yaw = Quaternion.LookRotation(flat.normalized, Vector3.up);
+         return yaw * Quaternion.Euler(-pitchDeg, 0f, 0f);
       }
 
       /// <summary>
@@ -490,21 +525,66 @@ namespace TeaGame
 
       /// <summary>
       /// 刷新当前武器的朝向。
-      /// 锁定时指向锁定目标；未锁定时指向视角正前方的武器观察目标点（见 UpdateLookTarget），
-      /// 保证射击方向与视角朝向一致。新武器组件由这里显式驱动，旧武器组件则通过适配器内部保持兼容。
+      /// 锁定时：legacy 武器由自身 Update 平滑吸附锁定目标；新版组件走 RefreshAim 平滑吸附。
+      /// 未锁定时：武器**直接对齐视角正前**（不平滑），并停用 legacy 组件的自朝向
+      /// （旧组件 Update 会把它平滑拉回，造成与视角不同步）。
       /// </summary>
       private void UpdateWeaponAim(PlayerControl controller)
       {
          var weaponView = State.CurrentBattleData?.WeaponView;
          if (weaponView == null) return;
 
-         var lookTarget = State.LockEnemy?.LockPoint;
-         if (!lookTarget)
+         var weaponRoot = weaponView.RootTransform;
+         if (!weaponRoot) return;
+
+         var lockPoint = State.LockEnemy?.LockPoint;
+         var legacyView = weaponView as LegacyBattleWeaponViewAdapter;
+
+         if (lockPoint)
          {
-            lookTarget = controller.WepLookatTarget ? controller.WepLookatTarget : null;
+            // 锁定时：legacy 恢复自朝向平滑（其 Update 每帧执行）；新版组件由本系统平滑吸附
+            if (legacyView != null)
+            {
+               var legacyComponent = legacyView.LegacyComponent;
+               if (legacyComponent && !legacyComponent.enabled)
+               {
+                  legacyComponent.enabled = true;
+               }
+
+               return;
+            }
+
+            weaponView.RefreshAim(lockPoint, controller.GetCurrentLockSpeed(State.LockSpeedMultiplier));
+            return;
          }
 
-         weaponView.RefreshAim(lookTarget, controller.GetCurrentLockSpeed(State.LockSpeedMultiplier));
+         // 未锁定：停用 legacy 自朝向，改为直接对齐视角
+         if (legacyView != null)
+         {
+            var legacyComponent = legacyView.LegacyComponent;
+            if (legacyComponent && legacyComponent.enabled)
+            {
+               legacyComponent.enabled = false;
+            }
+         }
+
+         Transform aimPoint = null;
+         if (controller.WepLookatTarget)
+         {
+            aimPoint = controller.WepLookatTarget;
+         }
+         else if (controller.Control_Camera)
+         {
+            aimPoint = controller.Control_Camera.transform;
+         }
+
+         if (aimPoint == null) return;
+
+         var aimDirection = aimPoint.position - weaponRoot.position;
+         if (aimDirection.sqrMagnitude < 0.0001f) return;
+
+         // 直接设置，不做 Lerp（未锁定响应即视角）
+         weaponRoot.rotation = ClampLookRotation(aimDirection, 89f);
       }
 
       /// <summary>

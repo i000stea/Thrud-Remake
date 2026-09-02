@@ -137,6 +137,13 @@ namespace TeaGame
          mComponent = component;
       }
 
+      /// <summary>
+      /// 底层旧版武器组件。
+      /// ViewSystem 在"未锁定"时需停用其自朝向（旧组件 Update 会把武器平滑拉回），
+      /// 改为由 ViewSystem 直接对齐视角；锁定时再恢复其自朝向。
+      /// </summary>
+      public Weapon_ObjectComponent LegacyComponent => mComponent;
+
       public Transform RootTransform => mComponent ? mComponent.transform : null;
       public Transform FirePoint => mComponent ? mComponent.showPoint : null;
       public GameObject BulletPrefab => mComponent ? mComponent.bulletPrefab : null;
