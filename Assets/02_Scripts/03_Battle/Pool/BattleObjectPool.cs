@@ -37,6 +37,13 @@ namespace TeaGame
       private static readonly Dictionary<GameObject, GameObject> sPrefabOf =
          new Dictionary<GameObject, GameObject>(64);
 
+      /// <summary>
+      /// 每个池化实例的 TrailRenderer 缓存（首次取用惰性查找，之后复用避免每帧/每发分配）。
+      /// TrailRenderer 失活不会自动清空轨迹，重新激活时需 Clear，否则会出现一帧滞留拖尾。
+      /// </summary>
+      private static readonly Dictionary<GameObject, TrailRenderer> sTrailRenderers =
+         new Dictionary<GameObject, TrailRenderer>(64);
+
       private static Transform sRoot;
       private static bool sRootCreated;
 
@@ -76,6 +83,7 @@ namespace TeaGame
          pooledTransform.SetPositionAndRotation(position, rotation);
 
          instance.SetActive(true);
+         ClearPooledTrail(instance);
          ResetRigidbody(instance);
 
          // 复用对象的一次性状态由组件自行重置
@@ -108,6 +116,7 @@ namespace TeaGame
             {
                // 分桶已满：丢弃实例，避免缓存无限膨胀
                sPrefabOf.Remove(instance);
+               sTrailRenderers.Remove(instance);
                Object.Destroy(instance);
             }
 
@@ -194,7 +203,9 @@ namespace TeaGame
             var candidate = bucket.Pop();
             if (!candidate)
             {
-               // 已被外部 Destroy 的残留实例
+               // 已被外部 Destroy 的残留实例：顺带清理缓存条目
+               sPrefabOf.Remove(candidate);
+               sTrailRenderers.Remove(candidate);
                continue;
             }
 
@@ -221,6 +232,24 @@ namespace TeaGame
 
          rigidbody.velocity = Vector3.zero;
          rigidbody.angularVelocity = Vector3.zero;
+      }
+
+      /// <summary>
+      /// 清空实例上的 TrailRenderer 旧轨迹（含子对象），避免池化复用出现一帧滞留拖尾。
+      /// Trail 引用按实例缓存：首次取用查找一次，之后查字典复用（无每帧/每发分配）。
+      /// </summary>
+      private static void ClearPooledTrail(GameObject instance)
+      {
+         if (!sTrailRenderers.TryGetValue(instance, out var trail))
+         {
+            trail = instance.GetComponentInChildren<TrailRenderer>(true);
+            sTrailRenderers[instance] = trail; // 可能为 null（无 Trail 的对象）
+         }
+
+         if (trail)
+         {
+            trail.Clear();
+         }
       }
 
       private static void EnsureRoot()
