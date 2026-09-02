@@ -266,11 +266,12 @@ namespace TeaGame
       private void SyncRuntimeBridge()
       {
          var state = Architecture.GetModel<BattleStateModel>();
+         var lockPoint = state.LockEnemy.IsAlive() ? state.LockEnemy.LockPoint : null;
          BattleRuntimeBridge.UpdateState(
             this,
             Control_Camera,
             transform,
-            state.LockEnemy?.LockPoint,
+            lockPoint,
             GetCurrentLockSpeed(state.LockSpeedMultiplier),
             environmentEffectController);
       }

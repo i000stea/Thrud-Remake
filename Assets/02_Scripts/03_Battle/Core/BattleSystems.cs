@@ -503,9 +503,12 @@ namespace TeaGame
       {
          if (!controller.WepLookatTarget) return;
 
-         if (State.LockEnemy != null && State.LockEnemy.LockPoint)
+         var lockEnemy = State.LockEnemy;
+         if (!lockEnemy.IsAlive()) lockEnemy = null;
+
+         if (lockEnemy != null && lockEnemy.LockPoint)
          {
-            controller.WepLookatTarget.position = State.LockEnemy.LockPoint.position;
+            controller.WepLookatTarget.position = lockEnemy.LockPoint.position;
          }
          else if (controller.Control_Camera)
          {
@@ -534,7 +537,8 @@ namespace TeaGame
          var weaponView = State.CurrentBattleData?.WeaponView;
          if (weaponView == null) return;
 
-         var lookTarget = State.LockEnemy?.LockPoint;
+         var lockEnemy = State.LockEnemy;
+         var lookTarget = lockEnemy.IsAlive() ? lockEnemy.LockPoint : null;
          weaponView.RefreshAim(lookTarget, controller.GetCurrentLockSpeed(State.LockSpeedMultiplier));
       }
 
@@ -654,6 +658,13 @@ namespace TeaGame
          var controller = State.Controller;
          if (!controller) return;
 
+         // 锁定目标已被销毁（接口引用判空无效）：清空锁定状态，避免访问已销毁对象
+         if (State.LockEnemy != null && !State.LockEnemy.IsAlive())
+         {
+            mManualLocked = false;
+            State.LockEnemy = null;
+         }
+
          // T1.1：Tab 循环切换/取消锁定（半自动）
          if (Input.GetKeyDown(controller.PlayerConfig.LockSwitchKey)
              && Time.time >= mSwitchCooldownUntil)
@@ -704,6 +715,13 @@ namespace TeaGame
 
          var controller = State.Controller;
          if (!controller) return;
+
+         // 锁定目标已被销毁：先清空再处理切换
+         if (State.LockEnemy != null && !State.LockEnemy.IsAlive())
+         {
+            mManualLocked = false;
+            State.LockEnemy = null;
+         }
 
          var candidates = CollectLockCandidates(controller);
          if (candidates.Count == 0)
@@ -770,7 +788,7 @@ namespace TeaGame
       /// </summary>
       private bool IsValidLockTarget(IBattleEnemyTarget enemy, PlayerControl controller)
       {
-         if (enemy == null || !enemy.CanBeLocked || !enemy.LockPoint) return false;
+         if (!enemy.IsAlive() || !enemy.CanBeLocked || !enemy.LockPoint) return false;
          return ProjectEnemyToCanvas(enemy, controller).magnitude < controller.PlayerConfig.LockAssistDistance;
       }
 
@@ -910,7 +928,8 @@ namespace TeaGame
          // 锁定时置空，子弹按武器实际朝向（吸附锁定目标）发射
          var controller = State.Controller;
          var aimCamera = controller ? controller.Control_Camera : null;
-         weaponMode.FreeAimRotation = State.LockEnemy == null && aimCamera
+         var hasLockTarget = State.LockEnemy.IsAlive();
+         weaponMode.FreeAimRotation = !hasLockTarget && aimCamera
             ? aimCamera.transform.rotation
             : (Quaternion?)null;
 

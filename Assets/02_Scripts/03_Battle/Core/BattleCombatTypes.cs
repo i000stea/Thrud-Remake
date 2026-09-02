@@ -114,6 +114,26 @@ namespace TeaGame
 
          return null;
       }
+
+      /// <summary>
+      /// 对战斗目标做 UnityEngine.Object 安全判空。
+      /// 锁定目标以接口（IBattleEnemyTarget）持有，接口判空不触发 UnityEngine.Object 的
+      /// <c>==</c> 重载——目标被 Destroy 后 <c>!= null</c> 仍为 true，直接访问其成员会抛
+      /// MissingReferenceException。
+      /// - 实现者为 UnityEngine.Object（如 BattleEnemyEntity）：按 Object 判空；
+      /// - 实现者为纯托管包装（如旧版敌人适配器 LegacyBattleEnemyTarget）：非空即视为存活。
+      /// </summary>
+      public static bool IsAlive(this IBattleEnemyTarget target)
+      {
+         if (target == null) return false;
+
+         if (target is Object unityObject)
+         {
+            return unityObject != null;
+         }
+
+         return true;
+      }
    }
 
    /// <summary>
