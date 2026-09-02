@@ -270,23 +270,4 @@ namespace TeaGame
          sRootCreated = true;
       }
    }
-
-   /// <summary>
-   /// 延迟回收标记组件（由 <see cref="BattleObjectPool.ReturnAfter"/> 惰性挂载）。
-   /// 存活期间递减计时，归零后调用池回收自身。
-   /// </summary>
-   internal sealed class BattlePoolAutoReturn : MonoBehaviour
-   {
-      public float life;
-
-      private void Update()
-      {
-         life -= Time.deltaTime;
-         if (life > 0f) return;
-
-         life = 0f;
-         enabled = false;
-         BattleObjectPool.Despawn(gameObject);
-      }
-   }
 }

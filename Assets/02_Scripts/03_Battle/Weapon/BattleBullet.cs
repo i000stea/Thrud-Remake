@@ -38,11 +38,19 @@ namespace TeaGame
       private float mAutoReturnTime;
 
       /// <summary>
+      /// 子弹上一帧位置（碰撞前位置）。
+      /// 用于在命中时向碰撞体求"进入侧表面点"，避免子弹高速穿过碰撞体后，
+      /// 特效出现在敌人后侧/相机看不到的位置。
+      /// </summary>
+      private Vector3 mLastPosition;
+
+      /// <summary>
       /// 供对象池取出后的组件状态重置。
       /// </summary>
       public void OnPoolSpawn()
       {
          mCanHit = true;
+         mLastPosition = transform.position;
       }
 
       /// <summary>
@@ -55,15 +63,18 @@ namespace TeaGame
          mCanHit = true;
          mArmed = true;
          mAutoReturnTime = Time.time + Mathf.Max(0.01f, lifeSeconds);
+         mLastPosition = transform.position;
       }
 
       /// <summary>
-      /// 未命中子弹超时自动回池。
+      /// 未命中子弹超时自动回池；同时记录本帧位置供命中表面点推算。
       /// 旧路径子弹未武装，Update 直接返回，保持零开销。
       /// </summary>
       private void Update()
       {
          if (!mArmed) return;
+
+         mLastPosition = transform.position;
          if (Time.time < mAutoReturnTime) return;
 
          mArmed = false;
@@ -109,8 +120,27 @@ namespace TeaGame
 
          if (hitEffectPrefab)
          {
-            var hitPoint = other ? other.ClosestPoint(transform.position) : transform.position;
-            var effectObject = BattleObjectPool.Spawn(hitEffectPrefab, hitPoint, Quaternion.identity);
+            // 以子弹"进入前"位置向碰撞体求表面点，特效落在子弹来向（通常是相机可见侧），
+            // 避免子弹高速穿过碰撞体后 ClosestPoint(当前位置) 落在敌人后侧而看不到
+            var effectPoint = transform.position;
+            if (other)
+            {
+               var probePosition = mLastPosition;
+               var surfacePoint = other.ClosestPoint(probePosition);
+
+               var outward = probePosition - surfacePoint; // 指向子弹来向（外部/相机侧）
+               if (outward.sqrMagnitude > 0.0001f)
+               {
+                  // 沿来向外推一点，避免特效嵌进碰撞体表面内部
+                  effectPoint = surfacePoint + outward.normalized * 0.15f;
+               }
+               else
+               {
+                  effectPoint = surfacePoint;
+               }
+            }
+
+            var effectObject = BattleObjectPool.Spawn(hitEffectPrefab, effectPoint, Quaternion.identity);
             if (effectObject)
             {
                BattleObjectPool.ReturnAfter(effectObject, 0.3f);
