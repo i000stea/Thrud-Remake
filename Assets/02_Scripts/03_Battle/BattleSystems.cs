@@ -879,6 +879,12 @@ namespace TeaGame
          {
             weaponMode.PressTrigger();
          }
+
+         // T1.3 调试：F8 打印对象池回收统计（验证无 Instantiate/Destroy 分配用，后续可移除）
+         if (Input.GetKeyDown(KeyCode.F8))
+         {
+            Debug.Log($"[T1.3] 对象池统计 -> {BattleObjectPool.DumpStats()}");
+         }
       }
 
       /// <summary>

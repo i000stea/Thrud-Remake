@@ -129,7 +129,7 @@ namespace TeaGame
 
       /// <summary>
       /// 刷新敌人射击逻辑。
-      /// 这里沿用了旧版的简单冷却发弹方式。
+      /// 子弹走对象池（T1.3），命中/超时由 BattleEnemyBullet 自回收。
       /// </summary>
       private void TickShoot()
       {
@@ -143,7 +143,9 @@ namespace TeaGame
 
          mShotCooldown = Random.Range(shotCooldownMin, shotCooldownMax);
 
-         var bulletObject = Instantiate(enemyBulletPrefab, transform.position, Quaternion.identity);
+         var bulletObject = BattleObjectPool.Spawn(enemyBulletPrefab, transform.position, Quaternion.identity);
+         if (!bulletObject) return;
+
          bulletObject.transform.LookAt(BattleRuntimeBridge.PlayerTransform);
 
          if (bulletObject.TryGetComponent(out Rigidbody rigidbody))

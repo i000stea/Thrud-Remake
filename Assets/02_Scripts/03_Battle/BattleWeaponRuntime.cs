@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using TeaFramework;
 using UnityEngine;
@@ -354,21 +355,82 @@ namespace TeaGame
       }
 
       /// <summary>
-      /// 生成一发物理子弹。
+      /// 生成一发物理子弹（T1.3：走对象池，无 Instantiate/Destroy 分配）。
       /// </summary>
       protected virtual void FireSingleShot(int index)
       {
          if (WeaponView?.BulletPrefab == null || WeaponView.FirePoint == null) return;
 
-         var bulletObject = Object.Instantiate(
+         var bulletObject = SpawnBulletPrefab(
             WeaponView.BulletPrefab,
             WeaponView.FirePoint.position,
-            WeaponView.FirePoint.rotation);
+            WeaponView.FirePoint.rotation,
+            WeaponData.damage);
+
+         if (!bulletObject) return;
 
          ApplyBulletSpread(bulletObject.transform, index);
          ApplyBulletVelocity(bulletObject.transform);
-         ApplyBulletDamage(bulletObject, WeaponData.damage);
-         Object.Destroy(bulletObject, 5f);
+      }
+
+      /// <summary>
+      /// 子弹预制体是否可池化（带 BattleBullet 组件）。
+      /// 结果按 prefab 缓存，避免每次开火重复 GetComponent。
+      /// </summary>
+      private static readonly Dictionary<GameObject, bool> sPoolablePrefabCache =
+         new Dictionary<GameObject, bool>(8);
+
+      private static bool IsPoolableBulletPrefab(GameObject prefab)
+      {
+         if (sPoolablePrefabCache.TryGetValue(prefab, out var poolable))
+         {
+            return poolable;
+         }
+
+         poolable = prefab.GetComponent<BattleBullet>() != null;
+         sPoolablePrefabCache[prefab] = poolable;
+         return poolable;
+      }
+
+      /// <summary>
+      /// 生成一发子弹并写入伤害。
+      /// 可池化子弹（带 BattleBullet）走对象池并武装为新版结算；
+      /// 纯旧版子弹（仅 Bullet_Base）保持原 Instantiate/Destroy 语义，保证旧路径零回归。
+      /// </summary>
+      protected GameObject SpawnBulletPrefab(
+         GameObject bulletPrefab,
+         Vector3 position,
+         Quaternion rotation,
+         float damage,
+         float lifeSeconds = 5f)
+      {
+         if (!bulletPrefab) return null;
+
+         if (IsPoolableBulletPrefab(bulletPrefab))
+         {
+            var bulletObject = BattleObjectPool.Spawn(bulletPrefab, position, rotation);
+            if (!bulletObject) return null;
+
+            if (bulletObject.TryGetComponent(out BattleBullet battleBullet))
+            {
+               // 池化新路径只走 BattleBullet 结算：武装 + 超时自回（命中即回池）
+               battleBullet.ResetBullet(damage, lifeSeconds);
+            }
+
+            // 禁用同挂载的旧版 Bullet_Base，避免命中时双重结算/销毁
+            if (bulletObject.TryGetComponent(out Bullet_Base legacyBullet))
+            {
+               legacyBullet.enabled = false;
+            }
+
+            return bulletObject;
+         }
+
+         // 旧版子弹（无 BattleBullet）：保持原本的 Instantiate + Destroy 行为
+         var legacyObject = Object.Instantiate(bulletPrefab, position, rotation);
+         ApplyBulletDamage(legacyObject, damage);
+         Object.Destroy(legacyObject, lifeSeconds);
+         return legacyObject;
       }
 
       /// <summary>
@@ -567,22 +629,33 @@ namespace TeaGame
             hitPoint = hitInfo.point;
          }
 
-         var impactObject = Object.Instantiate(WeaponView.BulletPrefab, hitPoint, Quaternion.identity);
-         ApplyBulletDamage(impactObject, WeaponData.damage);
-         Object.Destroy(impactObject, 5f);
+         // 命中点表现走对象池（T1.3）
+         SpawnBulletPrefab(
+            WeaponView.BulletPrefab,
+            hitPoint,
+            Quaternion.identity,
+            WeaponData.damage,
+            5f);
 
-         if (WeaponView.BulletLinePrefab && Object.Instantiate(WeaponView.BulletLinePrefab) is GameObject lineObject)
+         if (!WeaponView.BulletLinePrefab) return;
+
+         var lineObject = BattleObjectPool.Spawn(
+            WeaponView.BulletLinePrefab,
+            WeaponView.FirePoint.position,
+            WeaponView.FirePoint.rotation);
+
+         if (lineObject && lineObject.TryGetComponent(out LineRenderer lineRenderer))
          {
-            if (lineObject.TryGetComponent(out LineRenderer lineRenderer))
-            {
-               lineRenderer.positionCount = 2;
-               lineRenderer.SetPosition(0, WeaponView.FirePoint.position);
-               lineRenderer.SetPosition(1, hitPoint);
-               lineRenderer.startWidth = 0.05f;
-               lineRenderer.endWidth = 0.05f;
-            }
+            lineRenderer.positionCount = 2;
+            lineRenderer.SetPosition(0, WeaponView.FirePoint.position);
+            lineRenderer.SetPosition(1, hitPoint);
+            lineRenderer.startWidth = 0.05f;
+            lineRenderer.endWidth = 0.05f;
+         }
 
-            Object.Destroy(lineObject, 0.2f);
+         if (lineObject)
+         {
+            BattleObjectPool.ReturnAfter(lineObject, 0.2f);
          }
       }
    }
@@ -601,9 +674,11 @@ namespace TeaGame
 
    /// <summary>
    /// 新版玩家子弹。
-   /// 该脚本负责把伤害分发给新旧两套敌人实现，并在命中后销毁自己。
+   /// 负责把伤害分发给新旧两套敌人实现，命中后回收到对象池（T1.3）。
+   /// 该脚本同时作为"可池化"标记：旧路径（未走对象池）生成的子弹保持未武装状态，
+   /// 由同挂载的旧版 <c>Bullet_Base</c> 结算，避免新旧脚本双重处理。
    /// </summary>
-   public class BattleBullet : MonoBehaviour
+   public class BattleBullet : MonoBehaviour, IBattlePoolable
    {
       /// <summary>
       /// 当前子弹的伤害值。
@@ -611,16 +686,59 @@ namespace TeaGame
       public float Damage = 1f;
 
       /// <summary>
+      /// 是否武装（仅对象池新路径为 true）。
+      /// </summary>
+      private bool mArmed;
+
+      /// <summary>
       /// 用于防止一颗子弹在同一帧内重复命中多个碰撞体。
       /// </summary>
       private bool mCanHit = true;
+
+      /// <summary>
+      /// 未命中时的自动回收时间点（武装时由开火路径写入）。
+      /// </summary>
+      private float mAutoReturnTime;
+
+      /// <summary>
+      /// 供对象池取出后的组件状态重置。
+      /// </summary>
+      public void OnPoolSpawn()
+      {
+         mCanHit = true;
+      }
+
+      /// <summary>
+      /// 武装子弹（对象池新路径调用）。
+      /// 写入伤害与超时回收时间；命中时由 OnTriggerEnter 立即回池。
+      /// </summary>
+      public void ResetBullet(float damage, float lifeSeconds)
+      {
+         Damage = damage;
+         mCanHit = true;
+         mArmed = true;
+         mAutoReturnTime = Time.time + Mathf.Max(0.01f, lifeSeconds);
+      }
+
+      /// <summary>
+      /// 未命中子弹超时自动回池。
+      /// 旧路径子弹未武装，Update 直接返回，保持零开销。
+      /// </summary>
+      private void Update()
+      {
+         if (!mArmed) return;
+         if (Time.time < mAutoReturnTime) return;
+
+         mArmed = false;
+         BattleObjectPool.Despawn(gameObject);
+      }
 
       /// <summary>
       /// 当子弹进入触发器时，尝试寻找目标并施加伤害。
       /// </summary>
       private void OnTriggerEnter(Collider other)
       {
-         if (!mCanHit) return;
+         if (!mArmed || !mCanHit) return;
 
          var otherBullet = other.transform.FindParentComponent<BattleBullet>();
          if (otherBullet) return;
@@ -645,12 +763,13 @@ namespace TeaGame
       }
 
       /// <summary>
-      /// 命中后的统一处理。
+      /// 命中后的统一处理：立即回收到对象池。
       /// </summary>
       private void OnHit()
       {
          mCanHit = false;
-         Destroy(gameObject, 0.05f);
+         mArmed = false;
+         BattleObjectPool.Despawn(gameObject);
       }
    }
 }
