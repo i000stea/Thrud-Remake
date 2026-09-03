@@ -1,0 +1,112 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f5061728394a5b6c7d8e9f0a1b2c3d4, type: 3}
+  m_Name: StageConfig_Demo
+  m_EditorClassIdentifier: 
+  TimeLimitSeconds: 180
+  Sites:
+  - Note: "\u7AD91\uFF1A\u5DE1\u5F0B\xD75 \u2192 \u70AE\u53F0"
+    Position: {x: 0, y: 14}
+    ArriveRadius: 8
+    Batches:
+    - Note: "\u9996\u6279(\u5230\u8FBE\u89E6\u53D1): \u5DE1\u5F0B\xD75"
+      KillRatio: 0.8
+      Spawns:
+      - EnemyId: patrol
+        Count: 3
+        AngleDeg: -30
+        Distance: 5.5
+        Y: 1
+        Scatter: 1.5
+      - EnemyId: patrol
+        Count: 2
+        AngleDeg: 15
+        Distance: 5.5
+        Y: 1
+        Scatter: 1.5
+    - Note: "\u6B21\u6279(\u51FB\u674080%): \u70AE\u53F0\xD71"
+      KillRatio: 0.8
+      Spawns:
+      - EnemyId: gun_turret
+        Count: 1
+        AngleDeg: -40
+        Distance: 6.5
+        Y: 1
+        Scatter: 1
+  - Note: "\u7AD92\uFF1A\u5DE1\u5F0B+\u70AE\u53F0 \u2192 \u5BFC\u5F39+\u5DE1\u5F0B"
+    Position: {x: -12, y: 28}
+    ArriveRadius: 8
+    Batches:
+    - Note: "\u9996\u6279: \u5DE1\u5F0B\xD74+\u70AE\u53F0\xD71"
+      KillRatio: 0.8
+      Spawns:
+      - EnemyId: patrol
+        Count: 4
+        AngleDeg: 0
+        Distance: 4.5
+        Y: 1
+        Scatter: 1.5
+      - EnemyId: gun_turret
+        Count: 1
+        AngleDeg: -90
+        Distance: 5.5
+        Y: 1
+        Scatter: 1
+    - Note: "\u6B21\u6279(\u51FB\u674080%): \u5BFC\u5F39\xD71+\u5DE1\u5F0B\xD72"
+      KillRatio: 0.8
+      Spawns:
+      - EnemyId: missile
+        Count: 1
+        AngleDeg: 30
+        Distance: 6.5
+        Y: 1
+        Scatter: 1
+      - EnemyId: patrol
+        Count: 2
+        AngleDeg: 0
+        Distance: 7
+        Y: 1
+        Scatter: 1.5
+  - Note: "\u7AD93\uFF1A\u5DE1\u5F0B+\u91CD\u88C5 \u2192 \u5730\u96F7+\u5BFC\u5F39\uFF08\u6536\u5C3E\uFF09"
+    Position: {x: 8, y: 42}
+    ArriveRadius: 8
+    Batches:
+    - Note: "\u9996\u6279: \u5DE1\u5F0B\xD74+\u91CD\u88C5\xD71"
+      KillRatio: 0.8
+      Spawns:
+      - EnemyId: patrol
+        Count: 4
+        AngleDeg: 0
+        Distance: 4.5
+        Y: 1
+        Scatter: 1.5
+      - EnemyId: gun_turret_heavy
+        Count: 1
+        AngleDeg: -80
+        Distance: 5.5
+        Y: 1
+        Scatter: 1
+    - Note: "\u6B21\u6279(\u51FB\u674080%): \u5730\u96F7\xD71+\u5BFC\u5F39\xD71"
+      KillRatio: 0.8
+      Spawns:
+      - EnemyId: mine
+        Count: 1
+        AngleDeg: 20
+        Distance: 5.5
+        Y: 0.7
+        Scatter: 0.5
+      - EnemyId: missile
+        Count: 1
+        AngleDeg: 10
+        Distance: 6
+        Y: 1
+        Scatter: 0.5

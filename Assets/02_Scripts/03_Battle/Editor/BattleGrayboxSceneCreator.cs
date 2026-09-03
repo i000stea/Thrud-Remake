@@ -852,5 +852,214 @@ namespace TeaGame.Battle.Editor
             Object.DestroyImmediate(go);
          }
       }
+
+      // ===================== T2.2 区域波次与条件生成器（SO 配置方案） =====================
+      // 菜单：Thrud/Battle/T2.2 Create Default Stage Assets
+      // 一键创建/确保两张配置资产并摆放 BattleStageDirector：
+      //   Assets/04_Prefabs/Enemy/EnemyCatalog.asset     —— 敌人 id ↔ prefab 映射表（字符串驱动，热更增敌只需追加条目）
+      //   Assets/04_Prefabs/Enemy/StageConfig_Demo.asset —— 3 站示例关卡表（敌人字段在 Inspector 下拉重绘，底层存字符串）
+      // 改配置 = 打开 StageConfig 资产编辑表格；场景目标点/刷怪由 Director 运行时自动生成。
+      // 会清理旧的 Stage_T22_Demo 根与旧 BattleStageDirector 对象。
+
+      private const string T22EnemyCatalogAssetPath = "Assets/04_Prefabs/Enemy/EnemyCatalog.asset";
+      private const string T22StageConfigAssetPath = "Assets/04_Prefabs/Enemy/StageConfig_Demo.asset";
+      private const string T22DirectorObjectName = "BattleStageDirector";
+
+      [MenuItem("Thrud/Battle/T2.2 Create Default Stage Assets")]
+      public static void CreateT22StageAssets()
+      {
+         var activeScene = EditorSceneManager.GetActiveScene();
+         if (activeScene.path != ScenePath)
+         {
+            EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            activeScene = EditorSceneManager.GetActiveScene();
+         }
+
+         var environment = GameObject.Find("Environment");
+         if (environment == null)
+         {
+            Debug.LogError("[T2.2] 当前场景缺少 Environment 根节点，请先运行 Thrud/Battle/Setup BattleGraybox Scene 生成灰盒场景。");
+            return;
+         }
+
+         // 确保 T2.1 敌人 prefab 资产存在（目录映射目标）
+         var enemyBullet = AssetDatabase.LoadAssetAtPath<GameObject>(EnemyBulletPrefabPath);
+         EnsureAllT21EnemyPrefabs(enemyBullet);
+
+         // 清理旧演示结构（旧根与旧 Director 对象）
+         DestroyObjectByName("Stage_T22_Demo");
+         DestroyObjectByName(T22DirectorObjectName);
+
+         var catalog = EnsureEnemyCatalogAsset();
+         var stage = EnsureDefaultStageAsset(catalog);
+
+         PlaceStageDirector(environment.transform, catalog, stage);
+
+         EditorSceneManager.SaveScene(activeScene);
+         AssetDatabase.Refresh();
+         Debug.Log("[T2.2] 默认 Stage 资产已就绪并装配 Director。打开 StageConfig_Demo.asset 即可改表格（敌人字段为下拉）；Play 后目标点与刷怪按表自动生成。");
+      }
+
+      /// <summary>
+      /// 确保 EnemyCatalog 资产存在（字符串 id ↔ prefab，含 T2.1 五类敌人）。
+      /// </summary>
+      private static EnemyCatalog EnsureEnemyCatalogAsset()
+      {
+         var existing = AssetDatabase.LoadAssetAtPath<EnemyCatalog>(T22EnemyCatalogAssetPath);
+         if (existing != null) return existing;
+
+         var catalog = ScriptableObject.CreateInstance<EnemyCatalog>();
+         catalog.Entries = new[]
+         {
+            new EnemyCatalogEntry { Id = "patrol", DisplayName = "巡弋者", Prefab = LoadT21EnemyPrefab("Enemy_Patrol") },
+            new EnemyCatalogEntry { Id = "gun_turret", DisplayName = "站桩炮台", Prefab = LoadT21EnemyPrefab("Enemy_GunTurret") },
+            new EnemyCatalogEntry { Id = "gun_turret_heavy", DisplayName = "重装炮台", Prefab = LoadT21EnemyPrefab("Enemy_GunTurret_Heavy") },
+            new EnemyCatalogEntry { Id = "missile", DisplayName = "自爆·导弹", Prefab = LoadT21EnemyPrefab("Enemy_Missile") },
+            new EnemyCatalogEntry { Id = "mine", DisplayName = "自爆·地雷", Prefab = LoadT21EnemyPrefab("Enemy_Mine") },
+         };
+
+         AssetDatabase.CreateAsset(catalog, T22EnemyCatalogAssetPath);
+         AssetDatabase.SaveAssets();
+         Debug.Log($"[T2.2] 已创建敌人目录：{T22EnemyCatalogAssetPath}");
+         return catalog;
+      }
+
+      /// <summary>
+      /// 确保默认 3 站 StageConfig 资产存在（演示节奏：到达刷首批 → 击杀80% 刷次批 → 清场进下一站）。
+      /// </summary>
+      private static BattleStageAsset EnsureDefaultStageAsset(EnemyCatalog catalog)
+      {
+         var existing = AssetDatabase.LoadAssetAtPath<BattleStageAsset>(T22StageConfigAssetPath);
+         if (existing != null) return existing;
+
+         var stage = ScriptableObject.CreateInstance<BattleStageAsset>();
+         stage.TimeLimitSeconds = 180;
+         stage.Sites = new[]
+         {
+            new BattleSiteRow
+            {
+               Note = "站1：巡弋×5 → 炮台",
+               Position = new Vector2(0f, 14f),
+               ArriveRadius = 8f,
+               Batches = new[]
+               {
+                  new BattleBatchRow
+                  {
+                     Note = "首批(到达触发): 巡弋×5",
+                     KillRatio = 0.8f,
+                     Spawns = new[]
+                     {
+                        new BattleSpawnRow { EnemyId = "patrol", Count = 3, AngleDeg = -30f, Distance = 5.5f, Y = 1f, Scatter = 1.5f },
+                        new BattleSpawnRow { EnemyId = "patrol", Count = 2, AngleDeg = 15f, Distance = 5.5f, Y = 1f, Scatter = 1.5f },
+                     },
+                  },
+                  new BattleBatchRow
+                  {
+                     Note = "次批(击杀80%): 炮台×1",
+                     KillRatio = 0.8f,
+                     Spawns = new[]
+                     {
+                        new BattleSpawnRow { EnemyId = "gun_turret", Count = 1, AngleDeg = -40f, Distance = 6.5f, Y = 1f, Scatter = 1f },
+                     },
+                  },
+               },
+            },
+            new BattleSiteRow
+            {
+               Note = "站2：巡弋+炮台 → 导弹+巡弋",
+               Position = new Vector2(-12f, 28f),
+               ArriveRadius = 8f,
+               Batches = new[]
+               {
+                  new BattleBatchRow
+                  {
+                     Note = "首批: 巡弋×4+炮台×1",
+                     KillRatio = 0.8f,
+                     Spawns = new[]
+                     {
+                        new BattleSpawnRow { EnemyId = "patrol", Count = 4, AngleDeg = 0f, Distance = 4.5f, Y = 1f, Scatter = 1.5f },
+                        new BattleSpawnRow { EnemyId = "gun_turret", Count = 1, AngleDeg = -90f, Distance = 5.5f, Y = 1f, Scatter = 1f },
+                     },
+                  },
+                  new BattleBatchRow
+                  {
+                     Note = "次批(击杀80%): 导弹×1+巡弋×2",
+                     KillRatio = 0.8f,
+                     Spawns = new[]
+                     {
+                        new BattleSpawnRow { EnemyId = "missile", Count = 1, AngleDeg = 30f, Distance = 6.5f, Y = 1f, Scatter = 1f },
+                        new BattleSpawnRow { EnemyId = "patrol", Count = 2, AngleDeg = 0f, Distance = 7f, Y = 1f, Scatter = 1.5f },
+                     },
+                  },
+               },
+            },
+            new BattleSiteRow
+            {
+               Note = "站3：巡弋+重装 → 地雷+导弹（收尾）",
+               Position = new Vector2(8f, 42f),
+               ArriveRadius = 8f,
+               Batches = new[]
+               {
+                  new BattleBatchRow
+                  {
+                     Note = "首批: 巡弋×4+重装×1",
+                     KillRatio = 0.8f,
+                     Spawns = new[]
+                     {
+                        new BattleSpawnRow { EnemyId = "patrol", Count = 4, AngleDeg = 0f, Distance = 4.5f, Y = 1f, Scatter = 1.5f },
+                        new BattleSpawnRow { EnemyId = "gun_turret_heavy", Count = 1, AngleDeg = -80f, Distance = 5.5f, Y = 1f, Scatter = 1f },
+                     },
+                  },
+                  new BattleBatchRow
+                  {
+                     Note = "次批(击杀80%): 地雷×1+导弹×1",
+                     KillRatio = 0.8f,
+                     Spawns = new[]
+                     {
+                        new BattleSpawnRow { EnemyId = "mine", Count = 1, AngleDeg = 20f, Distance = 5.5f, Y = 0.7f, Scatter = 0.5f },
+                        new BattleSpawnRow { EnemyId = "missile", Count = 1, AngleDeg = 10f, Distance = 6f, Y = 1f, Scatter = 0.5f },
+                     },
+                  },
+               },
+            },
+         };
+
+         AssetDatabase.CreateAsset(stage, T22StageConfigAssetPath);
+         AssetDatabase.SaveAssets();
+         Debug.Log($"[T2.2] 已创建默认 3 站关卡表：{T22StageConfigAssetPath}");
+         return stage;
+      }
+
+      /// <summary>
+      /// 在场景放置/装配 BattleStageDirector（引用目录与关卡表；目标点由运行时自动生成）。
+      /// </summary>
+      private static void PlaceStageDirector(Transform environment, EnemyCatalog catalog, BattleStageAsset stage)
+      {
+         var directorObject = new GameObject(T22DirectorObjectName);
+         directorObject.transform.SetParent(environment, false);
+
+         var director = directorObject.AddComponent<BattleStageDirector>();
+         var serialized = new SerializedObject(director);
+         serialized.FindProperty("config").objectReferenceValue = stage;
+         serialized.FindProperty("catalog").objectReferenceValue = catalog;
+         serialized.ApplyModifiedPropertiesWithoutUndo();
+      }
+
+      private static GameObject LoadT21EnemyPrefab(string prefabName)
+      {
+         return AssetDatabase.LoadAssetAtPath<GameObject>(T21EnemyPrefabDir + "/" + prefabName + ".prefab");
+      }
+
+      /// <summary>
+      /// 按名称销毁场景内第一个同名 GameObject（幂等清理用）。
+      /// </summary>
+      private static void DestroyObjectByName(string objectName)
+      {
+         var target = GameObject.Find(objectName);
+         if (target != null)
+         {
+            Object.DestroyImmediate(target);
+         }
+      }
    }
 }
