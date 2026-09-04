@@ -1,3 +1,4 @@
+using TeaFramework;
 using UnityEngine;
 
 namespace TeaGame
@@ -77,5 +78,83 @@ namespace TeaGame
    /// </summary>
    public struct BattleReloadCompletedEvent
    {
+   }
+
+   /// <summary>
+   /// 玩家命中敌人事件（T2.4 技能能量来源之一）。
+   /// 仅当玩家子弹真正命中新版敌人实体（<see cref="BattleEnemyEntity"/>）时派发；
+   /// 擦弹、命中场景物、命中旧版敌人均不派发。
+   /// 技能系统订阅该事件积攒少量能量；击杀另有 <see cref="BattleEnemyKilledEvent"/>。
+   /// </summary>
+   public struct BattleEnemyHitEvent
+   {
+      /// <summary>
+      /// 本次命中实际结算的伤害（已含元素克制/易伤倍率）。
+      /// </summary>
+      public float Damage;
+
+      /// <summary>
+      /// 本次命中的攻击元素（子弹开火时写入；none=无元素）。
+      /// </summary>
+      public DamageElement Element;
+   }
+
+   /// <summary>
+   /// 玩家击杀敌人事件（T2.4 技能能量的主要来源）。
+   /// 仅当敌人因受到外部伤害（玩家子弹/技能）致死时派发；
+   /// 地雷踩爆、导弹贴近引爆、导弹超时自毁等非玩家击杀不派发。
+   /// </summary>
+   public struct BattleEnemyKilledEvent
+   {
+      /// <summary>
+      /// 被击杀敌人销毁前的世界坐标快照（供击杀特效/聚怪结算定位）。
+      /// </summary>
+      public Vector3 Position;
+
+      /// <summary>
+      /// 被击杀敌人的自身元素（供元素联动类技能读取）。
+      /// </summary>
+      public DamageElement Element;
+   }
+
+   /// <summary>
+   /// 技能能量变化事件（T2.4）。
+   /// 能量增/减结算完毕后由技能系统派发，
+   /// HUD 订阅后即时刷新 Q 行能量条，避免每帧轮询状态模型。
+   /// </summary>
+   public struct BattleSkillEnergyChangedEvent
+   {
+      /// <summary>
+      /// 变化后的当前能量值。
+      /// </summary>
+      public float Energy;
+
+      /// <summary>
+      /// 能量上限（通常为 <see cref="BattleStateModel.RoleEnergyMax"/>）。
+      /// </summary>
+      public float Max;
+   }
+
+   /// <summary>
+   /// 技能槽就绪状态变化事件（T2.4）。
+   /// 冷却进入/结束、能量达标/耗尽时由技能系统派发，
+   /// HUD 订阅后即时刷新 E/Q 行的就绪与剩余冷却显示。
+   /// </summary>
+   public struct BattleSkillCooldownChangedEvent
+   {
+      /// <summary>
+      /// 技能槽位：0 = 元素战技 E；1 = 极奏 Q。
+      /// </summary>
+      public int Slot;
+
+      /// <summary>
+      /// 该槽当前是否就绪（可施放）。
+      /// </summary>
+      public bool Ready;
+
+      /// <summary>
+      /// 距就绪的剩余冷却秒数（就绪时为 0）。
+      /// </summary>
+      public float RemainSeconds;
    }
 }

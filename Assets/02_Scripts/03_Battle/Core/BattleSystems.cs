@@ -108,6 +108,8 @@ namespace TeaGame
          input.SprintPressed = Input.GetKeyDown(KeyCode.LeftShift);
          input.FireHeld = Input.GetMouseButton(0);
          input.ReloadPressed = Input.GetKeyDown(controller.PlayerConfig.ReloadKey);
+         input.SkillEPressed = Input.GetKeyDown(KeyCode.E);
+         input.SkillQPressed = Input.GetKeyDown(KeyCode.Q);
 
          if (State.ControlTakenOver) return;
 

@@ -43,6 +43,19 @@ namespace TeaGame
       }
 
       /// <summary>
+      /// 治疗玩家（T2.4 技能效果调用）。
+      /// 非受击事件驱动，供 Heal 类公共效果 / 角色技能直接回血，
+      /// 当前生命值不越过最大生命值。
+      /// </summary>
+      /// <param name="amount">治疗量（内部截断为 ≥0）。</param>
+      public void HealPlayer(float amount)
+      {
+         State.PlayerCurrentHealth = Mathf.Min(
+            State.PlayerMaxHealth,
+            State.PlayerCurrentHealth + Mathf.Max(0f, amount));
+      }
+
+      /// <summary>
       /// 处理玩家受击。
       /// 处于控制接管状态时忽略伤害，避免死亡演出期间重复扣血。
       /// </summary>

@@ -140,11 +140,17 @@ namespace TeaGame
       /// <summary>本帧是否按下冲刺键。</summary>
       public bool SprintPressed;
 
-      /// <summary>是否持续按住开火键。</summary>
+      /// <summary>本帧是否按下开火键。</summary>
       public bool FireHeld;
 
       /// <summary>本帧是否按下换弹键。</summary>
       public bool ReloadPressed;
+
+      /// <summary>T2.4 本帧是否按下元素战技键（E）。</summary>
+      public bool SkillEPressed;
+
+      /// <summary>T2.4 本帧是否按下极奏键（Q）。</summary>
+      public bool SkillQPressed;
    }
 
    /// <summary>

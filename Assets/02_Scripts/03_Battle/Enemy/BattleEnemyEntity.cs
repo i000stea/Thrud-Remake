@@ -92,6 +92,14 @@ namespace TeaGame
       /// <summary>是否已进入销毁流程（防重复结算/二次爆炸）。</summary>
       private bool mDead;
 
+      /// <summary>
+      /// 是否由玩家击杀（T2.4）。
+      /// 仅在受到外部伤害致死时置位，用于区分"被玩家击毁"与
+      /// "地雷踩爆 / 导弹贴身引爆 / 导弹超时自毁"等非玩家击杀场景，
+      /// 保证击杀能量只结算玩家击毁的敌人。
+      /// </summary>
+      private bool mKilledByPlayer;
+
       /// <inheritdoc />
       public Transform RootTransform => transform;
 
@@ -323,6 +331,9 @@ namespace TeaGame
 
          if (mCurrentHealth <= 0f)
          {
+            // 因受到外部伤害致死 → 视为玩家击杀（T2.4 能量结算依据）。
+            // 自爆/自毁路径直接调用 Die()，不会走到这里，故不会误发击杀能量。
+            mKilledByPlayer = true;
             Die();
          }
       }
@@ -467,6 +478,17 @@ namespace TeaGame
          if (mBehaviour != null)
          {
             mBehaviour.OnBeforeDestroy(this);
+         }
+
+         // 仅玩家击杀派发能量事件（T2.4）：行为自爆/超时自毁路径不置位该标记。
+         if (mKilledByPlayer)
+         {
+            BattleArchitecture.Interface.SendEvent(new BattleEnemyKilledEvent
+            {
+               Position = transform.position,
+               Element = element
+            });
+            mKilledByPlayer = false;
          }
 
          Destroy(gameObject);

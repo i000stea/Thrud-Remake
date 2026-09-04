@@ -126,6 +126,9 @@ namespace TeaGame
          // T2.3.1：注册元素子弹（开火按角色元素取弹）
          BattleElementBulletLibrary.Register(bulletIcePrefab, bulletFirePrefab, bulletWindPrefab, bulletElectricPrefab);
 
+         // T2.4：技能系统按本场角色数量重建冷却表、清零能量并广播首帧状态
+         Architecture.GetSystem<BattleSkillSystem>().ResetForBattle();
+
          // T2.4 里程碑1：技能 HUD 事件注册（反向 bind——状态写入方广播，UI 订阅刷新）
          RegisterSkillHudEvents();
       }
@@ -142,6 +145,9 @@ namespace TeaGame
          Architecture.GetSystem<BattleViewSystem>().TickUpdate();
          Architecture.GetSystem<BattleWeaponSystem>().Tick();
 
+         // T2.4：技能管道（输入快照已含 E/Q，冷却读秒 + 施放校验在本系统内收口）
+         Architecture.GetSystem<BattleSkillSystem>().Tick();
+
          if (Input.GetKeyDown(KeyCode.Escape))
          {
             TogglePause();
@@ -153,21 +159,29 @@ namespace TeaGame
       /// <summary>角色切换事件反注册句柄（T2.4 技能 HUD）。</summary>
       private IUnRegister mSkillHudSwitchUnregister;
 
+      /// <summary>技能能量变化事件反注册句柄（T2.4）。</summary>
+      private IUnRegister mSkillHudEnergyUnregister;
+
+      /// <summary>技能槽冷却/就绪事件反注册句柄（T2.4）。</summary>
+      private IUnRegister mSkillHudCooldownUnregister;
+
       /// <summary>
-      /// T2.4 技能 HUD：以“反向 bind（事件注册）”方式驱动，而非每帧轮询 StateModel——
-      /// 状态写入方（BattleRoleSystem.SelectRole）在写模型后广播 BattleRoleSwitchedEvent，
+      /// T2.4 技能 HUD：以"反向 bind（事件注册）"方式驱动，而非每帧轮询 StateModel——
+      /// 状态写入方（角色切换 / 能量结算 / 冷却推进）在写模型后广播事件，
       /// UI 订阅事件、事件到达才刷新文本；注册后立即初始化一次首帧数据。
-      /// 能量行暂为静态（能量写入点尚未存在）；里程碑 2 能量随命中/击杀增长时，
-      /// 在写入点新增 BattleRoleEnergyChangedEvent，用同款订阅刷新即可（无需轮询）。
+      /// 事件仅作"需要刷新"的信号，具体数值统一在 <see cref="RefreshSkillHudUi"/>
+      /// 从模型与技能系统查询，避免多处散落格式化逻辑。
       /// </summary>
       private void RegisterSkillHudEvents()
       {
          mSkillHudSwitchUnregister = Architecture.RegisterEvent<BattleRoleSwitchedEvent>(_ => RefreshSkillHudUi());
+         mSkillHudEnergyUnregister = Architecture.RegisterEvent<BattleSkillEnergyChangedEvent>(_ => RefreshSkillHudUi());
+         mSkillHudCooldownUnregister = Architecture.RegisterEvent<BattleSkillCooldownChangedEvent>(_ => RefreshSkillHudUi());
          RefreshSkillHudUi();
       }
 
       /// <summary>
-      /// 根据当前状态刷新右下角技能/切人 HUD 文本（事件驱动；仅切人事件与初始化时调用）。
+      /// 根据当前状态刷新右下角技能/切人 HUD 文本（事件驱动；切人/能量/冷却事件到达时调用）。
       /// </summary>
       private void RefreshSkillHudUi()
       {
@@ -185,8 +199,30 @@ namespace TeaGame
          var element = data?.RoleData != null ? data.RoleData.damageElement : DamageElement.none;
          SkillHudRoleLine.text = roleName + " · " + ElementChineseName(element);
 
-         // 能量：里程碑 2 在能量写入点发 BattleRoleEnergyChangedEvent 后随事件刷新
-         SkillHudQLine.text = $"[Q] 极奏·能量 {(int)model.RoleEnergy}/{BattleStateModel.RoleEnergyMax:0}";
+         var skillSystem = Architecture.GetSystem<BattleSkillSystem>();
+         var hasSkill = element != DamageElement.none && BattleSkillCatalog.Get(element) != null;
+         SkillHudELine.text = hasSkill ? "[E] 元素战技 · " + FormatSlotState(skillSystem, BattleSkillSlot.Elemental) : "[E] —";
+         SkillHudQLine.text = hasSkill
+            ? $"[Q] 极奏 " + FormatSlotState(skillSystem, BattleSkillSlot.Ultimate) + $" · 能量 {(int)model.RoleEnergy}/{BattleStateModel.RoleEnergyMax:0}"
+            : $"[Q] — · 能量 {(int)model.RoleEnergy}/{BattleStateModel.RoleEnergyMax:0}";
+         SkillHudSwitchLine.text = "[1-4] 切换角色";
+      }
+
+      /// <summary>把槽位就绪/冷却/能量不足格式化为 HUD 文案。</summary>
+      private static string FormatSlotState(BattleSkillSystem skillSystem, BattleSkillSlot slot)
+      {
+         if (skillSystem.IsSlotReady(slot))
+         {
+            return "就绪";
+         }
+
+         var remain = skillSystem.GetSlotRemainSeconds(slot);
+         if (slot == BattleSkillSlot.Ultimate && remain <= 0.05f)
+         {
+            return $"能量不足({skillSystem.GetSlotEnergyDeficit(slot):0})";
+         }
+
+         return $"冷却 {remain:0.0}s";
       }
 
       /// <summary>元素枚举 → 中文（仅用于临时 HUD 文案）。</summary>
@@ -229,6 +265,11 @@ namespace TeaGame
          BattleRuntimeBridge.Clear(this);
          BattleElementBulletLibrary.Clear();
          mSkillHudSwitchUnregister?.UnRegister();
+         mSkillHudSwitchUnregister = null;
+         mSkillHudEnergyUnregister?.UnRegister();
+         mSkillHudEnergyUnregister = null;
+         mSkillHudCooldownUnregister?.UnRegister();
+         mSkillHudCooldownUnregister = null;
          this.UnRegisterAll();
       }
 
