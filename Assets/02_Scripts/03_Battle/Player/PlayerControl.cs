@@ -125,6 +125,9 @@ namespace TeaGame
 
          // T2.3.1：注册元素子弹（开火按角色元素取弹）
          BattleElementBulletLibrary.Register(bulletIcePrefab, bulletFirePrefab, bulletWindPrefab, bulletElectricPrefab);
+
+         // T2.4 里程碑1：技能 HUD 事件注册（反向 bind——状态写入方广播，UI 订阅刷新）
+         RegisterSkillHudEvents();
       }
 
       /// <summary>
@@ -145,6 +148,58 @@ namespace TeaGame
          }
 
          SyncRuntimeBridge();
+      }
+
+      /// <summary>角色切换事件反注册句柄（T2.4 技能 HUD）。</summary>
+      private IUnRegister mSkillHudSwitchUnregister;
+
+      /// <summary>
+      /// T2.4 技能 HUD：以“反向 bind（事件注册）”方式驱动，而非每帧轮询 StateModel——
+      /// 状态写入方（BattleRoleSystem.SelectRole）在写模型后广播 BattleRoleSwitchedEvent，
+      /// UI 订阅事件、事件到达才刷新文本；注册后立即初始化一次首帧数据。
+      /// 能量行暂为静态（能量写入点尚未存在）；里程碑 2 能量随命中/击杀增长时，
+      /// 在写入点新增 BattleRoleEnergyChangedEvent，用同款订阅刷新即可（无需轮询）。
+      /// </summary>
+      private void RegisterSkillHudEvents()
+      {
+         mSkillHudSwitchUnregister = Architecture.RegisterEvent<BattleRoleSwitchedEvent>(_ => RefreshSkillHudUi());
+         RefreshSkillHudUi();
+      }
+
+      /// <summary>
+      /// 根据当前状态刷新右下角技能/切人 HUD 文本（事件驱动；仅切人事件与初始化时调用）。
+      /// </summary>
+      private void RefreshSkillHudUi()
+      {
+         if (SkillHudRoleLine == null || SkillHudELine == null || SkillHudQLine == null || SkillHudSwitchLine == null)
+         {
+            // 未装配 SkillHud 的场景（如旧存档/纯编辑器）静默跳过，不影响战斗
+            return;
+         }
+
+         var model = Architecture.GetModel<BattleStateModel>();
+
+         var roleIndex = model.SelectedRoleIndex;
+         var data = roleIndex >= 0 && roleIndex < model.BattleDatas.Length ? model.BattleDatas[roleIndex] : null;
+         var roleName = data?.RoleName ?? "--";
+         var element = data?.RoleData != null ? data.RoleData.damageElement : DamageElement.none;
+         SkillHudRoleLine.text = roleName + " · " + ElementChineseName(element);
+
+         // 能量：里程碑 2 在能量写入点发 BattleRoleEnergyChangedEvent 后随事件刷新
+         SkillHudQLine.text = $"[Q] 极奏·能量 {(int)model.RoleEnergy}/{BattleStateModel.RoleEnergyMax:0}";
+      }
+
+      /// <summary>元素枚举 → 中文（仅用于临时 HUD 文案）。</summary>
+      private static string ElementChineseName(DamageElement element)
+      {
+         switch (element)
+         {
+            case DamageElement.Ice: return "冰";
+            case DamageElement.Fire: return "火";
+            case DamageElement.Wind: return "风";
+            case DamageElement.Electric: return "电";
+            default: return "无";
+         }
       }
 
       /// <summary>
@@ -173,6 +228,7 @@ namespace TeaGame
       {
          BattleRuntimeBridge.Clear(this);
          BattleElementBulletLibrary.Clear();
+         mSkillHudSwitchUnregister?.UnRegister();
          this.UnRegisterAll();
       }
 

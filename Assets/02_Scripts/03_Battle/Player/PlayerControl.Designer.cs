@@ -31,5 +31,13 @@ namespace TeaGame
 		
 		public UnityEngine.Rigidbody SelfRigidbody;
 		
+		public UnityEngine.UI.Text SkillHudRoleLine;
+		
+		public UnityEngine.UI.Text SkillHudELine;
+		
+		public UnityEngine.UI.Text SkillHudQLine;
+		
+		public UnityEngine.UI.Text SkillHudSwitchLine;
+		
 	}
 }

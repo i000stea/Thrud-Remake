@@ -38,6 +38,16 @@ namespace TeaGame
       public int SelectedRoleIndex;
 
       /// <summary>
+      /// T2.4 技能能量上限（命中/击杀增长，极奏 Q 消耗）。
+      /// </summary>
+      public const float RoleEnergyMax = 100f;
+
+      /// <summary>
+      /// T2.4 当前技能能量（0~<see cref="RoleEnergyMax"/>）。
+      /// </summary>
+      public float RoleEnergy;
+
+      /// <summary>
       /// 当前是否处于控制接管状态。
       /// 例如过场动画、暂停、技能演出等都可能接管控制。
       /// </summary>
