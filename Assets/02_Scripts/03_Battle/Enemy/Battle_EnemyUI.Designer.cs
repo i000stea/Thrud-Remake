@@ -15,5 +15,15 @@ namespace TeaGame
 		
 		public UnityEngine.UI.Image Sing;
 		
+		public Sprite SignIce;
+		
+		public Sprite SignFire;
+		
+		public Sprite SignWind;
+		
+		public Sprite SignElectric;
+		
+		public UnityEngine.UI.Text Status_Text;
+		
 	}
 }

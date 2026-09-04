@@ -364,23 +364,37 @@ namespace TeaGame
 
       /// <summary>
       /// 生成一发物理子弹（T1.3：走对象池，无 Instantiate/Destroy 分配）。
+      /// T2.3.1：子弹 prefab 按当前角色元素从 BattleElementBulletLibrary 解析（元素版子弹）。
       /// </summary>
       protected virtual void FireSingleShot(int index)
       {
-         if (WeaponView?.BulletPrefab == null || WeaponView.FirePoint == null) return;
+         if (WeaponView?.FirePoint == null) return;
+
+         var bulletPrefab = ResolvePlayerBulletPrefab();
+         if (bulletPrefab == null) return;
 
          var baseRotation = FreeAimRotation ?? WeaponView.FirePoint.rotation;
 
          var bulletObject = SpawnBulletPrefab(
-            WeaponView.BulletPrefab,
+            bulletPrefab,
             WeaponView.FirePoint.position,
             baseRotation,
-            WeaponData.damage);
+            WeaponData.damage,
+            BattleRuntimeBridge.ActiveElement);
 
          if (!bulletObject) return;
 
          ApplyBulletSpread(bulletObject.transform, index);
          ApplyBulletVelocity(bulletObject.transform);
+      }
+
+      /// <summary>
+      /// 解析本发子弹 prefab：当前角色元素对应的元素子弹优先，否则回退武器默认子弹。
+      /// </summary>
+      protected GameObject ResolvePlayerBulletPrefab()
+      {
+         var elementPrefab = BattleElementBulletLibrary.Resolve(BattleRuntimeBridge.ActiveElement);
+         return elementPrefab ? elementPrefab : WeaponView.BulletPrefab;
       }
 
       /// <summary>
@@ -412,6 +426,7 @@ namespace TeaGame
          Vector3 position,
          Quaternion rotation,
          float damage,
+         TeaFramework.DamageElement element,
          float lifeSeconds = 5f)
       {
          if (!bulletPrefab) return null;
@@ -424,7 +439,7 @@ namespace TeaGame
             if (bulletObject.TryGetComponent(out BattleBullet battleBullet))
             {
                // 池化新路径只走 BattleBullet 结算：武装 + 超时自回（命中即回池）
-               battleBullet.ResetBullet(damage, lifeSeconds);
+               battleBullet.ResetBullet(damage, lifeSeconds, element);
             }
 
             // 禁用同挂载的旧版 Bullet_Base，避免命中时双重结算/销毁
@@ -642,12 +657,13 @@ namespace TeaGame
             hitPoint = hitInfo.point;
          }
 
-         // 命中点表现走对象池（T1.3）
+         // 命中点表现走对象池（T1.3）；T2.3.1 命中点子弹按角色元素取元素版表现
          SpawnBulletPrefab(
-            WeaponView.BulletPrefab,
+            ResolvePlayerBulletPrefab(),
             hitPoint,
             Quaternion.identity,
             WeaponData.damage,
+            BattleRuntimeBridge.ActiveElement,
             5f);
 
          if (!WeaponView.BulletLinePrefab) return;

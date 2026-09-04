@@ -12,101 +12,122 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f5061728394a5b6c7d8e9f0a1b2c3d4, type: 3}
   m_Name: StageConfig_Demo
   m_EditorClassIdentifier: 
+  Version: 5
   TimeLimitSeconds: 180
   Sites:
-  - Note: "\u7AD91\uFF1A\u5DE1\u5F0B\xD75 \u2192 \u70AE\u53F0"
+  - Note: "\u7AD91\uFF08\u98CE\xB7\u6DF7\u7F16\uFF09"
     Position: {x: 0, y: 14}
-    ArriveRadius: 8
+    ArriveRadius: 9
     Batches:
-    - Note: "\u9996\u6279(\u5230\u8FBE\u89E6\u53D1): \u5DE1\u5F0B\xD75"
+    - Note: "\u9996\u6279(\u5230\u8FBE\u89E6\u53D1): \u5DE1\u5F0B\xD75\uFF08\u51B0/\u98CE/\u96F7\uFF09"
       KillRatio: 0.8
       Spawns:
-      - EnemyId: patrol
-        Count: 3
-        AngleDeg: -30
-        Distance: 5.5
-        Y: 1
-        Scatter: 1.5
-      - EnemyId: patrol
+      - EnemyId: patrol_ice
+        Element: 0
         Count: 2
-        AngleDeg: 15
-        Distance: 5.5
+        AngleDeg: -35
+        Distance: 14
         Y: 1
-        Scatter: 1.5
-    - Note: "\u6B21\u6279(\u51FB\u674080%): \u70AE\u53F0\xD71"
+        Scatter: 2
+      - EnemyId: patrol_wind
+        Element: 0
+        Count: 2
+        AngleDeg: 10
+        Distance: 15
+        Y: 1
+        Scatter: 2
+      - EnemyId: patrol_electric
+        Element: 0
+        Count: 1
+        AngleDeg: 40
+        Distance: 13
+        Y: 1
+        Scatter: 2
+    - Note: "\u6B21\u6279(\u51FB\u674080%): \u98CE\xB7\u70AE\u53F0\xD71"
       KillRatio: 0.8
       Spawns:
-      - EnemyId: gun_turret
+      - EnemyId: gun_turret_wind
+        Element: 0
         Count: 1
-        AngleDeg: -40
-        Distance: 6.5
+        AngleDeg: -45
+        Distance: 14
         Y: 1
         Scatter: 1
-  - Note: "\u7AD92\uFF1A\u5DE1\u5F0B+\u70AE\u53F0 \u2192 \u5BFC\u5F39+\u5DE1\u5F0B"
+  - Note: "\u7AD92\uFF08\u51B0\xB7\u70AE\u53F0 \u2192 \u7535\xB7\u5BFC\u5F39\uFF09"
     Position: {x: -12, y: 28}
-    ArriveRadius: 8
+    ArriveRadius: 9
     Batches:
-    - Note: "\u9996\u6279: \u5DE1\u5F0B\xD74+\u70AE\u53F0\xD71"
+    - Note: "\u9996\u6279(\u5230\u8FBE\u89E6\u53D1): \u706B\xB7\u5DE1\u5F0B\xD73
+        + \u51B0\xB7\u70AE\u53F0\xD71"
       KillRatio: 0.8
       Spawns:
-      - EnemyId: patrol
-        Count: 4
-        AngleDeg: 0
-        Distance: 4.5
+      - EnemyId: patrol_fire
+        Element: 0
+        Count: 3
+        AngleDeg: -20
+        Distance: 13
         Y: 1
-        Scatter: 1.5
-      - EnemyId: gun_turret
+        Scatter: 2
+      - EnemyId: gun_turret_ice
+        Element: 0
         Count: 1
-        AngleDeg: -90
-        Distance: 5.5
+        AngleDeg: 35
+        Distance: 15
         Y: 1
         Scatter: 1
-    - Note: "\u6B21\u6279(\u51FB\u674080%): \u5BFC\u5F39\xD71+\u5DE1\u5F0B\xD72"
+    - Note: "\u6B21\u6279(\u51FB\u674080%): \u7535\xB7\u5BFC\u5F39\xD72 + \u706B\xB7\u5DE1\u5F0B\xD72"
       KillRatio: 0.8
       Spawns:
-      - EnemyId: missile
-        Count: 1
-        AngleDeg: 30
-        Distance: 6.5
-        Y: 1
-        Scatter: 1
-      - EnemyId: patrol
+      - EnemyId: missile_electric
+        Element: 0
         Count: 2
-        AngleDeg: 0
-        Distance: 7
+        AngleDeg: 20
+        Distance: 16
         Y: 1
         Scatter: 1.5
-  - Note: "\u7AD93\uFF1A\u5DE1\u5F0B+\u91CD\u88C5 \u2192 \u5730\u96F7+\u5BFC\u5F39\uFF08\u6536\u5C3E\uFF09"
+      - EnemyId: patrol_fire
+        Element: 0
+        Count: 2
+        AngleDeg: -40
+        Distance: 14
+        Y: 1
+        Scatter: 1.5
+  - Note: "\u7AD93\uFF08\u706B\xB7\u91CD\u88C5 \u2192 \u7535\xB7\u5730\u96F7/\u5BFC\u5F39\u6536\u5C3E\uFF09"
     Position: {x: 8, y: 42}
-    ArriveRadius: 8
+    ArriveRadius: 9
     Batches:
-    - Note: "\u9996\u6279: \u5DE1\u5F0B\xD74+\u91CD\u88C5\xD71"
+    - Note: "\u9996\u6279(\u5230\u8FBE\u89E6\u53D1): \u51B0\xB7\u5DE1\u5F0B\xD73
+        + \u706B\xB7\u91CD\u88C5\xD71"
       KillRatio: 0.8
       Spawns:
-      - EnemyId: patrol
-        Count: 4
+      - EnemyId: patrol_ice
+        Element: 0
+        Count: 3
         AngleDeg: 0
-        Distance: 4.5
+        Distance: 13
         Y: 1
-        Scatter: 1.5
-      - EnemyId: gun_turret_heavy
+        Scatter: 2
+      - EnemyId: gun_turret_heavy_fire
+        Element: 0
         Count: 1
         AngleDeg: -80
-        Distance: 5.5
+        Distance: 15
         Y: 1
         Scatter: 1
-    - Note: "\u6B21\u6279(\u51FB\u674080%): \u5730\u96F7\xD71+\u5BFC\u5F39\xD71"
+    - Note: "\u6B21\u6279(\u51FB\u674080%): \u7535\xB7\u5730\u96F7\xD72 + \u7535\xB7\u5BFC\u5F39\xD71"
       KillRatio: 0.8
       Spawns:
-      - EnemyId: mine
-        Count: 1
-        AngleDeg: 20
-        Distance: 5.5
+      - EnemyId: mine_electric
+        Element: 0
+        Count: 2
+        AngleDeg: 25
+        Distance: 12
         Y: 0.7
-        Scatter: 0.5
-      - EnemyId: missile
+        Scatter: 1
+      - EnemyId: missile_electric
+        Element: 0
         Count: 1
-        AngleDeg: 10
-        Distance: 6
+        AngleDeg: -15
+        Distance: 14
         Y: 1
-        Scatter: 0.5
+        Scatter: 1

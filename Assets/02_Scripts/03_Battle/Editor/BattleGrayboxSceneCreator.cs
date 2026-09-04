@@ -18,9 +18,9 @@ namespace TeaGame.Battle.Editor
    ///   - PlayerControl.prefab 实例（复用现有角色/武器/相机/准星/血条装配）
    ///   - BattleRoleRepository（新数据仓库，复用 5BattleScene-Test0 已核实的 4 角色 × 4 武器数据）
    ///   - 地面 + 四周空气墙（BoxCollider，灰盒透明墙体）
-   ///   - 2 个灰盒胶囊敌人（BattleEnemyEntity，验证锁敌目标存在）
    ///   - Damage-Texts（BattleEnvironmentEffectController，供 T1.4 飘字复用）
    ///   - Directional Light / EventSystem
+   ///   敌人由 T2.2 表驱动 BattleStageDirector 运行时刷怪（T2.3 起为元素敌人），场景不再放静态敌人。
    ///
    /// 由编辑器生成场景，避免手写场景 YAML 的序列化风险（同 ConfigSceneCreator 模式）。
    /// 场景 key 使用文件名 BattleGraybox，加入 Build Settings（追加，不抢占 ConfigScene[0]）。
@@ -103,7 +103,6 @@ namespace TeaGame.Battle.Editor
          var repository = CreateRoleRepository();
          var effectController = CreateDamageTexts();
          WirePlayer(player, repository, effectController);
-         CreateEnemies(environment);
          CreateEventSystem();
 
          player.transform.position = new Vector3(0f, 2f, 0f);
@@ -333,37 +332,6 @@ namespace TeaGame.Battle.Editor
       /// <summary>
       /// 创建 2 个灰盒胶囊敌人（BattleEnemyEntity），注册进锁敌系统作为可锁定目标。
       /// </summary>
-      private static void CreateEnemies(Transform environment)
-      {
-         var enemyBulletPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(EnemyBulletPrefabPath);
-         if (enemyBulletPrefab == null)
-         {
-            Debug.LogWarning($"[BattleGrayboxSceneCreator] 未找到敌人子弹预制体：{EnemyBulletPrefabPath}，敌人将不发射子弹（仅作为锁敌目标）。");
-         }
-
-         CreateGrayboxEnemy(environment, "Enemy_Graybox_Chaser_01", new Vector3(5f, 1f, 12f), new Color(0.9f, 0.3f, 0.3f, 1f), enemyBulletPrefab);
-         CreateGrayboxEnemy(environment, "Enemy_Graybox_Chaser_02", new Vector3(-5f, 1f, 14f), new Color(0.95f, 0.55f, 0.2f, 1f), enemyBulletPrefab);
-      }
-
-      private static void CreateGrayboxEnemy(Transform parent, string name, Vector3 position, Color color, GameObject enemyBulletPrefab)
-      {
-         var enemy = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-         enemy.name = name;
-         enemy.transform.SetParent(parent, false);
-         enemy.transform.position = position;
-         enemy.transform.localScale = new Vector3(1.1f, 1.3f, 1.1f);
-         enemy.GetComponent<MeshRenderer>().sharedMaterial = CreateGrayboxMaterial("GrayboxMat_Enemy", color, false);
-
-         var entity = enemy.AddComponent<BattleEnemyEntity>();
-         var serialized = new SerializedObject(entity);
-         serialized.FindProperty("baseHealth").floatValue = 100f;
-         serialized.FindProperty("shotCooldownMin").floatValue = 3f;
-         serialized.FindProperty("shotCooldownMax").floatValue = 5f;
-         serialized.FindProperty("enemyBulletPrefab").objectReferenceValue = enemyBulletPrefab;
-         serialized.FindProperty("enemyBulletSpeed").floatValue = 8f;
-         serialized.ApplyModifiedPropertiesWithoutUndo();
-      }
-
       /// <summary>
       /// 把数据仓库与飘字控制器绑定到 PlayerControl 实例。
       /// </summary>
@@ -492,34 +460,21 @@ namespace TeaGame.Battle.Editor
       private const string T21EnemyPrefabDir = "Assets/04_Prefabs/Enemy";
       private const string T21EnemyMaterialDir = "Assets/04_Prefabs/Enemy/Materials";
 
-      /// <summary>灰盒场景演示布局（prefab 名 + 摆放位置）。</summary>
-      private struct T21DemoEntry
-      {
-         public readonly string PrefabName;
-         public readonly Vector3 Position;
+      /// <summary>敌人头顶 UI prefab（T2.3 QFramework View：Battle_EnemyUI）。</summary>
+      private const string EnemyEntityUIPrefabName = "EnemyEntity_UI.prefab";
 
-         public T21DemoEntry(string prefabName, Vector3 position)
-         {
-            PrefabName = prefabName;
-            Position = position;
-         }
-      }
-
-      private static readonly T21DemoEntry[] T21DemoLayout =
+      /// <summary>五类敌人 prefab 类型基础名（元素变体名 = 基础名 + "_" + 元素）。无属性基础 prefab 已废弃（2026-09-04）。</summary>
+      private static readonly string[] T21EnemyPrefabNames =
       {
-         new T21DemoEntry("Enemy_Patrol", new Vector3(5f, 1f, 12f)),
-         new T21DemoEntry("Enemy_Patrol", new Vector3(-5f, 1f, 14f)),
-         new T21DemoEntry("Enemy_GunTurret", new Vector3(14f, 1f, -8f)),
-         new T21DemoEntry("Enemy_GunTurret_Heavy", new Vector3(12f, 1f, -15f)),
-         new T21DemoEntry("Enemy_Missile", new Vector3(9f, 1f, 18f)),
-         new T21DemoEntry("Enemy_Mine", new Vector3(0f, 0.7f, 18f)),
-         new T21DemoEntry("Enemy_Mine", new Vector3(-5f, 0.7f, 20f)),
+         "Enemy_Patrol", "Enemy_GunTurret", "Enemy_GunTurret_Heavy",
+         "Enemy_Missile", "Enemy_Mine",
       };
 
       /// <summary>
-      /// 生成/确保全部 T2.1 敌人 prefab 资产（幂等；已有则直接返回）。
+      /// 生成/确保全部元素敌人 prefab 资产（幂等；已有则直接返回）。
+      /// 2026-09-04 起只产出 20 个元素敌人（无属性基础敌人已废弃）。
       /// </summary>
-      [MenuItem("Thrud/Battle/T2.1 Create Enemy Prefabs")]
+      [MenuItem("Thrud/Battle/T2.1 Create Element Enemy Prefabs")]
       public static void CreateT21EnemyPrefabs()
       {
          var enemyBullet = AssetDatabase.LoadAssetAtPath<GameObject>(EnemyBulletPrefabPath);
@@ -530,21 +485,26 @@ namespace TeaGame.Battle.Editor
 
          EnsureAllT21EnemyPrefabs(enemyBullet);
          AssetDatabase.Refresh();
-         Debug.Log($"[T2.1] 敌人 prefab 已就绪：{T21EnemyPrefabDir}（Enemy_Patrol / Enemy_GunTurret / Enemy_GunTurret_Heavy / Enemy_Missile / Enemy_Mine）。可在编辑器直接拖入场景或双击改参数。");
+         Debug.Log($"[T2.1] 元素敌人 prefab 已就绪：{T21EnemyPrefabDir}（5 类型 × 4 元素 = 20 变体，各配元素色材质球）。可在编辑器直接拖入场景或双击改参数。");
       }
 
       /// <summary>
-      /// 重建敌人 prefab（先删后建）：当敌人组件新增字段/结构变化时，旧资产不会自动更新，
-      /// 需执行本菜单强制重建（材质资产保留）。之后再用 Add Demo Enemies 重新摆放场景实例。
+      /// 重建元素敌人 prefab（先删后建）：当敌人组件新增字段/结构变化时，旧资产不会自动更新，
+      /// 需执行本菜单强制重建（材质资产保留）。不生成无属性基础敌人（2026-09-04 起）。
       /// </summary>
-      [MenuItem("Thrud/Battle/T2.1 Rebuild Enemy Prefabs")]
+      [MenuItem("Thrud/Battle/T2.1 Rebuild Element Enemy Prefabs")]
       public static void RebuildT21EnemyPrefabs()
       {
-         string[] prefabNames =
+         var prefabNames = new List<string>();
+         foreach (var baseName in T21EnemyPrefabNames)
          {
-            "Enemy_Patrol", "Enemy_GunTurret", "Enemy_GunTurret_Heavy",
-            "Enemy_Missile", "Enemy_Mine", "Enemy_BlastRange",
-         };
+            foreach (var element in EnemyElementVariants)
+            {
+               prefabNames.Add(baseName + "_" + element);
+            }
+         }
+
+         prefabNames.Add("Enemy_BlastRange");
 
          var deleted = 0;
          foreach (var prefabName in prefabNames)
@@ -560,85 +520,112 @@ namespace TeaGame.Battle.Editor
          CreateT21EnemyPrefabs();
       }
 
-      /// <summary>
-      /// 生成 prefab 并摆放灰盒演示敌人（会重建工具管理的 Enemy_Graybox_* 敌人实例）。
-      /// </summary>
-      [MenuItem("Thrud/Battle/T2.1 Add Demo Enemies")]
-      public static void AddT21DemoEnemies()
+      /// <summary>T2.1 五种敌人类型模板（元素变体复用同一组参数，仅换 prefab 名 / 元素 / 材质）。</summary>
+      private sealed class T21EnemyTemplate
       {
-         var activeScene = EditorSceneManager.GetActiveScene();
-         if (activeScene.path != ScenePath)
-         {
-            EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            activeScene = EditorSceneManager.GetActiveScene();
-         }
-
-         var environment = GameObject.Find("Environment");
-         if (environment == null)
-         {
-            Debug.LogError("[T2.1] 当前场景缺少 Environment 根节点，请先运行 Thrud/Battle/Setup BattleGraybox Scene 生成灰盒场景。");
-            return;
-         }
-
-         var enemyBullet = AssetDatabase.LoadAssetAtPath<GameObject>(EnemyBulletPrefabPath);
-         EnsureAllT21EnemyPrefabs(enemyBullet);
-         PlaceT21DemoEnemies(environment.transform);
-
-         EditorSceneManager.SaveScene(activeScene);
-         AssetDatabase.Refresh();
-         Debug.Log("[T2.1] 演示敌人已摆放为 prefab 实例并保存。Play 验证：巡弋者(游走速射,不追玩家) / 站桩炮台(扇形弹幕,含重装变体) / 自爆·导弹(追踪后小爆) / 自爆·地雷(感应或被打爆→大爆)。");
+         public string Name;
+         public EnemyKind Kind;
+         public PrimitiveType Primitive;
+         public Color Color;
+         public Vector3 Scale;
+         public bool ShootBullets;
+         public bool HasBlastRing;
+         public float BaseHealth;
+         public float MoveSpeed;
+         public float WanderRadius;
+         public int BarrageCount;
+         public float SpreadDeg;
+         public float BulletSpeed;
+         public float CdMin;
+         public float CdMax;
+         public float BlastRadius;
+         public float BlastDamage;
       }
 
+      private static readonly T21EnemyTemplate[] T21EnemyTemplates =
+      {
+         new T21EnemyTemplate { Name = "Enemy_Patrol", Kind = EnemyKind.Patrol, Primitive = PrimitiveType.Capsule,
+            Color = new Color(0.9f, 0.35f, 0.35f, 1f), Scale = new Vector3(1f, 1.15f, 1f),
+            ShootBullets = true, HasBlastRing = false,
+            BaseHealth = 35f, MoveSpeed = 2.2f, WanderRadius = 4f, BarrageCount = 1, SpreadDeg = 0f,
+            BulletSpeed = 8f, CdMin = 1.2f, CdMax = 2.2f, BlastRadius = 2f, BlastDamage = 14f },
+         new T21EnemyTemplate { Name = "Enemy_GunTurret", Kind = EnemyKind.GunTurret, Primitive = PrimitiveType.Sphere,
+            Color = new Color(1f, 0.62f, 0.15f, 1f), Scale = new Vector3(1.6f, 1.6f, 1.6f),
+            ShootBullets = true, HasBlastRing = false,
+            BaseHealth = 60f, MoveSpeed = 0f, WanderRadius = 1f, BarrageCount = 3, SpreadDeg = 24f,
+            BulletSpeed = 8f, CdMin = 3f, CdMax = 4.5f, BlastRadius = 2f, BlastDamage = 14f },
+         new T21EnemyTemplate { Name = "Enemy_GunTurret_Heavy", Kind = EnemyKind.GunTurret, Primitive = PrimitiveType.Cube,
+            Color = new Color(0.6f, 0.12f, 0.15f, 1f), Scale = new Vector3(2.1f, 2.1f, 2.1f),
+            ShootBullets = true, HasBlastRing = false,
+            BaseHealth = 160f, MoveSpeed = 0f, WanderRadius = 1f, BarrageCount = 3, SpreadDeg = 32f,
+            BulletSpeed = 4f, CdMin = 4.5f, CdMax = 6.5f, BlastRadius = 2f, BlastDamage = 14f },
+         new T21EnemyTemplate { Name = "Enemy_Missile", Kind = EnemyKind.Missile, Primitive = PrimitiveType.Capsule,
+            Color = new Color(1f, 0.85f, 0.15f, 1f), Scale = new Vector3(0.8f, 1.1f, 0.8f),
+            ShootBullets = false, HasBlastRing = true,
+            BaseHealth = 20f, MoveSpeed = 9f, WanderRadius = 1f, BarrageCount = 1, SpreadDeg = 0f,
+            BulletSpeed = 0f, CdMin = 1f, CdMax = 1f, BlastRadius = 1.8f, BlastDamage = 12f },
+         new T21EnemyTemplate { Name = "Enemy_Mine", Kind = EnemyKind.Mine, Primitive = PrimitiveType.Sphere,
+            Color = new Color(0.55f, 0.1f, 0.1f, 1f), Scale = new Vector3(1.3f, 0.7f, 1.3f),
+            ShootBullets = false, HasBlastRing = true,
+            BaseHealth = 12f, MoveSpeed = 0f, WanderRadius = 1f, BarrageCount = 1, SpreadDeg = 0f,
+            BulletSpeed = 0f, CdMin = 1f, CdMax = 1f, BlastRadius = 6f, BlastDamage = 18f },
+      };
+
+      /// <summary>敌人自身可携带的四种元素（元素变体 prefab 生成/目录增补用）。</summary>
+      private static readonly DamageElement[] EnemyElementVariants =
+      {
+         DamageElement.Ice, DamageElement.Fire, DamageElement.Wind, DamageElement.Electric,
+      };
+
+      /// <summary>
+      /// 生成/确保全部元素敌人 prefab（幂等；已有则返回并补齐头顶 UI 引用）。
+      /// 2026-09-04 起不再生成无属性基础 prefab：只有 5 类型 × 4 元素 = 20 个独立变体——
+      /// 命名 Enemy_&lt;Type&gt;_&lt;Element&gt;；body 材质为元素色材质球，BattleEnemyEntity.element 已写入（克制/UI 依据）。
+      /// </summary>
       private static void EnsureAllT21EnemyPrefabs(GameObject enemyBullet)
       {
          // 爆炸范围提示环 prefab（Mine 常驻子环与之共用材质）
          var blastRing = EnsureT21BlastRangePrefab();
 
-         EnsureT21EnemyPrefab("Enemy_Patrol", EnemyKind.Patrol, PrimitiveType.Capsule,
-            new Color(0.9f, 0.35f, 0.35f, 1f), new Vector3(1f, 1.15f, 1f), null,
-            enemyBullet, baseHealth: 35f, moveSpeed: 2.2f, wanderRadius: 4f,
-            barrageCount: 1, spreadDeg: 0f, bulletSpeed: 8f, cdMin: 1.2f, cdMax: 2.2f,
-            blastRadius: 2f, blastDamage: 14f);
+         foreach (var template in T21EnemyTemplates)
+         {
+            var bullet = template.ShootBullets ? enemyBullet : null;
+            var blast = template.HasBlastRing ? blastRing : null;
 
-         EnsureT21EnemyPrefab("Enemy_GunTurret", EnemyKind.GunTurret, PrimitiveType.Sphere,
-            new Color(1f, 0.62f, 0.15f, 1f), new Vector3(1.6f, 1.6f, 1.6f), null,
-            enemyBullet, baseHealth: 60f, moveSpeed: 0f, wanderRadius: 1f,
-            barrageCount: 3, spreadDeg: 24f, bulletSpeed: 8f, cdMin: 3f, cdMax: 4.5f,
-            blastRadius: 2f, blastDamage: 14f);
-
-         EnsureT21EnemyPrefab("Enemy_GunTurret_Heavy", EnemyKind.GunTurret, PrimitiveType.Cube,
-            new Color(0.6f, 0.12f, 0.15f, 1f), new Vector3(2.1f, 2.1f, 2.1f), null,
-            enemyBullet, baseHealth: 160f, moveSpeed: 0f, wanderRadius: 1f,
-            barrageCount: 3, spreadDeg: 32f, bulletSpeed: 4f, cdMin: 4.5f, cdMax: 6.5f,
-            blastRadius: 2f, blastDamage: 14f);
-
-         EnsureT21EnemyPrefab("Enemy_Missile", EnemyKind.Missile, PrimitiveType.Capsule,
-            new Color(1f, 0.85f, 0.15f, 1f), new Vector3(0.8f, 1.1f, 0.8f), blastRing,
-            null, baseHealth: 20f, moveSpeed: 9f, wanderRadius: 1f,
-            barrageCount: 1, spreadDeg: 0f, bulletSpeed: 0f, cdMin: 1f, cdMax: 1f,
-            blastRadius: 1.8f, blastDamage: 12f);
-
-         EnsureT21EnemyPrefab("Enemy_Mine", EnemyKind.Mine, PrimitiveType.Sphere,
-            new Color(0.55f, 0.1f, 0.1f, 1f), new Vector3(1.3f, 0.7f, 1.3f), blastRing,
-            null, baseHealth: 12f, moveSpeed: 0f, wanderRadius: 1f,
-            barrageCount: 1, spreadDeg: 0f, bulletSpeed: 0f, cdMin: 1f, cdMax: 1f,
-            blastRadius: 6f, blastDamage: 18f);
+            foreach (var element in EnemyElementVariants)
+            {
+               EnsureT21EnemyPrefab(template.Name + "_" + element, template.Kind, template.Primitive, template.Color,
+                  template.Scale, blast, bullet, template.BaseHealth, template.MoveSpeed, template.WanderRadius,
+                  template.BarrageCount, template.SpreadDeg, template.BulletSpeed,
+                  template.CdMin, template.CdMax, template.BlastRadius, template.BlastDamage, element);
+            }
+         }
       }
 
       /// <summary>
       /// 生成单个敌人 prefab 资产（幂等）。灰盒外形 = 内置几何体 + 资产材质；组件 = BattleEnemyEntity。
+      /// <paramref name="element"/> 非 none 时：prefab 名为 "Enemy_&lt;Type&gt;_&lt;Element&gt;"，
+      /// body 材质用元素材质球（Element_Ice/Fire/Wind/Electric.mat），BattleEnemyEntity.element 写入对应值。
       /// Mine 特殊结构：root(空,scale=1) + Body(网格/碰撞体子对象) + RangeRing(常驻感应圈子对象)。
       /// </summary>
       private static GameObject EnsureT21EnemyPrefab(string prefabName, EnemyKind kind, PrimitiveType primitive,
          Color color, Vector3 scale, GameObject blastRingPrefab, GameObject enemyBullet, float baseHealth,
          float moveSpeed, float wanderRadius, int barrageCount, float spreadDeg, float bulletSpeed,
-         float cdMin, float cdMax, float blastRadius, float blastDamage)
+         float cdMin, float cdMax, float blastRadius, float blastDamage,
+         DamageElement element = DamageElement.none)
       {
          var prefabPath = T21EnemyPrefabDir + "/" + prefabName + ".prefab";
          var existing = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-         if (existing != null) return existing;
+         if (existing != null)
+         {
+            // T2.3：老 prefab（工具早期生成）无头顶 UI 引用 → 读内容补齐
+            EnsureT21EnemyUiReference(prefabPath);
+            return existing;
+         }
 
-         var material = EnsureT21EnemyMaterialAsset(prefabName, color);
+         var material = element == DamageElement.none
+            ? EnsureT21EnemyMaterialAsset(prefabName, color)
+            : EnsureElementMaterialAsset(element);
 
          GameObject root;
          Transform rangeRing = null;
@@ -684,6 +671,7 @@ namespace TeaGame.Battle.Editor
          var entity = root.AddComponent<BattleEnemyEntity>();
          var serialized = new SerializedObject(entity);
          serialized.FindProperty("kind").enumValueIndex = (int)kind;
+         serialized.FindProperty("element").enumValueIndex = (int)element;
          serialized.FindProperty("baseHealth").floatValue = baseHealth;
          serialized.FindProperty("moveSpeed").floatValue = moveSpeed;
          serialized.FindProperty("wanderRadius").floatValue = wanderRadius;
@@ -709,8 +697,236 @@ namespace TeaGame.Battle.Editor
          {
             Debug.LogError($"[T2.1] 敌人 prefab 生成失败：{prefabPath}");
          }
+         else
+         {
+            EnsureT21EnemyUiReference(prefabPath);
+         }
 
          return saved;
+      }
+
+      /// <summary>
+      /// 确保敌人 prefab 已配置敌人头顶 UI prefab（uiPrefab → EnemyEntity_UI.prefab，T2.3）。
+      /// 直接在 prefab 内容里补字段（保留资产 guid），缺失才写入，幂等。
+      /// </summary>
+      private static void EnsureT21EnemyUiReference(string prefabPath)
+      {
+         var uiPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(T21EnemyPrefabDir + "/" + EnemyEntityUIPrefabName);
+         if (uiPrefab == null)
+         {
+            Debug.LogWarning($"[T2.3] 未找到敌人头顶 UI prefab：{T21EnemyPrefabDir}/{EnemyEntityUIPrefabName}，请确认其已生成。");
+            return;
+         }
+
+         var contents = PrefabUtility.LoadPrefabContents(prefabPath);
+         try
+         {
+            var entity = contents.GetComponent<BattleEnemyEntity>();
+            if (entity == null) return;
+
+            var serialized = new SerializedObject(entity);
+            var uiPrefabProperty = serialized.FindProperty("uiPrefab");
+            if (uiPrefabProperty != null && uiPrefabProperty.objectReferenceValue == null)
+            {
+               uiPrefabProperty.objectReferenceValue = uiPrefab;
+               serialized.ApplyModifiedPropertiesWithoutUndo();
+               PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+               Debug.Log($"[T2.3] 已为 {Path.GetFileName(prefabPath)} 补齐敌人头顶 UI（uiPrefab → EnemyEntity_UI.prefab）。");
+            }
+         }
+         finally
+         {
+            PrefabUtility.UnloadPrefabContents(contents);
+         }
+      }
+
+      /// <summary>
+      /// T2.3 一键补齐全部元素敌人 prefab（5 类型 × 4 元素 = 20 个）的头顶 UI 引用。
+      /// 执行后敌人出生即带血条/元素标识/状态小字（EnemyEntity_UI.prefab 已随本卡更新）。
+      /// </summary>
+      [MenuItem("Thrud/Battle/T2.3 Setup Enemy Head UI")]
+      public static void SetupT23EnemyHeadUI()
+      {
+         var names = new List<string>();
+         foreach (var baseName in T21EnemyPrefabNames)
+         {
+            foreach (var element in EnemyElementVariants)
+            {
+               names.Add(baseName + "_" + element);
+            }
+         }
+
+         var checkedCount = 0;
+         foreach (var prefabName in names)
+         {
+            var path = T21EnemyPrefabDir + "/" + prefabName + ".prefab";
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null) continue;
+
+            EnsureT21EnemyUiReference(path);
+            checkedCount++;
+         }
+
+         AssetDatabase.SaveAssets();
+         Debug.Log($"[T2.3] 已检查 {checkedCount} 个敌人 prefab（含元素变体）的头顶 UI 引用（缺失已补齐）。重新 Play 即可验证：受伤展开血条、元素 Sing、状态小字。");
+      }
+
+      /// <summary>玩家子弹元素版基座路径（T2.3.1 元素子弹克隆自 Bullet_Player_Base）。</summary>
+      private const string PlayerBulletPrefabDir = "Assets/04_Prefabs/Wep/Bullet";
+      private const string PlayerBulletBasePath = "Assets/04_Prefabs/Wep/Bullet/Bullet_Player_Base.prefab";
+
+      /// <summary>Bullet_Player_Base 拖尾材质 guid（元素拖尾材质克隆基座）。</summary>
+      private const string BasePlayerBulletTrailMaterialGuid = "b01462d674746324eb6b7df67b516dc2";
+
+      /// <summary>
+      /// T2.3.1 一键装配玩家元素子弹：
+      /// 1) 克隆生成 Bullet_Player_Ice/Fire/Wind/Electric（body 元素色 + 独立元素拖尾材质）；
+      /// 2) 把 4 个引用写入 PlayerControl.prefab（开火按当前角色元素取弹）。
+      /// </summary>
+      [MenuItem("Thrud/Battle/T2.3 Setup Element Bullets")]
+      public static void SetupT23ElementBullets()
+      {
+         EnsureElementPlayerBulletPrefabs();
+         PatchPlayerControlElementBulletRefs();
+
+         AssetDatabase.SaveAssets();
+         AssetDatabase.Refresh();
+         Debug.Log("[T2.3] 玩家元素子弹已就绪：Bullet_Player_Ice/Fire/Wind/Electric.prefab 已装配到 PlayerControl.prefab。Play 后切不同角色（元素）开火可见对应元素子弹。");
+      }
+
+      private static void EnsureElementPlayerBulletPrefabs()
+      {
+         foreach (var element in EnemyElementVariants)
+         {
+            EnsureElementPlayerBulletPrefab(element);
+         }
+      }
+
+      /// <summary>
+      /// 生成单个元素版玩家子弹 prefab（克隆 Bullet_Player_Base）：
+      /// body 网格材质 → 元素色材质球；拖尾材质 → 独立元素拖尾材质（不改 base 拖尾）。
+      /// </summary>
+      private static GameObject EnsureElementPlayerBulletPrefab(DamageElement element)
+      {
+         var prefabName = "Bullet_Player_" + element;
+         var prefabPath = PlayerBulletPrefabDir + "/" + prefabName + ".prefab";
+         var existing = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+         if (existing != null) return existing;
+
+         var basePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerBulletBasePath);
+         if (basePrefab == null)
+         {
+            Debug.LogError($"[T2.3] 缺少玩家子弹基座：{PlayerBulletBasePath}");
+            return null;
+         }
+
+         var instance = (GameObject)PrefabUtility.InstantiatePrefab(basePrefab);
+         instance.name = prefabName;
+
+         // 弹体（MeshRenderer，如 Module）→ 元素色材质
+         var bodyMaterial = EnsureElementMaterialAsset(element);
+         var meshRenderers = instance.GetComponentsInChildren<MeshRenderer>(true);
+         foreach (var renderer in meshRenderers)
+         {
+            renderer.sharedMaterial = bodyMaterial;
+         }
+
+         // 拖尾（TrailRenderer/LineRenderer）→ 独立元素拖尾材质
+         var trailMaterial = EnsureElementBulletTrailMaterialAsset(element);
+         foreach (var trail in instance.GetComponentsInChildren<TrailRenderer>(true))
+         {
+            trail.sharedMaterial = trailMaterial;
+         }
+
+         foreach (var line in instance.GetComponentsInChildren<LineRenderer>(true))
+         {
+            line.sharedMaterial = trailMaterial;
+         }
+
+         var saved = PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
+         Object.DestroyImmediate(instance);
+         if (saved == null)
+         {
+            Debug.LogError($"[T2.3] 元素子弹 prefab 生成失败：{prefabPath}");
+         }
+
+         return saved;
+      }
+
+      /// <summary>
+      /// 生成/获取元素版子弹拖尾材质（克隆 base 拖尾材质，仅替换元素主色；独立资产避免污染 base）。
+      /// </summary>
+      private static Material EnsureElementBulletTrailMaterialAsset(DamageElement element)
+      {
+         const string directory = "Assets/04_Prefabs/Wep/Bullet/Materials";
+         var materialName = "Bullet_Trail_Element_" + element;
+         var materialPath = directory + "/" + materialName + ".mat";
+         var existing = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+         if (existing != null) return existing;
+
+         var baseTrailPath = AssetDatabase.GUIDToAssetPath(BasePlayerBulletTrailMaterialGuid);
+         var baseTrail = AssetDatabase.LoadAssetAtPath<Material>(baseTrailPath);
+         var material = baseTrail ? new Material(baseTrail) : new Material(Shader.Find("Legacy Shaders/Particles/Alpha Blended"));
+         material.name = materialName;
+
+         var elementColor = BattleElementBalance.GetElementColor(element);
+         var alpha = material.HasProperty("_Color") ? material.color.a : 0.6f;
+         if (material.HasProperty("_Color")) material.SetColor("_Color", new Color(elementColor.r, elementColor.g, elementColor.b, alpha));
+         if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", new Color(elementColor.r, elementColor.g, elementColor.b, alpha));
+
+         Directory.CreateDirectory(directory);
+         AssetDatabase.CreateAsset(material, materialPath);
+         return material;
+      }
+
+      /// <summary>
+      /// 把 4 个元素子弹 prefab 引用写入 PlayerControl.prefab（LoadPrefabContents 保留资产 guid）。
+      /// </summary>
+      private static void PatchPlayerControlElementBulletRefs()
+      {
+         var contents = PrefabUtility.LoadPrefabContents(PlayerControlPrefabPath);
+         try
+         {
+            var player = contents.GetComponent<PlayerControl>();
+            if (player == null)
+            {
+               Debug.LogError($"[T2.3] PlayerControl.prefab 根缺少 PlayerControl 组件：{PlayerControlPrefabPath}");
+               return;
+            }
+
+            var serialized = new SerializedObject(player);
+            var changed = false;
+            changed |= AssignBulletRef(serialized, "bulletIcePrefab", "Bullet_Player_Ice.prefab");
+            changed |= AssignBulletRef(serialized, "bulletFirePrefab", "Bullet_Player_Fire.prefab");
+            changed |= AssignBulletRef(serialized, "bulletWindPrefab", "Bullet_Player_Wind.prefab");
+            changed |= AssignBulletRef(serialized, "bulletElectricPrefab", "Bullet_Player_Electric.prefab");
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            if (changed)
+            {
+               PrefabUtility.SaveAsPrefabAsset(contents, PlayerControlPrefabPath);
+               Debug.Log($"[T2.3] PlayerControl.prefab 已装配元素子弹引用：{PlayerControlPrefabPath}");
+            }
+         }
+         finally
+         {
+            PrefabUtility.UnloadPrefabContents(contents);
+         }
+      }
+
+      private static bool AssignBulletRef(SerializedObject serialized, string fieldName, string prefabFileName)
+      {
+         var elementBullet = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerBulletPrefabDir + "/" + prefabFileName);
+         if (elementBullet == null)
+         {
+            Debug.LogWarning($"[T2.3] 缺少元素子弹资产：{PlayerBulletPrefabDir}/{prefabFileName}");
+            return false;
+         }
+
+         var property = serialized.FindProperty(fieldName);
+         if (property == null || property.objectReferenceValue == elementBullet) return false;
+
+         property.objectReferenceValue = elementBullet;
+         return true;
       }
 
       /// <summary>
@@ -738,8 +954,40 @@ namespace TeaGame.Battle.Editor
          }
 
          AssetDatabase.CreateAsset(material, materialPath);
-          return material;
-       }
+         return material;
+      }
+
+      /// <summary>
+      /// 生成/获取敌人元素色材质球（Element_Ice/Fire/Wind/Electric.mat，颜色与 BattleElementBalance 元素色一致）。
+      /// 供元素敌人变体 prefab 的 body 使用；后期替换美术材质只需替换对应 prefab 材质即可。
+      /// </summary>
+      private static Material EnsureElementMaterialAsset(DamageElement element)
+      {
+         var materialName = "Element_" + element;
+         var materialPath = T21EnemyMaterialDir + "/" + materialName + ".mat";
+         var existing = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+         if (existing != null) return existing;
+
+         var color = BattleElementBalance.GetElementColor(element);
+
+         var shader = Shader.Find("Universal Render Pipeline/Lit");
+         if (shader == null) shader = Shader.Find("Standard");
+
+         var material = new Material(shader != null ? shader : Shader.Find("Diffuse"))
+         {
+            name = materialName,
+            color = color
+         };
+
+         var directory = Path.GetDirectoryName(materialPath);
+         if (!string.IsNullOrEmpty(directory))
+         {
+            Directory.CreateDirectory(directory);
+         }
+
+         AssetDatabase.CreateAsset(material, materialPath);
+         return material;
+      }
 
       /// <summary>
       /// 生成/获取爆炸范围提示环 prefab（Plane + 半透明红，无碰撞体）。
@@ -811,31 +1059,10 @@ namespace TeaGame.Battle.Editor
       }
 
       /// <summary>
-      /// 把演示敌人以 prefab 实例形式摆放到灰盒场景 Environment 下（重建工具管理的实例）。
+      /// 清理 Environment 下历史遗留的 Enemy_Graybox_* 敌人（T0 静态灰盒敌人 / 旧 T2.1 手动演示实例）。
+      /// 敌人体系已表驱动（BattleStageDirector 运行时刷怪），场景不再需要静态敌人。
       /// </summary>
-      private static void PlaceT21DemoEnemies(Transform environment)
-      {
-         RemoveManagedDemoEnemies(environment);
-
-         foreach (var entry in T21DemoLayout)
-         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(T21EnemyPrefabDir + "/" + entry.PrefabName + ".prefab");
-            if (prefab == null)
-            {
-               Debug.LogWarning($"[T2.1] 缺少敌人 prefab：{entry.PrefabName}，请先运行 Thrud/Battle/T2.1 Create Enemy Prefabs。");
-               continue;
-            }
-
-            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, environment);
-            instance.name = "Enemy_Graybox_" + entry.PrefabName + "_" + instance.GetInstanceID();
-            instance.transform.position = entry.Position;
-         }
-      }
-
-      /// <summary>
-      /// 清理 Environment 下工具曾摆放的 Enemy_Graybox_* 敌人（primitive 或旧 prefab 实例）。
-      /// </summary>
-      private static void RemoveManagedDemoEnemies(Transform environment)
+      private static void CleanupLegacyDemoEnemies(Transform environment)
       {
          var managed = new List<GameObject>();
          for (var i = 0; i < environment.childCount; i++)
@@ -856,10 +1083,10 @@ namespace TeaGame.Battle.Editor
       // ===================== T2.2 区域波次与条件生成器（SO 配置方案） =====================
       // 菜单：Thrud/Battle/T2.2 Create Default Stage Assets
       // 一键创建/确保两张配置资产并摆放 BattleStageDirector：
-      //   Assets/04_Prefabs/Enemy/EnemyCatalog.asset     —— 敌人 id ↔ prefab 映射表（字符串驱动，热更增敌只需追加条目）
-      //   Assets/04_Prefabs/Enemy/StageConfig_Demo.asset —— 3 站示例关卡表（敌人字段在 Inspector 下拉重绘，底层存字符串）
+      //   Assets/04_Prefabs/Enemy/EnemyCatalog.asset     —— 元素敌人 id ↔ prefab 映射表（字符串驱动，热更增敌只需追加条目）
+      //   Assets/04_Prefabs/Enemy/StageConfig_Demo.asset —— 元素演示表（四种元素敌人各 1；敌人字段在 Inspector 下拉重绘，底层存字符串）
       // 改配置 = 打开 StageConfig 资产编辑表格；场景目标点/刷怪由 Director 运行时自动生成。
-      // 会清理旧的 Stage_T22_Demo 根与旧 BattleStageDirector 对象。
+      // 会清理旧 Stage_T22_Demo 根、旧 BattleStageDirector 与历史静态敌人（Enemy_Graybox_*）。
 
       private const string T22EnemyCatalogAssetPath = "Assets/04_Prefabs/Enemy/EnemyCatalog.asset";
       private const string T22StageConfigAssetPath = "Assets/04_Prefabs/Enemy/StageConfig_Demo.asset";
@@ -886,9 +1113,10 @@ namespace TeaGame.Battle.Editor
          var enemyBullet = AssetDatabase.LoadAssetAtPath<GameObject>(EnemyBulletPrefabPath);
          EnsureAllT21EnemyPrefabs(enemyBullet);
 
-         // 清理旧演示结构（旧根与旧 Director 对象）
+         // 清理旧演示结构（旧根 / 旧 Director / 历史静态敌人 Enemy_Graybox_*）
          DestroyObjectByName("Stage_T22_Demo");
          DestroyObjectByName(T22DirectorObjectName);
+         CleanupLegacyDemoEnemies(environment.transform);
 
          var catalog = EnsureEnemyCatalogAsset();
          var stage = EnsureDefaultStageAsset(catalog);
@@ -900,28 +1128,146 @@ namespace TeaGame.Battle.Editor
          Debug.Log("[T2.2] 默认 Stage 资产已就绪并装配 Director。打开 StageConfig_Demo.asset 即可改表格（敌人字段为下拉）；Play 后目标点与刷怪按表自动生成。");
       }
 
+      /// <summary>目录类型元数据（EnemyCatalog 基础条目 + 元素变体条目构造用）。</summary>
+      private sealed class T21CatalogType
+      {
+         public string PrefabName;
+         public string Id;
+         public string Display;
+      }
+
+      private static readonly T21CatalogType[] T21CatalogTypes =
+      {
+         new T21CatalogType { PrefabName = "Enemy_Patrol", Id = "patrol", Display = "巡弋者" },
+         new T21CatalogType { PrefabName = "Enemy_GunTurret", Id = "gun_turret", Display = "站桩炮台" },
+         new T21CatalogType { PrefabName = "Enemy_GunTurret_Heavy", Id = "gun_turret_heavy", Display = "重装炮台" },
+         new T21CatalogType { PrefabName = "Enemy_Missile", Id = "missile", Display = "自爆·导弹" },
+         new T21CatalogType { PrefabName = "Enemy_Mine", Id = "mine", Display = "自爆·地雷" },
+      };
+
+      /// <summary>元素 id 后缀（小写）与显示中文。</summary>
+      private static string ElementIdOf(DamageElement element)
+      {
+         switch (element)
+         {
+            case DamageElement.Ice: return "ice";
+            case DamageElement.Fire: return "fire";
+            case DamageElement.Wind: return "wind";
+            case DamageElement.Electric: return "electric";
+            default: return "none";
+         }
+      }
+
+      private static string ElementDisplayOf(DamageElement element)
+      {
+         switch (element)
+         {
+            case DamageElement.Ice: return "冰";
+            case DamageElement.Fire: return "火";
+            case DamageElement.Wind: return "风";
+            case DamageElement.Electric: return "电";
+            default: return "无";
+         }
+      }
+
       /// <summary>
-      /// 确保 EnemyCatalog 资产存在（字符串 id ↔ prefab，含 T2.1 五类敌人）。
+      /// 确保 EnemyCatalog 资产存在（字符串 id ↔ prefab，仅元素敌人：5 类型 × 4 元素 = 20 条）。
+      /// 已有资产：清理失效条目（prefab 引用已删除的旧无属性敌人等）+ 就地增补缺失的元素条目，不整体覆盖。
       /// </summary>
       private static EnemyCatalog EnsureEnemyCatalogAsset()
       {
          var existing = AssetDatabase.LoadAssetAtPath<EnemyCatalog>(T22EnemyCatalogAssetPath);
-         if (existing != null) return existing;
-
-         var catalog = ScriptableObject.CreateInstance<EnemyCatalog>();
-         catalog.Entries = new[]
+         if (existing == null)
          {
-            new EnemyCatalogEntry { Id = "patrol", DisplayName = "巡弋者", Prefab = LoadT21EnemyPrefab("Enemy_Patrol") },
-            new EnemyCatalogEntry { Id = "gun_turret", DisplayName = "站桩炮台", Prefab = LoadT21EnemyPrefab("Enemy_GunTurret") },
-            new EnemyCatalogEntry { Id = "gun_turret_heavy", DisplayName = "重装炮台", Prefab = LoadT21EnemyPrefab("Enemy_GunTurret_Heavy") },
-            new EnemyCatalogEntry { Id = "missile", DisplayName = "自爆·导弹", Prefab = LoadT21EnemyPrefab("Enemy_Missile") },
-            new EnemyCatalogEntry { Id = "mine", DisplayName = "自爆·地雷", Prefab = LoadT21EnemyPrefab("Enemy_Mine") },
-         };
+            existing = ScriptableObject.CreateInstance<EnemyCatalog>();
+            existing.Entries = BuildElementVariantCatalogEntries();
+            AssetDatabase.CreateAsset(existing, T22EnemyCatalogAssetPath);
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[T2.2] 已创建敌人目录：{T22EnemyCatalogAssetPath}（元素敌人 {existing.Entries.Length} 条）");
+         }
+         else
+         {
+            // 旧目录可能残留“无属性基础敌人”等失效条目（prefab 已删）→ 清理
+            var kept = new List<EnemyCatalogEntry>();
+            if (existing.Entries != null)
+            {
+               foreach (var entry in existing.Entries)
+               {
+                  if (entry != null && !string.IsNullOrEmpty(entry.Id) && entry.Prefab != null) kept.Add(entry);
+               }
+            }
 
-         AssetDatabase.CreateAsset(catalog, T22EnemyCatalogAssetPath);
+            if (kept.Count != (existing.Entries?.Length ?? 0))
+            {
+               existing.Entries = kept.ToArray();
+               EditorUtility.SetDirty(existing);
+            }
+         }
+
+         AppendElementVariantEntries(existing);
+         return existing;
+      }
+
+      /// <summary>构造 5 类型 × 4 元素 = 20 条元素敌人目录条目。</summary>
+      private static EnemyCatalogEntry[] BuildElementVariantCatalogEntries()
+      {
+         var entries = new List<EnemyCatalogEntry>();
+         foreach (var type in T21CatalogTypes)
+         {
+            foreach (var element in EnemyElementVariants)
+            {
+               entries.Add(new EnemyCatalogEntry
+               {
+                  Id = type.Id + "_" + ElementIdOf(element),
+                  DisplayName = type.Display + "·" + ElementDisplayOf(element),
+                  Prefab = LoadT21EnemyPrefab(type.PrefabName + "_" + element),
+               });
+            }
+         }
+
+         return entries.ToArray();
+      }
+
+      /// <summary>
+      /// 就地增补 5 类型 × 4 元素 = 20 条元素敌人目录条目（id = &lt;类型id&gt;_ice/fire/wind/electric）。
+      /// 幂等：已存在条目跳过。
+      /// </summary>
+      private static void AppendElementVariantEntries(EnemyCatalog catalog)
+      {
+         var knownIds = new HashSet<string>();
+         if (catalog.Entries != null)
+         {
+            foreach (var entry in catalog.Entries)
+            {
+               if (entry != null && !string.IsNullOrEmpty(entry.Id)) knownIds.Add(entry.Id);
+            }
+         }
+
+         var additions = new List<EnemyCatalogEntry>();
+         foreach (var type in T21CatalogTypes)
+         {
+            foreach (var element in EnemyElementVariants)
+            {
+               var id = type.Id + "_" + ElementIdOf(element);
+               if (knownIds.Contains(id)) continue;
+
+               additions.Add(new EnemyCatalogEntry
+               {
+                  Id = id,
+                  DisplayName = type.Display + "·" + ElementDisplayOf(element),
+                  Prefab = LoadT21EnemyPrefab(type.PrefabName + "_" + element),
+               });
+            }
+         }
+
+         if (additions.Count == 0) return;
+
+         catalog.Entries = (catalog.Entries ?? System.Array.Empty<EnemyCatalogEntry>())
+            .Concat(additions)
+            .ToArray();
+         EditorUtility.SetDirty(catalog);
          AssetDatabase.SaveAssets();
-         Debug.Log($"[T2.2] 已创建敌人目录：{T22EnemyCatalogAssetPath}");
-         return catalog;
+         Debug.Log($"[T2.3] EnemyCatalog 已增补 {additions.Count} 条元素敌人条目（风/冰/电/火 变体）。");
       }
 
       /// <summary>
@@ -930,94 +1276,107 @@ namespace TeaGame.Battle.Editor
       private static BattleStageAsset EnsureDefaultStageAsset(EnemyCatalog catalog)
       {
          var existing = AssetDatabase.LoadAssetAtPath<BattleStageAsset>(T22StageConfigAssetPath);
+         if (existing != null && existing.Version < BattleStageAsset.CurrentVersion)
+         {
+            // 结构变更：旧资产缺新字段，重建（用户自定义会丢失，日志提示）
+            AssetDatabase.DeleteAsset(T22StageConfigAssetPath);
+            existing = null;
+            Debug.LogWarning($"[T2.2] StageConfig 资产版本过旧（{BattleStageAsset.CurrentVersion}），已删除待重建。");
+         }
+
          if (existing != null) return existing;
 
          var stage = ScriptableObject.CreateInstance<BattleStageAsset>();
          stage.TimeLimitSeconds = 180;
          stage.Sites = new[]
          {
+            // 2026-09-04 元素演示 v5：保持 3 站 × 每站 2 批（到达 → 击杀80% → 下一站）的轮次结构，
+            // 全部使用元素敌人（无属性基础敌人已移除），四种元素覆盖：风·炮台 / 冰·炮台 /
+            // 电·导弹 / 火·重装 各一，另以元素巡弋/地雷/导弹补充批内数量；
+            // 生成距离拉远（12~16m），避免贴近目标点刷怪。
             new BattleSiteRow
             {
-               Note = "站1：巡弋×5 → 炮台",
+               Note = "站1（风·混编）",
                Position = new Vector2(0f, 14f),
-               ArriveRadius = 8f,
+               ArriveRadius = 9f,
                Batches = new[]
                {
                   new BattleBatchRow
                   {
-                     Note = "首批(到达触发): 巡弋×5",
+                     Note = "首批(到达触发): 巡弋×5（冰/风/雷）",
                      KillRatio = 0.8f,
                      Spawns = new[]
                      {
-                        new BattleSpawnRow { EnemyId = "patrol", Count = 3, AngleDeg = -30f, Distance = 5.5f, Y = 1f, Scatter = 1.5f },
-                        new BattleSpawnRow { EnemyId = "patrol", Count = 2, AngleDeg = 15f, Distance = 5.5f, Y = 1f, Scatter = 1.5f },
+                        new BattleSpawnRow { EnemyId = "patrol_ice", Count = 2, AngleDeg = -35f, Distance = 14f, Y = 1f, Scatter = 2f },
+                        new BattleSpawnRow { EnemyId = "patrol_wind", Count = 2, AngleDeg = 10f, Distance = 15f, Y = 1f, Scatter = 2f },
+                        new BattleSpawnRow { EnemyId = "patrol_electric", Count = 1, AngleDeg = 40f, Distance = 13f, Y = 1f, Scatter = 2f },
                      },
                   },
                   new BattleBatchRow
                   {
-                     Note = "次批(击杀80%): 炮台×1",
+                     Note = "次批(击杀80%): 风·炮台×1",
                      KillRatio = 0.8f,
                      Spawns = new[]
                      {
-                        new BattleSpawnRow { EnemyId = "gun_turret", Count = 1, AngleDeg = -40f, Distance = 6.5f, Y = 1f, Scatter = 1f },
+                        new BattleSpawnRow { EnemyId = "gun_turret_wind", Count = 1, AngleDeg = -45f, Distance = 14f, Y = 1f, Scatter = 1f },
                      },
                   },
                },
             },
             new BattleSiteRow
             {
-               Note = "站2：巡弋+炮台 → 导弹+巡弋",
+               Note = "站2（冰·炮台 → 电·导弹）",
                Position = new Vector2(-12f, 28f),
-               ArriveRadius = 8f,
+               ArriveRadius = 9f,
                Batches = new[]
                {
                   new BattleBatchRow
                   {
-                     Note = "首批: 巡弋×4+炮台×1",
+                     Note = "首批(到达触发): 火·巡弋×3 + 冰·炮台×1",
                      KillRatio = 0.8f,
                      Spawns = new[]
                      {
-                        new BattleSpawnRow { EnemyId = "patrol", Count = 4, AngleDeg = 0f, Distance = 4.5f, Y = 1f, Scatter = 1.5f },
-                        new BattleSpawnRow { EnemyId = "gun_turret", Count = 1, AngleDeg = -90f, Distance = 5.5f, Y = 1f, Scatter = 1f },
+                        new BattleSpawnRow { EnemyId = "patrol_fire", Count = 3, AngleDeg = -20f, Distance = 13f, Y = 1f, Scatter = 2f },
+                        new BattleSpawnRow { EnemyId = "gun_turret_ice", Count = 1, AngleDeg = 35f, Distance = 15f, Y = 1f, Scatter = 1f },
                      },
                   },
                   new BattleBatchRow
                   {
-                     Note = "次批(击杀80%): 导弹×1+巡弋×2",
+                     Note = "次批(击杀80%): 电·导弹×2 + 火·巡弋×2",
                      KillRatio = 0.8f,
                      Spawns = new[]
                      {
-                        new BattleSpawnRow { EnemyId = "missile", Count = 1, AngleDeg = 30f, Distance = 6.5f, Y = 1f, Scatter = 1f },
-                        new BattleSpawnRow { EnemyId = "patrol", Count = 2, AngleDeg = 0f, Distance = 7f, Y = 1f, Scatter = 1.5f },
+                        new BattleSpawnRow { EnemyId = "missile_electric", Count = 2, AngleDeg = 20f, Distance = 16f, Y = 1f, Scatter = 1.5f },
+                        new BattleSpawnRow { EnemyId = "patrol_fire", Count = 2, AngleDeg = -40f, Distance = 14f, Y = 1f, Scatter = 1.5f },
                      },
                   },
                },
             },
             new BattleSiteRow
             {
-               Note = "站3：巡弋+重装 → 地雷+导弹（收尾）",
+               Note = "站3（火·重装 → 电·地雷/导弹收尾）",
                Position = new Vector2(8f, 42f),
-               ArriveRadius = 8f,
+               ArriveRadius = 9f,
                Batches = new[]
                {
                   new BattleBatchRow
                   {
-                     Note = "首批: 巡弋×4+重装×1",
+                     Note = "首批(到达触发): 冰·巡弋×3 + 火·重装×1",
                      KillRatio = 0.8f,
                      Spawns = new[]
                      {
-                        new BattleSpawnRow { EnemyId = "patrol", Count = 4, AngleDeg = 0f, Distance = 4.5f, Y = 1f, Scatter = 1.5f },
-                        new BattleSpawnRow { EnemyId = "gun_turret_heavy", Count = 1, AngleDeg = -80f, Distance = 5.5f, Y = 1f, Scatter = 1f },
+                        new BattleSpawnRow { EnemyId = "patrol_ice", Count = 3, AngleDeg = 0f, Distance = 13f, Y = 1f, Scatter = 2f },
+                        new BattleSpawnRow { EnemyId = "gun_turret_heavy_fire", Count = 1, AngleDeg = -80f, Distance = 15f, Y = 1f, Scatter = 1f },
                      },
                   },
                   new BattleBatchRow
                   {
-                     Note = "次批(击杀80%): 地雷×1+导弹×1",
+                     Note = "次批(击杀80%): 电·地雷×2 + 电·导弹×1",
                      KillRatio = 0.8f,
                      Spawns = new[]
                      {
-                        new BattleSpawnRow { EnemyId = "mine", Count = 1, AngleDeg = 20f, Distance = 5.5f, Y = 0.7f, Scatter = 0.5f },
-                        new BattleSpawnRow { EnemyId = "missile", Count = 1, AngleDeg = 10f, Distance = 6f, Y = 1f, Scatter = 0.5f },
+                        new BattleSpawnRow { EnemyId = "mine_electric", Count = 2, AngleDeg = 25f, Distance = 12f, Y = 0.7f, Scatter = 1f },
+                        new BattleSpawnRow { EnemyId = "missile_electric", Count = 1, AngleDeg = -15f, Distance = 14f, Y = 1f, Scatter = 1f },
                      },
                   },
                },
@@ -1026,7 +1385,7 @@ namespace TeaGame.Battle.Editor
 
          AssetDatabase.CreateAsset(stage, T22StageConfigAssetPath);
          AssetDatabase.SaveAssets();
-         Debug.Log($"[T2.2] 已创建默认 3 站关卡表：{T22StageConfigAssetPath}");
+         Debug.Log($"[T2.2] 已创建默认元素演示表（v{BattleStageAsset.CurrentVersion}）：{T22StageConfigAssetPath}（3 站 × 每站 2 批，四元素敌人覆盖，Distance 12~16m）");
          return stage;
       }
 

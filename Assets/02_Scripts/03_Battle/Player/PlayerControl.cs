@@ -33,6 +33,12 @@ namespace TeaGame
       [Header("弹匣调试 UI（T3.3 正式 HUD 实现后移除）")]
       [SerializeField] private UnityEngine.UI.Text weaponAmmoText;
 
+      [Header("元素子弹 prefab（T2.3.1：按当前角色元素打出对应子弹，由编辑器向导统一装配）")]
+      [SerializeField] private GameObject bulletIcePrefab;
+      [SerializeField] private GameObject bulletFirePrefab;
+      [SerializeField] private GameObject bulletWindPrefab;
+      [SerializeField] private GameObject bulletElectricPrefab;
+
       /// <summary>
       /// 灰盒阶段弹匣/换弹调试文本。
       /// 由 BattleViewSystem 驱动显示"子弹 x/y"与"装填中… z%"；T3.3 正式 HUD 实现后移除。
@@ -116,6 +122,9 @@ namespace TeaGame
          Architecture.GetSystem<BattleHealthSystem>().Initialize();
          Architecture.GetSystem<BattleViewSystem>().InitializeView();
          SyncRuntimeBridge();
+
+         // T2.3.1：注册元素子弹（开火按角色元素取弹）
+         BattleElementBulletLibrary.Register(bulletIcePrefab, bulletFirePrefab, bulletWindPrefab, bulletElectricPrefab);
       }
 
       /// <summary>
@@ -163,6 +172,7 @@ namespace TeaGame
       private void OnDestroy()
       {
          BattleRuntimeBridge.Clear(this);
+         BattleElementBulletLibrary.Clear();
          this.UnRegisterAll();
       }
 
@@ -267,13 +277,24 @@ namespace TeaGame
       {
          var state = Architecture.GetModel<BattleStateModel>();
          var lockPoint = state.LockEnemy.IsAlive() ? state.LockEnemy.LockPoint : null;
+
+         // T2.3：当前角色元素（子弹携带元素依据）
+         var activeElement = TeaFramework.DamageElement.none;
+         var battleDatas = state.BattleDatas;
+         if (battleDatas != null && state.SelectedRoleIndex >= 0 && state.SelectedRoleIndex < battleDatas.Length
+             && battleDatas[state.SelectedRoleIndex]?.RoleData != null)
+         {
+            activeElement = battleDatas[state.SelectedRoleIndex].RoleData.damageElement;
+         }
+
          BattleRuntimeBridge.UpdateState(
             this,
             Control_Camera,
             transform,
             lockPoint,
             GetCurrentLockSpeed(state.LockSpeedMultiplier),
-            environmentEffectController);
+            environmentEffectController,
+            activeElement);
       }
 
       /// <summary>

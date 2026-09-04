@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TeaFramework;
 using UnityEngine;
 
 namespace TeaGame
@@ -165,14 +166,14 @@ namespace TeaGame
                }
 
                var spawnOrigin = ResolveSpawnPosition(site.Marker, row);
-               mBatchSpawned += SpawnEnemies(prefab, row.Count, spawnOrigin, row.Scatter);
+               mBatchSpawned += SpawnEnemies(prefab, row.Count, spawnOrigin, row.Scatter, row.Element);
             }
          }
 
          Debug.Log($"[T2.2] 站点 {mSiteIndex + 1} 已刷批次 {batchIndex + 1}/{site.Row.Batches.Length}：敌人 {mBatchSpawned} 个。");
       }
 
-      private int SpawnEnemies(GameObject prefab, int count, Vector3 origin, float scatter)
+      private int SpawnEnemies(GameObject prefab, int count, Vector3 origin, float scatter, DamageElement element)
       {
          var spawned = 0;
          for (var i = 0; i < count; i++)
@@ -191,6 +192,12 @@ namespace TeaGame
             {
                Debug.LogWarning($"[T2.2] 敌人 prefab {prefab.name} 根节点缺少 BattleEnemyEntity，已生成但不参与统计。");
                continue;
+            }
+
+            // T2.3：配置的敌人元素（同时按元素染色）
+            if (element != DamageElement.none)
+            {
+               entity.Element = element;
             }
 
             mBatchEnemies.Add(entity);

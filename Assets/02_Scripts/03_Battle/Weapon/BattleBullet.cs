@@ -17,6 +17,11 @@ namespace TeaGame
       public float Damage = 1f;
 
       /// <summary>
+      /// T2.3 子弹携带的攻击元素（开火时由当前角色元素写入）。
+      /// </summary>
+      public DamageElement Element = DamageElement.none;
+
+      /// <summary>
       /// 命中点特效预制体（T1.4，灰盒闪烁球占位）。
       /// 命中时从对象池取出并在命中处显示，短暂后自动回池。
       /// </summary>
@@ -49,9 +54,10 @@ namespace TeaGame
       /// 武装子弹（对象池新路径调用）。
       /// 写入伤害与超时回收时间；命中时由 OnTriggerEnter 立即回池。
       /// </summary>
-      public void ResetBullet(float damage, float lifeSeconds)
+      public void ResetBullet(float damage, float lifeSeconds, DamageElement element)
       {
          Damage = damage;
+         Element = element;
          mCanHit = true;
          mArmed = true;
          mAutoReturnTime = Time.time + Mathf.Max(0.01f, lifeSeconds);
@@ -83,7 +89,7 @@ namespace TeaGame
          var battleEnemy = other.transform.FindParentComponent<BattleEnemyEntity>();
          if (battleEnemy)
          {
-            battleEnemy.ApplyDamage(Damage);
+            battleEnemy.ApplyElementalDamage(Damage, Element);
             OnHit(other);
             return;
          }

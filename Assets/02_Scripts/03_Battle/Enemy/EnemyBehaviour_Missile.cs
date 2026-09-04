@@ -29,7 +29,7 @@ namespace TeaGame
          if (distance <= enemy.BlastRadius) return;
 
          var direction = toPlayer / Mathf.Max(0.01f, distance);
-         enemy.transform.position += direction * (enemy.MoveSpeed * Time.deltaTime);
+         enemy.transform.position += direction * (enemy.CurrentMoveSpeed * Time.deltaTime);
       }
 
       public void TickAttack(BattleEnemyEntity enemy)

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &3655121814794861824
+--- !u!1 &210222045221345031
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,48 +8,48 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3363748064841884746}
-  - component: {fileID: 8702761556335448419}
-  - component: {fileID: 7441959885079212800}
-  - component: {fileID: 6704646012252763405}
-  - component: {fileID: 6859349117629785915}
+  - component: {fileID: 2539006005222947496}
+  - component: {fileID: 4253061512090220385}
+  - component: {fileID: 2133694876148998606}
+  - component: {fileID: 5420161843466670211}
+  - component: {fileID: 5104490026618385255}
   m_Layer: 0
-  m_Name: Enemy_Missile
+  m_Name: Enemy_GunTurret_Wind
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3363748064841884746
+--- !u!4 &2539006005222947496
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3655121814794861824}
+  m_GameObject: {fileID: 210222045221345031}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.8, y: 1.1, z: 0.8}
+  m_LocalScale: {x: 1.6, y: 1.6, z: 1.6}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &8702761556335448419
+--- !u!33 &4253061512090220385
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3655121814794861824}
-  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
---- !u!136 &7441959885079212800
-CapsuleCollider:
+  m_GameObject: {fileID: 210222045221345031}
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!135 &2133694876148998606
+SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3655121814794861824}
+  m_GameObject: {fileID: 210222045221345031}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -61,18 +61,16 @@ CapsuleCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
+  serializedVersion: 3
   m_Radius: 0.5
-  m_Height: 2
-  m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
---- !u!23 &6704646012252763405
+--- !u!23 &5420161843466670211
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3655121814794861824}
+  m_GameObject: {fileID: 210222045221345031}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -86,7 +84,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 70fd3052249154042a44e35dc616f9c7, type: 2}
+  - {fileID: 2100000, guid: e8bb2f1de31d8fe47a5bda5631dd5f96, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -108,33 +106,33 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &6859349117629785915
+--- !u!114 &5104490026618385255
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3655121814794861824}
+  m_GameObject: {fileID: 210222045221345031}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0ad0e9b33d04ad4eae7c10027ac13bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  element: 0
+  element: 3
   lockPoint: {fileID: 0}
-  uiData: {fileID: 0}
+  uiPrefab: {fileID: 8656652531096268448, guid: 01f69bce0396c984c91c7c9d68ee9095, type: 3}
   uiYOffset: 1
-  baseHealth: 20
-  shotCooldownMin: 1
-  shotCooldownMax: 1
-  enemyBulletPrefab: {fileID: 0}
-  enemyBulletSpeed: 0
-  kind: 2
-  moveSpeed: 9
+  baseHealth: 60
+  shotCooldownMin: 3
+  shotCooldownMax: 4.5
+  enemyBulletPrefab: {fileID: 1441587937702267563, guid: 00ff7e94fab92ce4a96eaf0d02bfd9fd, type: 3}
+  enemyBulletSpeed: 8
+  kind: 1
+  moveSpeed: 0
   wanderRadius: 1
-  barrageCount: 1
-  barrageSpreadDeg: 0
-  blastRadius: 1.8
-  blastDamage: 12
+  barrageCount: 3
+  barrageSpreadDeg: 24
+  blastRadius: 2
+  blastDamage: 14
   blastRangeRing: {fileID: 0}
-  blastRingPrefab: {fileID: 6240256527830900375, guid: 04abdbf8f7c95ba4d9fe01e5a1b6c4ab, type: 3}
+  blastRingPrefab: {fileID: 0}

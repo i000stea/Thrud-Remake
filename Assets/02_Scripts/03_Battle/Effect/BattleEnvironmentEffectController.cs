@@ -32,6 +32,9 @@ namespace TeaGame
       /// </summary>
       private WaitForSeconds mLifeTimeWait;
 
+      /// <summary>飘字基准字号（T2.3 克制放大用，Awake 从 prefab 读取缓存）。</summary>
+      private float mBaseFontSize = 24f;
+
       /// <summary>
       /// 初始化控制器。
       /// </summary>
@@ -40,6 +43,11 @@ namespace TeaGame
          mLifeTimeWait = new WaitForSeconds(damageTextShowTime);
          mShowingTexts.Clear();
          BattleObjectPool.WarmUp(damageTextPrefab, 8);
+
+         if (damageTextPrefab && damageTextPrefab.GetComponentInChildren<TMP_Text>())
+         {
+            mBaseFontSize = damageTextPrefab.GetComponentInChildren<TMP_Text>().fontSize;
+         }
       }
 
       /// <summary>
@@ -60,11 +68,17 @@ namespace TeaGame
       }
 
       /// <summary>
-      /// 创建或复用一个伤害飘字（对象取自 BattleObjectPool，T1.3 统一池）。
+      /// 创建或复用一个伤害飘字（对象取自 BattleObjectPool，T1.3 统一池；默认白字）。
       /// </summary>
-      /// <param name="worldPosition">飘字生成位置。</param>
-      /// <param name="damage">显示的伤害值。</param>
       public void CreateDamageText(Vector3 worldPosition, int damage)
+      {
+         CreateDamageText(worldPosition, damage, Color.white, false);
+      }
+
+      /// <summary>
+      /// 创建伤害飘字（T2.3：支持元素色 / 克制金色放大）。
+      /// </summary>
+      public void CreateDamageText(Vector3 worldPosition, int damage, Color color, bool big)
       {
          if (!damageTextPrefab || !damageTextParent) return;
 
@@ -73,7 +87,7 @@ namespace TeaGame
 
          var childTransform = textObject.transform.GetChild(0);
          SetRandomOffset(childTransform);
-         RefreshTextContent(childTransform, damage);
+         RefreshTextContent(childTransform, damage, color, big);
 
          textObject.transform.localScale = Vector3.one * 0.7f;
          textObject.transform.DOScale(1f, 0.1f);
@@ -106,15 +120,16 @@ namespace TeaGame
       }
 
       /// <summary>
-      /// 刷新飘字文本内容与淡入效果。
+      /// 刷新飘字文本内容、颜色与淡入（克制金/元素色）。
       /// </summary>
-      private static void RefreshTextContent(Transform childTransform, int damage)
+      private void RefreshTextContent(Transform childTransform, int damage, Color color, bool big)
       {
          if (!childTransform.TryGetComponent(out TMP_Text tmpText)) return;
 
          tmpText.text = damage.ToString();
-         tmpText.color = new Color(1f, 1f, 1f, 0f);
-         tmpText.DOColor(Color.white, 0.1f);
+         tmpText.color = new Color(color.r, color.g, color.b, 0f);
+         tmpText.fontSize = big ? mBaseFontSize * 1.4f : mBaseFontSize;
+         tmpText.DOColor(color, 0.1f);
       }
 
       /// <summary>

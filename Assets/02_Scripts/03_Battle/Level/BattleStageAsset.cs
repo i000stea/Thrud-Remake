@@ -1,3 +1,4 @@
+using TeaFramework;
 using UnityEngine;
 
 namespace TeaGame
@@ -12,6 +13,12 @@ namespace TeaGame
    [CreateAssetMenu(fileName = "BattleStageConfig", menuName = "Thrud/Battle/Stage Config")]
    public class BattleStageAsset : ScriptableObject
    {
+      /// <summary>资产结构版本（向导据此重建旧资产，避免字段变更后旧资产缺数据）。</summary>
+      public const int CurrentVersion = 5;
+
+      [Tooltip("资产结构版本（勿手改；版本过低时运行 Create Default Stage Assets 向导会重建）。")]
+      public int Version = CurrentVersion;
+
       [Tooltip("整场限时（秒）；0 = 不限时。")]
       public int TimeLimitSeconds = 180;
 
@@ -51,13 +58,16 @@ namespace TeaGame
       public BattleSpawnRow[] Spawns;
    }
 
-   /// <summary>刷怪条目：敌人类型（字符串 id，下拉重绘）+ 数量 + 相对站点方位角/距离/高度。</summary>
+   /// <summary>刷怪条目：敌人类型（字符串 id，下拉重绘）+ 数量 + 相对站点方位角/距离/高度 + 敌人元素。</summary>
    [System.Serializable]
    public class BattleSpawnRow
    {
       [Tooltip("敌人类型（来自 EnemyCatalog 下拉；底层存字符串）。")]
       [EnemyId]
       public string EnemyId;
+
+      [Tooltip("敌人自身元素（T2.3 克制演示用；none=无元素按类型色）。")]
+      public DamageElement Element = DamageElement.none;
 
       [Tooltip("数量。")]
       public int Count = 1;

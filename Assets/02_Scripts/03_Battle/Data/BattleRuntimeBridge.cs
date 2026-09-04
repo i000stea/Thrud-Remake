@@ -1,3 +1,4 @@
+using TeaFramework;
 using UnityEngine;
 
 namespace TeaGame
@@ -44,6 +45,11 @@ namespace TeaGame
       public static BattleEnvironmentEffectController EnvironmentEffectController { get; private set; }
 
       /// <summary>
+      /// T2.3 当前操控角色的元素（武器/子弹据此携带元素）。
+      /// </summary>
+      public static DamageElement ActiveElement { get; private set; } = DamageElement.none;
+
+      /// <summary>
       /// 刷新桥接层状态。
       /// 该方法会在 `PlayerControl` 的生命周期中持续调用，确保桥接数据与当前战斗同步。
       /// </summary>
@@ -53,7 +59,8 @@ namespace TeaGame
          Transform playerTransform,
          Transform lockEnemyTransform,
          float lockSpeed,
-         BattleEnvironmentEffectController environmentEffectController)
+         BattleEnvironmentEffectController environmentEffectController,
+         DamageElement activeElement)
       {
          sOwner = owner;
          Camera = camera;
@@ -61,6 +68,7 @@ namespace TeaGame
          LockEnemyTransform = lockEnemyTransform;
          LockSpeed = Mathf.Max(0.01f, lockSpeed);
          EnvironmentEffectController = environmentEffectController;
+         ActiveElement = activeElement;
       }
 
       /// <summary>
@@ -77,6 +85,7 @@ namespace TeaGame
          LockEnemyTransform = null;
          LockSpeed = 1f;
          EnvironmentEffectController = null;
+         ActiveElement = DamageElement.none;
       }
    }
 }

@@ -46,7 +46,7 @@ namespace TeaGame
          }
 
          var direction = toTarget.normalized;
-         enemy.transform.position += direction * (enemy.MoveSpeed * Time.deltaTime);
+         enemy.transform.position += direction * (enemy.CurrentMoveSpeed * Time.deltaTime);
       }
 
       public void TickAttack(BattleEnemyEntity enemy)
