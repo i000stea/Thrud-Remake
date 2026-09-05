@@ -1,12 +1,13 @@
 using DG.Tweening;
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
-using UnityEngine.UIElements;
 namespace TeaGame
 {
    public class TeaBaseButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerClickHandler
    {
+      public event Action OnClicked;
       public UnityEvent clickEvent;
 
       [SerializeField] private float clickChangeScale = 1;
@@ -28,7 +29,8 @@ namespace TeaGame
       public void OnPointerClick(PointerEventData eventData)
       {
          Debug.Log("按下" + gameObject.name);
-         clickEvent?.Invoke();         
+         clickEvent?.Invoke();
+         OnClicked?.Invoke();
       }
 
       public void OnPointerDown(PointerEventData eventData)

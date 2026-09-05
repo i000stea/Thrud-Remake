@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Setting
   m_EditorClassIdentifier: 
   Namespace: TeaGame
-  ScriptDir: Assets/Scripts/02_Scripts
+  ScriptDir: Assets/02_Scripts
   PrefabDir: Assets/04_Prefabs

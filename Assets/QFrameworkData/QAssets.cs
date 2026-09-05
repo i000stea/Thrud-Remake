@@ -16,9 +16,29 @@ namespace QAssetBundle
         public const string BundleName = "battlelevelresultpanel_prefab";
         public const string BattleLevelResultPanel = "BattleLevelResultPanel";
     }
+    public class Battlemainhubpanel_prefab
+    {
+        public const string BundleName = "battlemainhubpanel_prefab";
+        public const string BattleMainHubPanel = "BattleMainHubPanel";
+    }
     public class Battlepausemenupanel_prefab
     {
         public const string BundleName = "battlepausemenupanel_prefab";
         public const string BattlePauseMenuPanel = "BattlePauseMenuPanel";
+    }
+    public class Battleteamselectpanel_prefab
+    {
+        public const string BundleName = "battleteamselectpanel_prefab";
+        public const string BattleTeamSelectPanel = "BattleTeamSelectPanel";
+    }
+    public class Loadinggroup_prefab
+    {
+        public const string BundleName = "loadinggroup_prefab";
+        public const string LoadingGroup = "LoadingGroup";
+    }
+    public class Main_menupanel_prefab
+    {
+        public const string BundleName = "main_menupanel_prefab";
+        public const string Main_MenuPanel = "Main_MenuPanel";
     }
 }
