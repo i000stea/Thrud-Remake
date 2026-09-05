@@ -286,24 +286,46 @@ namespace TeaGame
          this.UnRegisterAll();
       }
 
-      /// <summary>解析战斗运行时角色数据（新版仓库优先，旧版仓库过渡兜底）。</summary>
+      /// <summary>
+      /// 解析战斗运行时角色数据（T3.1A 数据管道）。
+      /// 优先级：
+      /// 1. <see cref="BattleTeamSession"/> 有选队 → 实体化本次出战编队（角色 SO + 武器 SO，任意搭配）；
+      /// 2. 编辑模式直连（无会话）→ 默认编队（仓库成对数组）/ 旧版仓库过渡兜底，与改造前行为一致；
+      /// 3. 正式构建且无会话 → 视为流程错误：收集日志后退回主场景（不崩溃、不开空队）。
+      /// </summary>
       public BattleRoleRuntimeData[] ResolveBattleDatas()
       {
-         if (dataRepository)
+         if (BattleTeamSession.HasSelection)
          {
-            return dataRepository.BuildRuntimeDatas();
+            var members = BattleTeamSession.Members;
+            return dataRepository
+               ? dataRepository.BuildFromSession(members)
+               : BattleTeamRuntimeBuilder.Build(members);
          }
 
-         if (legacyDataStore && legacyDataStore.battleDatas != null)
+         if (Application.isEditor)
          {
-            return ConvertLegacyDatas(legacyDataStore.battleDatas);
+            if (dataRepository)
+            {
+               return dataRepository.BuildRuntimeDatas();
+            }
+
+            if (legacyDataStore && legacyDataStore.battleDatas != null)
+            {
+               return ConvertLegacyDatas(legacyDataStore.battleDatas);
+            }
+
+            if (StoreBattleRoleData.I != null && StoreBattleRoleData.I.battleDatas != null)
+            {
+               return ConvertLegacyDatas(StoreBattleRoleData.I.battleDatas);
+            }
+
+            return Array.Empty<BattleRoleRuntimeData>();
          }
 
-         if (StoreBattleRoleData.I != null && StoreBattleRoleData.I.battleDatas != null)
-         {
-            return ConvertLegacyDatas(StoreBattleRoleData.I.battleDatas);
-         }
-
+         Debug.LogError(
+            $"[T3.1A] 正式环境进入战斗但缺少出战编队会话——请从「{BattleTeamSession.TeamSelectSceneName}」进入。已退回主场景。");
+         UnityEngine.SceneManagement.SceneManager.LoadScene(BattleTeamSession.MainSceneName);
          return Array.Empty<BattleRoleRuntimeData>();
       }
 

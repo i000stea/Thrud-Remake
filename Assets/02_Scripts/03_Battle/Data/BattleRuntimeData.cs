@@ -72,6 +72,17 @@ namespace TeaGame
          mCachedRuntimeDatas = runtimeDatas.ToArray();
          return mCachedRuntimeDatas;
       }
+
+      /// <summary>
+      /// 依据"出战编队会话"构建运行时数据（T3.1A）。
+      /// 每名出战成员 = 一个 <see cref="BattleTeamMemberDraft"/>（角色 SO + 武器 SO），
+      /// 实体化逻辑统一走 <see cref="BattleTeamRuntimeBuilder"/>；
+      /// 本方法不清空默认编队缓存（选队路径与默认路径互不影响）。
+      /// </summary>
+      public BattleRoleRuntimeData[] BuildFromSession(IReadOnlyList<BattleTeamMemberDraft> members)
+      {
+         return BattleTeamRuntimeBuilder.Build(members);
+      }
    }
 
    /// <summary>
