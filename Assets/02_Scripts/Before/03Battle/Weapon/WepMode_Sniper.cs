@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace TeaFramework
+namespace TeaGame
 {
    /// <summary> 狙击型武器 </summary>
    public abstract class WepMode_Sniper : WepMode_0Base

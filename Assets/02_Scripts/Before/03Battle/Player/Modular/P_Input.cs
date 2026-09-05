@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace TeaFramework
+namespace TeaGame
 {
    public class P_Input : P_0ModularBase
    {

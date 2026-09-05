@@ -7,7 +7,7 @@ namespace TeaGame.Login
 	{
 		public UnityEngine.UI.Image awakeMask;
 		
-		public TeaFramework.TeaBaseButton startButton;
+		public TeaGame.TeaBaseButton startButton;
 		
 		public UnityEngine.Video.VideoPlayer _videoPlayer;
 		

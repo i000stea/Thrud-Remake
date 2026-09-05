@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace TeaFramework
+namespace TeaGame
 {
    /// <summary>
    /// 战斗角色数据存储类

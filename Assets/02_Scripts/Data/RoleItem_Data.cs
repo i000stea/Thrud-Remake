@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace TeaFramework
+namespace TeaGame
 {
    public class RoleItem_Data : Base_ItemData
    {

@@ -1,5 +1,5 @@
 using UnityEngine;
-namespace TeaFramework
+namespace TeaGame
 {
    public class Bullet_Base : MonoBehaviour
    {

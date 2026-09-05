@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEditor.Compilation;
 using UnityEngine;
 
-namespace TeaFramework
+namespace TeaGame
 {
    [System.Serializable]
    public abstract class WepMode_0Base

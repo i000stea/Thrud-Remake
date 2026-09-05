@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-namespace TeaFramework
+namespace TeaGame
 {
    public class EnemyControl : Singleton<EnemyControl>
    {

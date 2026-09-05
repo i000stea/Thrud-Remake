@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using TeaFramework;
+using TeaGame;
 using UnityEngine;
 
 namespace TeaGame
@@ -426,7 +426,7 @@ namespace TeaGame
          Vector3 position,
          Quaternion rotation,
          float damage,
-         TeaFramework.DamageElement element,
+         TeaGame.DamageElement element,
          float lifeSeconds = 5f)
       {
          if (!bulletPrefab) return null;

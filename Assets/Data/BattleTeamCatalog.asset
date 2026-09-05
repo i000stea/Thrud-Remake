@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbd15f2815ec60a4d80d6492e3f77643, type: 3}
+  m_Name: BattleTeamCatalog
+  m_EditorClassIdentifier: 
+  roles:
+  - {fileID: 11400000, guid: 5b84149f04e74da41add29c24f116a1c, type: 2}
+  - {fileID: 11400000, guid: ad3ae915e4a7138479b9953688484145, type: 2}
+  - {fileID: 11400000, guid: a27a63b8f76f39048996b7f95b2dfa6f, type: 2}
+  - {fileID: 11400000, guid: 9c291e91627ba1846979e40973180dbf, type: 2}
+  weapons:
+  - {fileID: 11400000, guid: 01d1b6448a6ba434888abe289aad260b, type: 2}
+  - {fileID: 11400000, guid: 20058370950d7c14abf91441865a97d5, type: 2}
+  - {fileID: 11400000, guid: feffcc04d72a2e64f98bb19f251b9cfd, type: 2}
+  - {fileID: 11400000, guid: 34c2c9667ebdcdb4187a36f03496daa6, type: 2}

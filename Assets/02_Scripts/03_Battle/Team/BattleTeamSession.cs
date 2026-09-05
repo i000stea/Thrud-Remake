@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using TeaFramework;
+using TeaGame;
 
 namespace TeaGame
 {

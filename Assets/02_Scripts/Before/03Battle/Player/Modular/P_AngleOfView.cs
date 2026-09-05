@@ -1,5 +1,5 @@
 using UnityEngine;
-namespace TeaFramework
+namespace TeaGame
 {
    public class P_AngleOfView : P_0ModularBase
    {

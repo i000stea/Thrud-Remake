@@ -5,7 +5,7 @@ using TeaGame;
 using TMPro;
 using UnityEngine;
 
-namespace TeaFramework
+namespace TeaGame
 {
    /// <summary>
    /// 环境特效控制类，用于管理伤害文本的对象池和显示生命周期

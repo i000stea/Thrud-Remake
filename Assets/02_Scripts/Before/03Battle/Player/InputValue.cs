@@ -1,4 +1,4 @@
-namespace TeaFramework
+namespace TeaGame
 {
    public static class InputValue
    {

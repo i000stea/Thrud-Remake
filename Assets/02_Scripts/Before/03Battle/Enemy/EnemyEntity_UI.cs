@@ -2,7 +2,7 @@ using DG.Tweening;
 using TeaGame;
 using UnityEngine;
 using UnityEngine.UI;
-namespace TeaFramework
+namespace TeaGame
 {
    public class EnemyEntity_UI : MonoBehaviour
    {

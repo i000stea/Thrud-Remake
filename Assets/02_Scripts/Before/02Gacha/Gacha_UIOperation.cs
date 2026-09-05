@@ -5,7 +5,7 @@ using UnityEngine.Serialization;
 using UnityEngine.Playables;
 using TMPro;
 
-namespace TeaFramework
+namespace TeaGame
 {
    /// <summary>
    /// 抽卡系统UI操作静态类

@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Serialization; // 添加命名空间
 
-namespace TeaFramework
+namespace TeaGame
 {
    /// <summary>
    /// 抽卡系统的主控制器

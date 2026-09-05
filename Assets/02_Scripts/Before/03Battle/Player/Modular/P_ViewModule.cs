@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace TeaFramework
+namespace TeaGame
 {
    public class P_ViewModule : P_0ModularBase
    {

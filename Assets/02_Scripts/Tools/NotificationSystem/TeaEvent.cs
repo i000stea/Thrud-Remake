@@ -1,4 +1,4 @@
-namespace TeaFramework
+namespace TeaGame
 {
    // 委托类,自己进行委托封装，可以添加多个参数
    /// <summary> 无参委托 </summary>

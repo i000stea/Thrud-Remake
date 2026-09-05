@@ -1,6 +1,6 @@
 using System;
 
-namespace TeaFramework
+namespace TeaGame
 {
    /// <summary> 伤害元素 </summary>
    public enum DamageElement

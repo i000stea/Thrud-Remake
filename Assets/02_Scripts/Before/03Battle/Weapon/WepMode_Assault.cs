@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace TeaFramework
+namespace TeaGame
 {
    /// <summary> 突击型 </summary>
    public abstract class WepMode_Assault : WepMode_0Base  {  }

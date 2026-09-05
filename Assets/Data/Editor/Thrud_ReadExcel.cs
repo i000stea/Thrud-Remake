@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
-namespace TeaFramework.editor
+namespace TeaGame.editor
 {
    public class Thrud_ReadExcel : Editor
    {

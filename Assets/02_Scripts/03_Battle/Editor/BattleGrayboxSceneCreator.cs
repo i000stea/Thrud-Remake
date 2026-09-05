@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using TeaFramework;
+using TeaGame;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -144,7 +144,7 @@ namespace TeaGame.Battle.Editor
 
             if (player)
             {
-               var legacyPlayer = player.GetComponent<TeaFramework.PlayerControl>();
+               var legacyPlayer = player.GetComponent<TeaGame.PlayerControl>();
                LogVerify(results, "旧版 TeaFramework.PlayerControl 已禁用（灰盒仅用新版系统，避免越界与准星冲突）", legacyPlayer == null || !legacyPlayer.enabled);
             }
 
@@ -259,7 +259,7 @@ namespace TeaGame.Battle.Editor
       }
 
       /// <summary>
-      /// 禁用 prefab 上遗留的旧版 <see cref="TeaFramework.PlayerControl"/> 组件。
+      /// 禁用 prefab 上遗留的旧版 <see cref="TeaGame.PlayerControl"/> 组件。
       /// 灰盒场景只走新版 <see cref="TeaGame.Battle_PlayerControl"/>，原因：
       ///  1. 旧版依赖 StoreBattleRoleData 单例填充 entityBattleDatas，灰盒没有该对象 → IndexOutOfRange 报错；
       ///  2. 旧版 P_Aim 与新版 BattleAimSystem 争抢同一准星（Cross_LockEnemy），导致锁敌表现异常。
@@ -267,7 +267,7 @@ namespace TeaGame.Battle.Editor
       /// </summary>
       private static void DisableLegacyBattle_PlayerControl(Battle_PlayerControl player)
       {
-         var legacyPlayer = player.GetComponent<TeaFramework.PlayerControl>();
+         var legacyPlayer = player.GetComponent<TeaGame.PlayerControl>();
          if (!legacyPlayer)
          {
             Debug.LogWarning("[BattleGrayboxSceneCreator] Battle_PlayerControl.prefab 上未发现旧版 TeaFramework.PlayerControl，跳过禁用。");

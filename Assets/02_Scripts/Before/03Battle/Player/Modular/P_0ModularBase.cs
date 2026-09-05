@@ -1,4 +1,4 @@
-namespace TeaFramework
+namespace TeaGame
 {
    public abstract class P_0ModularBase
    {

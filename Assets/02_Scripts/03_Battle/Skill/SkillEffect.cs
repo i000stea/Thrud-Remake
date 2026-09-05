@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using DG.Tweening;
-using TeaFramework;
+using TeaGame;
 using UnityEngine;
 
 namespace TeaGame

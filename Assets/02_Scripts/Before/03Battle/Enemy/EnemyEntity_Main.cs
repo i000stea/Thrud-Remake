@@ -1,7 +1,6 @@
 using UnityEngine;
-using TeaGame;
 
-namespace TeaFramework
+namespace TeaGame
 {
    public class EnemyEntity_Main : MonoBehaviour
    {

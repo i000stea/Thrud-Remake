@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-namespace TeaFramework
+namespace TeaGame
 {
    public class P_WeaponTrigger : P_0ModularBase
    {

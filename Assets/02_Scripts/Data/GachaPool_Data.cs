@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace TeaFramework
+namespace TeaGame
 {
    public class GachaPool_Data : Base_ItemData
    {

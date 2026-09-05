@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace TeaFramework
+namespace TeaGame
 {
    /// <summary>
    /// 抽卡核心操作类

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace TeaFramework
+namespace TeaGame
 {
    public class P_Aim : P_0ModularBase
    {

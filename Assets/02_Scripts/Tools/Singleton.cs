@@ -1,5 +1,5 @@
 using UnityEngine;
-namespace TeaFramework
+namespace TeaGame
 {
    /// <summary> 泛型单例 </summary>
    /// <typeparam name="T"></typeparam>

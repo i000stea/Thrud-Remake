@@ -4,10 +4,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing.Drawing2D;
-using TeaFramework.editor;
+using TeaGame.editor;
 using UnityEditor;
 using UnityEngine;
-namespace TeaFramework.editor
+namespace TeaGame.editor
 {
    public static class Thrud_ItemData
    {

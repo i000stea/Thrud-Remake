@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-namespace TeaFramework
+namespace TeaGame
 {
    [CreateAssetMenu(fileName = "All Gacha Pool Data", menuName = "thrudData/所有卡池信息列表", order = 1)]
    public class GachaPool_ListData : Base_AllItemData

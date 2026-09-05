@@ -1,4 +1,4 @@
-using TeaFramework;
+using TeaGame;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;

@@ -1,4 +1,4 @@
-namespace TeaFramework
+namespace TeaGame
 {
    /// <summary> 重装型武器 </summary>
    public abstract class WepMode_Heavy : WepMode_0Base

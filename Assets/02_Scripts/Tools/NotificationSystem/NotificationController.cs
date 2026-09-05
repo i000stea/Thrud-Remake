@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace TeaFramework
+namespace TeaGame
 {
    /// <summary>事件控制</summary>
    public static class NotificationController

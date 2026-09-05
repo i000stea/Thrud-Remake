@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-namespace TeaFramework
+namespace TeaGame
 {
 
    [System.Serializable]

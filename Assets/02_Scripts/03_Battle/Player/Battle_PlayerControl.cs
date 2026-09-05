@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using QFramework;
-using TeaFramework;
+using TeaGame;
 using UnityEngine;
 
 namespace TeaGame
@@ -388,7 +388,7 @@ namespace TeaGame
          var lockPoint = state.LockEnemy.IsAlive() ? state.LockEnemy.LockPoint : null;
 
          // T2.3：当前角色元素（子弹携带元素依据）
-         var activeElement = TeaFramework.DamageElement.none;
+         var activeElement = TeaGame.DamageElement.none;
          var battleDatas = state.BattleDatas;
          if (battleDatas != null && state.SelectedRoleIndex >= 0 && state.SelectedRoleIndex < battleDatas.Length
              && battleDatas[state.SelectedRoleIndex]?.RoleData != null)

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace TeaFramework
+namespace TeaGame
 {
    public class LoginControl : MonoBehaviour
    {

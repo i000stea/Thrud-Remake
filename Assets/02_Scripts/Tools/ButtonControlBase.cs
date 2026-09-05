@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.Events;
 using UnityEngine.Experimental.Rendering;
 
-namespace Tea
+namespace TeaGame
 {
    /// <summary>
    /// 自定义的按钮基类(工程需要加载dotween) 目前有拖拽和点击两种事件
