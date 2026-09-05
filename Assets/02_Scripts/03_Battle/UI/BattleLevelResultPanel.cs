@@ -1,5 +1,6 @@
 using QFramework;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace TeaGame
@@ -14,15 +15,17 @@ namespace TeaGame
 
    /// <summary>
    /// T3.1 结算弹窗面板（QFramework UIKit 标准 UIPanel）。
-   /// prefab：Assets/Resources/Panels/LevelResultPanel.prefab（Editor 工具生成，根节点挂本组件）。
+   /// prefab：Assets/Resources/Panels/BattleLevelResultPanel.prefab（CodeGen 绑定，根节点挂本组件）。
    /// BattleUiSystem 在 Victory/Defeat 时经 <see cref="UIKit.OpenPanel{T}"/> 加载到 UIRoot 的
-   /// PopUI 层（添加），点击「再来一次」→ ClosePanel（移除）+ BattleLevelFlow.Restart。
+   /// PopUI 层（添加），点击「再来一次」→ ClosePanel（移除）+ BattleLevelFlow.Restart；
+   /// 「退出」→ 回到主场景 <see cref="BattleTeamSession.MainSceneName"/>（T3.1A）。
    /// 面板根不挂 Canvas，交由 UIRoot 按 UILevel 归位。
    /// </summary>
    public partial class BattleLevelResultPanel : UIPanel
    {
       [SerializeField] private Text titleText;
       [SerializeField] private Button restartButton;
+      [SerializeField] private Button exitButton;
 
       private bool mWired;
 
@@ -53,12 +56,29 @@ namespace TeaGame
          {
             restartButton.onClick.AddListener(RestartLevel);
          }
+
+         if (exitButton)
+         {
+            exitButton.onClick.AddListener(ExitToMainScene);
+         }
       }
 
       private void RestartLevel()
       {
          UIKit.ClosePanel<BattleLevelResultPanel>();
          BattleArchitecture.Interface.GetSystem<BattleLevelFlow>().Restart();
+      }
+
+      /// <summary>退出到主场景（T3.1A）。</summary>
+      private void ExitToMainScene()
+      {
+         if (UIKit.GetPanel<BattleLevelResultPanel>() != null)
+         {
+            UIKit.ClosePanel<BattleLevelResultPanel>();
+         }
+
+         Time.timeScale = 1f;
+         SceneManager.LoadScene(BattleTeamSession.MainSceneName);
       }
    }
 }
