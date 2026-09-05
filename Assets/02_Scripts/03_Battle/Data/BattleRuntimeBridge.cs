@@ -14,7 +14,7 @@ namespace TeaGame
       /// 当前桥接层的拥有者。
       /// 只有拥有者销毁时，桥接层才会真正清空，避免多实例场景下误删状态。
       /// </summary>
-      private static PlayerControl sOwner;
+      private static Battle_PlayerControl sOwner;
 
       /// <summary>
       /// 当前战斗相机。
@@ -51,10 +51,10 @@ namespace TeaGame
 
       /// <summary>
       /// 刷新桥接层状态。
-      /// 该方法会在 `PlayerControl` 的生命周期中持续调用，确保桥接数据与当前战斗同步。
+      /// 该方法会在 `Battle_PlayerControl` 的生命周期中持续调用，确保桥接数据与当前战斗同步。
       /// </summary>
       public static void UpdateState(
-         PlayerControl owner,
+         Battle_PlayerControl owner,
          Camera camera,
          Transform playerTransform,
          Transform lockEnemyTransform,
@@ -75,7 +75,7 @@ namespace TeaGame
       /// 清理桥接层状态。
       /// 只有当前调用者正是桥接层拥有者时才会执行清空，避免误清理其他战斗实例的数据。
       /// </summary>
-      public static void Clear(PlayerControl owner)
+      public static void Clear(Battle_PlayerControl owner)
       {
          if (sOwner != owner) return;
 

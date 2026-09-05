@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace TeaGame
 {
-	public partial class PlayerControl
+	public partial class Battle_PlayerControl
 	{
 		public Transform ControlXAxis;
 		

@@ -18,7 +18,7 @@ namespace TeaGame
 
       /// <summary>
       /// T2.3 子弹携带的攻击元素（开火时由当前角色元素写入）。
-      /// </summary>
+      /// </summary> 
       public DamageElement Element = DamageElement.none;
 
       /// <summary>

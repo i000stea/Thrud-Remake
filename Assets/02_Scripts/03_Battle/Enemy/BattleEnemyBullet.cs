@@ -104,7 +104,7 @@ namespace TeaGame
       {
          if (!mCanHit) return;
 
-         var player = other.transform.FindParentComponent<PlayerControl>();
+         var player = other.transform.FindParentComponent<Battle_PlayerControl>();
          if (!player) return;
 
          mCanHit = false;

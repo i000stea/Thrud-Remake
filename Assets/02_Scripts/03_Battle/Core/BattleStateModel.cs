@@ -13,7 +13,7 @@ namespace TeaGame
       /// <summary>
       /// 当前战斗控制器。
       /// </summary>
-      public PlayerControl Controller;
+      public Battle_PlayerControl Controller;
 
       /// <summary>
       /// 当前战斗角色运行时数据集合。
@@ -46,6 +46,18 @@ namespace TeaGame
       /// T2.4 当前技能能量（0~<see cref="RoleEnergyMax"/>）。
       /// </summary>
       public float RoleEnergy;
+
+      /// <summary>
+      /// T3.1 当前关卡流程状态（Prepare/Wave/Victory/Defeat/Exit）。
+      /// 由 BattleLevelFlow 状态机写入，HUD/表现层只读。
+      /// </summary>
+      public BattleLevelState LevelState = BattleLevelState.Exit;
+
+      /// <summary>
+      /// T3.1 暂停标记（ESC 暂停菜单：Time.timeScale=0，进程不暂停）。
+      /// 暂停期间战斗输入/物理/表现不推进，UI 菜单可点击。
+      /// </summary>
+      public bool Paused;
 
       /// <summary>
       /// 当前是否处于控制接管状态。

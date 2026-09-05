@@ -24,7 +24,7 @@ namespace TeaGame
       /// <summary>
       /// 初始化角色系统。
       /// </summary>
-      public void Initialize(PlayerControl controller)
+      public void Initialize(Battle_PlayerControl controller)
       {
          State.Controller = controller;
          State.ControlTakenOver = controller.ControlTakeOff;
@@ -97,6 +97,12 @@ namespace TeaGame
          var controller = State.Controller;
          if (!controller) return;
 
+         if (State.Paused)
+         {
+            Clear(); // 暂停中不采集战斗输入
+            return;
+         }
+
          var input = State.Input;
          input.MouseX = Input.GetAxis("Mouse X");
          input.MouseY = Input.GetAxis("Mouse Y");
@@ -118,6 +124,26 @@ namespace TeaGame
          {
             Architecture.GetSystem<BattleRoleSystem>().SelectRole(roleIndex);
          }
+      }
+
+      /// <summary>
+      /// 清空输入快照（暂停/恢复过渡调用：防止残留的按下/按住状态在恢复瞬间误触发）。
+      /// </summary>
+      public void Clear()
+      {
+         var input = State.Input;
+         input.MouseX = 0f;
+         input.MouseY = 0f;
+         input.MoveHorizontal = 0f;
+         input.MoveVertical = 0f;
+         input.MoveDepth = 0f;
+         input.HasMoveInput = false;
+         input.SprintHeld = false;
+         input.SprintPressed = false;
+         input.FireHeld = false;
+         input.ReloadPressed = false;
+         input.SkillEPressed = false;
+         input.SkillQPressed = false;
       }
 
       /// <summary>
@@ -201,7 +227,7 @@ namespace TeaGame
       /// <summary>
       /// 判断翻滚冷却是否结束。
       /// </summary>
-      private bool CanRoll(PlayerControl controller)
+      private bool CanRoll(Battle_PlayerControl controller)
       {
          return Time.time > State.Movement.LastRollTime + controller.PlayerConfig.GetRollCooldown();
       }
@@ -209,7 +235,7 @@ namespace TeaGame
       /// <summary>
       /// 执行翻滚。
       /// </summary>
-      private void PerformRoll(PlayerControl controller)
+      private void PerformRoll(Battle_PlayerControl controller)
       {
          var playerRigidbody = controller.SelfRigidbody;
          if (!playerRigidbody) return;
@@ -364,7 +390,7 @@ namespace TeaGame
 
       /// <summary>
       /// 刷新弹匣/换弹调试文本（T3.3 正式 HUD 实现后移除）。
-      /// 文本控件序列化在 PlayerControl.prefab 中（WeaponAmmoUI）；
+      /// 文本控件序列化在 Battle_PlayerControl.prefab 中（WeaponAmmoUI）；
       /// 仅在数值变化时重建字符串，避免每帧字符串拼接产生 GC。
       /// </summary>
       private void RefreshWeaponAmmo()
@@ -416,7 +442,7 @@ namespace TeaGame
       /// <summary>
       /// 刷新移动动画参数。
       /// </summary>
-      private void UpdateMovementAnimator(PlayerControl controller)
+      private void UpdateMovementAnimator(Battle_PlayerControl controller)
       {
          var animator = State.CurrentBattleData?.RoleAnimator;
          if (!animator) return;
@@ -430,7 +456,7 @@ namespace TeaGame
       /// <summary>
       /// 刷新相机视场角。
       /// </summary>
-      private void UpdateCameraFov(PlayerControl controller)
+      private void UpdateCameraFov(Battle_PlayerControl controller)
       {
          var camera = controller.Control_Camera;
          if (!camera) return;
@@ -449,7 +475,7 @@ namespace TeaGame
       /// 模型整体朝向跟随视角（含俯仰，ClampLookRotation 限制最大俯仰避免穿地/倒立）；
       /// 无相机时退回水平 yaw 跟随。
       /// </summary>
-      private void UpdateShowView(PlayerControl controller)
+      private void UpdateShowView(Battle_PlayerControl controller)
       {
          var showViewAxis = controller.ViewRotateAxis;
          if (!showViewAxis) return;
@@ -501,7 +527,7 @@ namespace TeaGame
       /// 刷新用于调试和表现的武器观察目标点（未锁定观察点距离 10，仅表现/调试用，
       /// 不再参与武器朝向与弹道——未锁定弹道方向由 FreeAimRotation=相机旋转承担）。
       /// </summary>
-      private void UpdateLookTarget(PlayerControl controller)
+      private void UpdateLookTarget(Battle_PlayerControl controller)
       {
          if (!controller.WepLookatTarget) return;
 
@@ -534,7 +560,7 @@ namespace TeaGame
       /// 新版组件 RefreshAim(null) 同理）——未锁定弹道方向由 FreeAimRotation（=相机旋转）承担，
       /// 因此子弹仍打向准星/视角正前，而武器模型不指向远处点。
       /// </summary>
-      private void UpdateWeaponAim(PlayerControl controller)
+      private void UpdateWeaponAim(Battle_PlayerControl controller)
       {
          var weaponView = State.CurrentBattleData?.WeaponView;
          if (weaponView == null) return;
@@ -601,12 +627,14 @@ namespace TeaGame
          var controller = State.Controller;
          if (!controller) return;
 
-         if (Input.GetKeyDown(KeyCode.Escape))
+         // T3.1 终局：保持鼠标解锁（结算弹窗点击用），不响应 Escape/左键锁定
+         if (State.LevelState == BattleLevelState.Victory || State.LevelState == BattleLevelState.Defeat)
          {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            return;
          }
-         else if (Input.GetMouseButtonDown(0))
+
+         // ESC 改由 Battle_PlayerControl 统一处理暂停菜单；此处仅保留"点击画面锁定视角"
+         if (Input.GetMouseButtonDown(0))
          {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -766,7 +794,7 @@ namespace TeaGame
       /// <summary>
       /// 收集当前可见且在吸附距离内的候选目标（Tab 切换用，事件驱动非每帧）。
       /// </summary>
-      private System.Collections.Generic.List<IBattleEnemyTarget> CollectLockCandidates(PlayerControl controller)
+      private System.Collections.Generic.List<IBattleEnemyTarget> CollectLockCandidates(Battle_PlayerControl controller)
       {
          var candidates = new System.Collections.Generic.List<IBattleEnemyTarget>(4);
          var camera = controller.Control_Camera;
@@ -788,7 +816,7 @@ namespace TeaGame
       /// <summary>
       /// 判断目标是否仍可作为有效锁定对象（存在、可锁定、在吸附距离内）。
       /// </summary>
-      private bool IsValidLockTarget(IBattleEnemyTarget enemy, PlayerControl controller)
+      private bool IsValidLockTarget(IBattleEnemyTarget enemy, Battle_PlayerControl controller)
       {
          if (!enemy.IsAlive() || !enemy.CanBeLocked || !enemy.LockPoint) return false;
          return ProjectEnemyToCanvas(enemy, controller).magnitude < controller.PlayerConfig.LockAssistDistance;
@@ -797,7 +825,7 @@ namespace TeaGame
       /// <summary>
       /// 把敌人的锁定点投影到 Canvas 本地坐标。
       /// </summary>
-      private Vector2 ProjectEnemyToCanvas(IBattleEnemyTarget enemy, PlayerControl controller)
+      private Vector2 ProjectEnemyToCanvas(IBattleEnemyTarget enemy, Battle_PlayerControl controller)
       {
          var camera = controller.Control_Camera;
          var canvas = controller.MainCanvas;
@@ -847,7 +875,7 @@ namespace TeaGame
       /// 搜索当前最适合作为锁敌对象的敌人。
       /// 算法仍然延续旧版思路：优先综合考虑屏幕距离与世界距离。
       /// </summary>
-      private IBattleEnemyTarget FindLockEnemy(PlayerControl controller, out Vector2 screenTarget)
+      private IBattleEnemyTarget FindLockEnemy(Battle_PlayerControl controller, out Vector2 screenTarget)
       {
          screenTarget = Vector2.zero;
          if (State.ControlTakenOver) return null;

@@ -67,6 +67,19 @@ namespace TeaGame
 		}
 
 		/// <summary>
+		/// 销毁前清理自身 tween（T3.1 修复）：血条展开 DOSizeDelta 的 target 是 EnemyUICanvas 的
+		/// RectTransform——敌人死亡销毁本体时该 RectTransform 随之销毁，若不 Kill，DOTween
+		/// 下一帧访问已销毁目标会触发 SAFE MODE "missing target or field" 报错刷屏。
+		/// </summary>
+		private void OnDestroy()
+		{
+			if (mCanvasRect != null)
+			{
+				DOTween.Kill(mCanvasRect);
+			}
+		}
+
+		/// <summary>
 		/// 每帧：世界空间 UI 面向战斗相机；缓动血条跟随；从宿主拉取元素/状态刷新。
 		/// </summary>
 		private void LateUpdate()

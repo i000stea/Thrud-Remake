@@ -27,6 +27,8 @@ namespace TeaGame
          this.RegisterSystem(new BattleAimSystem());
          this.RegisterSystem(new BattleWeaponSystem());
          this.RegisterSystem(new BattleSkillSystem());
+         this.RegisterSystem(new BattleLevelFlow());
+         this.RegisterSystem(new BattleUiSystem());
       }
    }
 }

@@ -15,7 +15,7 @@ namespace TeaGame.Battle.Editor
    /// 菜单：Thrud/Battle/Setup BattleGraybox Scene
    ///
    /// 生成 Assets/01_Scenes/BattleGraybox.unity：
-   ///   - PlayerControl.prefab 实例（复用现有角色/武器/相机/准星/血条装配）
+   ///   - Battle_PlayerControl.prefab 实例（复用现有角色/武器/相机/准星/血条装配）
    ///   - BattleRoleRepository（新数据仓库，复用 5BattleScene-Test0 已核实的 4 角色 × 4 武器数据）
    ///   - 地面 + 四周空气墙（BoxCollider，灰盒透明墙体）
    ///   - Damage-Texts（BattleEnvironmentEffectController，供 T1.4 飘字复用）
@@ -29,7 +29,7 @@ namespace TeaGame.Battle.Editor
    {
       public const string ScenePath = "Assets/01_Scenes/BattleGraybox.unity";
 
-      private const string PlayerControlPrefabPath = "Assets/04_Prefabs/PlayerControl.prefab";
+      private const string Battle_PlayerControlPrefabPath = "Assets/04_Prefabs/Battle_PlayerControl.prefab";
       private const string DamageTextPrefabPath = "Assets/04_Prefabs/Damage-Text.prefab";
       private const string EnemyBulletPrefabPath = "Assets/04_Prefabs/Enemy/EnemyBullet/EnemyBullet.prefab";
 
@@ -99,7 +99,7 @@ namespace TeaGame.Battle.Editor
          CreateLighting();
          var environment = CreateEnvironment();
          var player = CreatePlayer();
-         DisableLegacyPlayerControl(player);
+         DisableLegacyBattle_PlayerControl(player);
          var repository = CreateRoleRepository();
          var effectController = CreateDamageTexts();
          WirePlayer(player, repository, effectController);
@@ -123,7 +123,7 @@ namespace TeaGame.Battle.Editor
 
       /// <summary>
       /// 结构校验（批量模式）。
-      /// 检查场景文件、PlayerControl/数据仓库/飘字控制器/地面/空气墙/敌人是否齐全，并核对 Build Settings。
+      /// 检查场景文件、Battle_PlayerControl/数据仓库/飘字控制器/地面/空气墙/敌人是否齐全，并核对 Build Settings。
       /// 结果全部通过时进程退出码为 0，否则为 1。
       /// </summary>
       public static void VerifyGrayboxScene()
@@ -139,8 +139,8 @@ namespace TeaGame.Battle.Editor
             LogVerify(results, $"场景文件存在：{ScenePath}", true);
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
 
-            var player = FindComponentInScene<PlayerControl>();
-            LogVerify(results, "场景包含 PlayerControl（PlayerControl.prefab 实例）", player != null);
+            var player = FindComponentInScene<Battle_PlayerControl>();
+            LogVerify(results, "场景包含 Battle_PlayerControl（Battle_PlayerControl.prefab 实例）", player != null);
 
             if (player)
             {
@@ -242,35 +242,35 @@ namespace TeaGame.Battle.Editor
       }
 
       /// <summary>
-      /// 实例化 PlayerControl.prefab（保持 prefab 链接）。
+      /// 实例化 Battle_PlayerControl.prefab（保持 prefab 链接）。
       /// </summary>
-      private static PlayerControl CreatePlayer()
+      private static Battle_PlayerControl CreatePlayer()
       {
-         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerControlPrefabPath);
+         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Battle_PlayerControlPrefabPath);
          if (prefab == null)
          {
-            Debug.LogError($"[BattleGrayboxSceneCreator] 未找到 PlayerControl.prefab：{PlayerControlPrefabPath}");
-            throw new FileNotFoundException(PlayerControlPrefabPath);
+            Debug.LogError($"[BattleGrayboxSceneCreator] 未找到 Battle_PlayerControl.prefab：{Battle_PlayerControlPrefabPath}");
+            throw new FileNotFoundException(Battle_PlayerControlPrefabPath);
          }
 
          var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-         instance.name = "PlayerControl";
-         return instance.GetComponent<PlayerControl>();
+         instance.name = "Battle_PlayerControl";
+         return instance.GetComponent<Battle_PlayerControl>();
       }
 
       /// <summary>
       /// 禁用 prefab 上遗留的旧版 <see cref="TeaFramework.PlayerControl"/> 组件。
-      /// 灰盒场景只走新版 <see cref="TeaGame.PlayerControl"/>，原因：
+      /// 灰盒场景只走新版 <see cref="TeaGame.Battle_PlayerControl"/>，原因：
       ///  1. 旧版依赖 StoreBattleRoleData 单例填充 entityBattleDatas，灰盒没有该对象 → IndexOutOfRange 报错；
       ///  2. 旧版 P_Aim 与新版 BattleAimSystem 争抢同一准星（Cross_LockEnemy），导致锁敌表现异常。
       /// 仅对场景实例禁用（场景级覆盖），不影响 Test0/Test1 的既有行为。
       /// </summary>
-      private static void DisableLegacyPlayerControl(PlayerControl player)
+      private static void DisableLegacyBattle_PlayerControl(Battle_PlayerControl player)
       {
          var legacyPlayer = player.GetComponent<TeaFramework.PlayerControl>();
          if (!legacyPlayer)
          {
-            Debug.LogWarning("[BattleGrayboxSceneCreator] PlayerControl.prefab 上未发现旧版 TeaFramework.PlayerControl，跳过禁用。");
+            Debug.LogWarning("[BattleGrayboxSceneCreator] Battle_PlayerControl.prefab 上未发现旧版 TeaFramework.PlayerControl，跳过禁用。");
             return;
          }
 
@@ -333,9 +333,9 @@ namespace TeaGame.Battle.Editor
       /// 创建 2 个灰盒胶囊敌人（BattleEnemyEntity），注册进锁敌系统作为可锁定目标。
       /// </summary>
       /// <summary>
-      /// 把数据仓库与飘字控制器绑定到 PlayerControl 实例。
+      /// 把数据仓库与飘字控制器绑定到 Battle_PlayerControl 实例。
       /// </summary>
-      private static void WirePlayer(PlayerControl player, BattleRoleRepository repository, BattleEnvironmentEffectController effectController)
+      private static void WirePlayer(Battle_PlayerControl player, BattleRoleRepository repository, BattleEnvironmentEffectController effectController)
       {
          var serialized = new SerializedObject(player);
          serialized.FindProperty("dataRepository").objectReferenceValue = repository;
@@ -780,17 +780,17 @@ namespace TeaGame.Battle.Editor
       /// <summary>
       /// T2.3.1 一键装配玩家元素子弹：
       /// 1) 克隆生成 Bullet_Player_Ice/Fire/Wind/Electric（body 元素色 + 独立元素拖尾材质）；
-      /// 2) 把 4 个引用写入 PlayerControl.prefab（开火按当前角色元素取弹）。
+      /// 2) 把 4 个引用写入 Battle_PlayerControl.prefab（开火按当前角色元素取弹）。
       /// </summary>
       [MenuItem("Thrud/Battle/T2.3 Setup Element Bullets")]
       public static void SetupT23ElementBullets()
       {
          EnsureElementPlayerBulletPrefabs();
-         PatchPlayerControlElementBulletRefs();
+         PatchBattle_PlayerControlElementBulletRefs();
 
          AssetDatabase.SaveAssets();
          AssetDatabase.Refresh();
-         Debug.Log("[T2.3] 玩家元素子弹已就绪：Bullet_Player_Ice/Fire/Wind/Electric.prefab 已装配到 PlayerControl.prefab。Play 后切不同角色（元素）开火可见对应元素子弹。");
+         Debug.Log("[T2.3] 玩家元素子弹已就绪：Bullet_Player_Ice/Fire/Wind/Electric.prefab 已装配到 Battle_PlayerControl.prefab。Play 后切不同角色（元素）开火可见对应元素子弹。");
       }
 
       private static void EnsureElementPlayerBulletPrefabs()
@@ -879,17 +879,17 @@ namespace TeaGame.Battle.Editor
       }
 
       /// <summary>
-      /// 把 4 个元素子弹 prefab 引用写入 PlayerControl.prefab（LoadPrefabContents 保留资产 guid）。
+      /// 把 4 个元素子弹 prefab 引用写入 Battle_PlayerControl.prefab（LoadPrefabContents 保留资产 guid）。
       /// </summary>
-      private static void PatchPlayerControlElementBulletRefs()
+      private static void PatchBattle_PlayerControlElementBulletRefs()
       {
-         var contents = PrefabUtility.LoadPrefabContents(PlayerControlPrefabPath);
+         var contents = PrefabUtility.LoadPrefabContents(Battle_PlayerControlPrefabPath);
          try
          {
-            var player = contents.GetComponent<PlayerControl>();
+            var player = contents.GetComponent<Battle_PlayerControl>();
             if (player == null)
             {
-               Debug.LogError($"[T2.3] PlayerControl.prefab 根缺少 PlayerControl 组件：{PlayerControlPrefabPath}");
+               Debug.LogError($"[T2.3] Battle_PlayerControl.prefab 根缺少 Battle_PlayerControl 组件：{Battle_PlayerControlPrefabPath}");
                return;
             }
 
@@ -903,8 +903,8 @@ namespace TeaGame.Battle.Editor
 
             if (changed)
             {
-               PrefabUtility.SaveAsPrefabAsset(contents, PlayerControlPrefabPath);
-               Debug.Log($"[T2.3] PlayerControl.prefab 已装配元素子弹引用：{PlayerControlPrefabPath}");
+               PrefabUtility.SaveAsPrefabAsset(contents, Battle_PlayerControlPrefabPath);
+               Debug.Log($"[T2.3] Battle_PlayerControl.prefab 已装配元素子弹引用：{Battle_PlayerControlPrefabPath}");
             }
          }
          finally

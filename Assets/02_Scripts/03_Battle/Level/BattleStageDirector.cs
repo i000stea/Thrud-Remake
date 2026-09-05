@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using QFramework;
 using TeaFramework;
 using UnityEngine;
 
@@ -45,6 +46,10 @@ namespace TeaGame
 
       private float mElapsed;
       private bool mFinished;
+
+      /// <summary>本场是否已派发"波次开始"事件（首个站点刷怪时置位一次，T3.1）。</summary>
+      private bool mWaveStarted;
+
       private Material mMarkerMaterial;
 
       private void Start()
@@ -99,6 +104,14 @@ namespace TeaGame
             mSiteArrived = true;
             Debug.Log($"[T2.2] 玩家到达站点 {mSiteIndex + 1}/{mSites.Count}，开始刷怪。");
             SpawnBatch(0);
+
+            // T3.1：首个站点刷怪 = 波次开始（关卡状态机 Prepare → Wave）
+            if (!mWaveStarted)
+            {
+               mWaveStarted = true;
+               BattleArchitecture.Interface.SendEvent(new BattleStageWaveStartedEvent());
+            }
+
             return;
          }
 
@@ -233,6 +246,9 @@ namespace TeaGame
          {
             mFinished = true;
             Debug.Log("[T2.2] 全部站点清剿完成（演示通关）。");
+
+            // T3.1：整场清剿完成 → 关卡状态机 Wave → Victory
+            BattleArchitecture.Interface.SendEvent(new BattleStageClearedEvent());
             return;
          }
 
@@ -246,6 +262,9 @@ namespace TeaGame
       {
          mFinished = true;
          Debug.LogWarning($"[T2.2] 整场限时 {config.TimeLimitSeconds}s 到，判负（占位，正式结算归 T3.4）。");
+
+         // T3.1：限时到 → 关卡状态机 Wave → Defeat
+         BattleArchitecture.Interface.SendEvent(new BattleStageTimedOutEvent());
       }
 
       // ---------------- 运行时可视化（按配置自动生成目标点） ----------------

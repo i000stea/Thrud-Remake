@@ -17,7 +17,7 @@ namespace TeaGame
       public BattleRoleRuntimeData Role;
 
       /// <summary>施放者控制器（场景装配/相机/预制引用入口）。</summary>
-      public PlayerControl Controller;
+      public Battle_PlayerControl Controller;
 
       /// <summary>战斗状态模型（读取当前能量、锁敌、输入等共享状态）。</summary>
       public BattleStateModel State;
