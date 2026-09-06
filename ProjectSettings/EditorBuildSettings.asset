@@ -9,12 +9,6 @@ EditorBuildSettings:
     path: Assets/01_Scenes/0ConfigScene.unity
     guid: ed773ea555e3a8e45b37633f0b786fc6
   - enabled: 1
-    path: Assets/01_Scenes/M1_Menu.unity
-    guid: a9b39639398b6d64fa96de0b3fa496ec
-  - enabled: 1
-    path: Assets/01_Scenes/M1_TeamSelect.unity
-    guid: c697e71cfc2c5fe409ee99d369ed7ae6
-  - enabled: 1
     path: Assets/01_Scenes/1LoginScene.unity
     guid: 950ec15a9c6e21447b8843dd69dce5fa
   - enabled: 1

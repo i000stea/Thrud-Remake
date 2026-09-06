@@ -4,10 +4,12 @@ using UnityEngine;
 namespace TeaGame
 {
    /// <summary>
-   /// 玩家健康系统。
-   /// 负责玩家血量初始化、受击扣血与死亡状态接管。
-   /// 订阅 <see cref="BattlePlayerDamagedEvent"/> 完成扣血，
-   /// 血量归零时派发 <see cref="BattlePlayerDiedEvent"/> 并接管控制权。
+   /// 玩家健康系统（T3.1B 成员级血量版）。
+   /// 职责：
+   /// - 每名出战成员独立血量（<see cref="BattleRoleRuntimeData.CurrentHealth"/>，MaxHp 取自角色 SO）；
+   /// - 受击只扣「当前出战角色」（<see cref="BattleStateModel.SelectedRoleIndex"/>）；
+   /// - 当前角色血量归零 → IsDowned + 派发 <see cref="BattleRoleDownedEvent"/> → 自动切下一存活；
+   /// - 无存活成员才派发 <see cref="BattlePlayerDiedEvent"/>（全灭 → 关卡 Defeat），单成员阵亡不接管控制。
    /// </summary>
    public sealed class BattleHealthSystem : AbstractSystem
    {
@@ -31,55 +33,77 @@ namespace TeaGame
       }
 
       /// <summary>
-      /// 初始化玩家血量。
-      /// 最大生命值取自玩家配置（数据优先），当前生命值重置为满值。
+      /// 初始化成员级血量：全体成员回满并清除阵亡态。
       /// </summary>
       public void Initialize()
       {
-         var controller = State.Controller;
-         var maxHealth = controller ? controller.PlayerConfig.PlayerMaxHealth : 100f;
-         State.PlayerMaxHealth = Mathf.Max(1f, maxHealth);
-         State.PlayerCurrentHealth = State.PlayerMaxHealth;
+         if (State.BattleDatas == null) return;
+
+         for (var i = 0; i < State.BattleDatas.Length; i++)
+         {
+            State.BattleDatas[i]?.ResetHealth();
+         }
       }
 
       /// <summary>
-      /// 治疗玩家（T2.4 技能效果调用）。
-      /// 非受击事件驱动，供 Heal 类公共效果 / 角色技能直接回血，
-      /// 当前生命值不越过最大生命值。
+      /// 治疗当前出战成员（T2.4 技能效果调用；T3.1B 目标=当前成员）。
+      /// 当前生命值不越过该成员最大生命值。
       /// </summary>
       /// <param name="amount">治疗量（内部截断为 ≥0）。</param>
       public void HealPlayer(float amount)
       {
-         State.PlayerCurrentHealth = Mathf.Min(
-            State.PlayerMaxHealth,
-            State.PlayerCurrentHealth + Mathf.Max(0f, amount));
+         var index = State.SelectedRoleIndex;
+         var data = State.CurrentBattleData;
+         if (data == null || data.IsDowned) return;
+
+         data.CurrentHealth = Mathf.Min(
+            data.MaxHealth,
+            data.CurrentHealth + Mathf.Max(0f, amount));
+         Architecture.SendEvent(new BattleRoleHealthChangedEvent { RoleIndex = index });
       }
 
       /// <summary>
-      /// 处理玩家受击。
-      /// 处于控制接管状态时忽略伤害，避免死亡演出期间重复扣血。
+      /// 处理玩家受击（结算到当前出战成员）。
+      /// - 控制接管（终局/全灭演出）或关卡已终局时忽略伤害；
+      /// - 当前成员归零 → 阵亡流程（自动切人 / 全灭 Defeat）。
       /// </summary>
       private void OnPlayerDamaged(BattlePlayerDamagedEvent e)
       {
          if (State.ControlTakenOver) return;
-
-         State.PlayerCurrentHealth -= e.Damage;
-         State.PlayerCurrentHealth = Mathf.Max(0f, State.PlayerCurrentHealth);
-
-         if (State.PlayerCurrentHealth <= 0f)
+         if (State.LevelState == BattleLevelState.Victory
+             || State.LevelState == BattleLevelState.Defeat
+             || State.LevelState == BattleLevelState.Exit)
          {
-            State.ControlTakenOver = true;
-
-            // 让控制器的序列化字段同步为接管状态。
-            // PlayerControl.Update 每帧会用自身字段覆盖 State.ControlTakenOver，
-            // 不同步的话死亡接管会被立即写回 false，导致角色死亡后仍可操作。
-            if (State.Controller)
-            {
-               State.Controller.ControlTakeOff = true;
-            }
-
-            Architecture.SendEvent(new BattlePlayerDiedEvent());
+            return;
          }
+
+         var index = State.SelectedRoleIndex;
+         var data = State.CurrentBattleData;
+         if (data == null || data.IsDowned) return;
+
+         data.CurrentHealth = Mathf.Max(0f, data.CurrentHealth - e.Damage);
+         Architecture.SendEvent(new BattleRoleHealthChangedEvent { RoleIndex = index });
+
+         if (data.CurrentHealth > 0f) return;
+
+         // 当前成员阵亡：置阵亡态 → 广播阵亡事件 → 自动切下一存活
+         data.IsDowned = true;
+         Debug.Log($"[T3.1B] {data.RoleName} 阵亡（槽 {index + 1}）。");
+
+         Architecture.SendEvent(new BattleRoleDownedEvent { RoleIndex = index });
+
+         var switched = Architecture.GetSystem<BattleRoleSystem>().HandleRoleDowned(index);
+         if (switched) return;
+
+         // 无存活成员 → 全灭：接管控制并触发 Defeat（BattleLevelFlow 消费）
+         // 先同步控制器序列化字段，避免 PlayerControl.Update 每帧把接管状态写回 false
+         if (State.Controller)
+         {
+            State.Controller.ControlTakeOff = true;
+         }
+
+         Debug.Log("[T3.1B] 全队阵亡 → 失败判定。");
+         Architecture.SendEvent(new BattlePlayerDiedEvent());
       }
    }
 }

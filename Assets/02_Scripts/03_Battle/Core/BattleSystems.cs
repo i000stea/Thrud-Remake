@@ -55,6 +55,7 @@ namespace TeaGame
 
       /// <summary>
       /// 切换当前角色。
+      /// T3.1B：阵亡槽不可切（数字键/自动切人跳过）。
       /// </summary>
       public void SelectRole(int index)
       {
@@ -62,8 +63,35 @@ namespace TeaGame
          if (index < 0 || index >= State.BattleDatas.Length) return;
          if (State.SelectedRoleIndex == index) return;
 
+         var target = State.BattleDatas[index];
+         if (target == null || target.IsDowned) return;
+
          State.SelectedRoleIndex = index;
          Architecture.SendEvent(new BattleRoleSwitchedEvent { Index = index });
+      }
+
+      /// <summary>
+      /// 处理成员阵亡后的自动切人（T3.1B）：从 <paramref name="fromIndex"/> 起按槽位序向后
+      /// 找到下一个存活成员并切过去；无存活成员返回 false（由健康系统触发全灭判定）。
+      /// </summary>
+      public bool HandleRoleDowned(int fromIndex)
+      {
+         if (State.BattleDatas == null || State.BattleDatas.Length == 0) return false;
+
+         var count = State.BattleDatas.Length;
+         for (var step = 1; step <= count; step++)
+         {
+            var index = (fromIndex + step) % count;
+            var candidate = State.BattleDatas[index];
+            if (candidate == null || candidate.IsDowned) continue;
+
+            State.SelectedRoleIndex = index;
+            Debug.Log($"[T3.1B] 自动切至存活成员：{candidate.RoleName}（槽 {index + 1}）。");
+            Architecture.SendEvent(new BattleRoleSwitchedEvent { Index = index });
+            return true;
+         }
+
+         return false;
       }
 
       /// <summary>
@@ -261,7 +289,8 @@ namespace TeaGame
 
    /// <summary>
    /// 表现系统。
-   /// 负责角色实例装配、角色显隐、动画参数、相机 FOV、展示模型跟随、武器朝向刷新与玩家血条表现。
+   /// 负责角色实例装配、角色显隐、动画参数、相机 FOV、展示模型跟随、武器朝向刷新、
+   /// 玩家（当前出战成员）血条与 T3.1B 队伍血条列表表现。
    /// </summary>
    public sealed class BattleViewSystem : AbstractSystem
    {
@@ -269,14 +298,17 @@ namespace TeaGame
       private BattleStateModel State => Architecture.GetModel<BattleStateModel>();
       private IUnRegister mRoleSwitchUnregister;
       private IUnRegister mRollUnregister;
-      private IUnRegister mPlayerDamagedUnregister;
-      private IUnRegister mPlayerDiedUnregister;
+      private IUnRegister mRoleHealthChangedUnregister;
+      private IUnRegister mRoleDownedUnregister;
 
       /// <summary>
       /// 血条满血时的宽度缓存。
       /// Health_Main 为 Sliced 类型左锚点血条，受击时按比例改宽度（沿用旧版 P_VisualEffect 方案）。
       /// </summary>
       private float mHealthFullWidth;
+
+      /// <summary>T3.1B 队伍血条列表 HUD（无则跳过：灰盒场景未挂 Canvas 时静默）。</summary>
+      private BattleTeamHudView mTeamHud;
 
       /// <summary>弹匣调试文本缓存（变化时才重建字符串，避免每帧 GC）。</summary>
       private int mAmmoLastMagazine = int.MinValue;
@@ -286,10 +318,24 @@ namespace TeaGame
 
       protected override void OnInit()
       {
-         mRoleSwitchUnregister = Architecture.RegisterEvent<BattleRoleSwitchedEvent>(_ => ApplyRoleSwitch());
+         mRoleSwitchUnregister = Architecture.RegisterEvent<BattleRoleSwitchedEvent>(_ =>
+         {
+            ApplyRoleSwitch();
+            RefreshPlayerHealth();
+            RefreshTeamHud();
+         });
          mRollUnregister = Architecture.RegisterEvent<BattleRollTriggeredEvent>(e => PlayRoll(e.RollForce));
-         mPlayerDamagedUnregister = Architecture.RegisterEvent<BattlePlayerDamagedEvent>(_ => RefreshPlayerHealth());
-         mPlayerDiedUnregister = Architecture.RegisterEvent<BattlePlayerDiedEvent>(_ => RefreshPlayerHealth());
+         mRoleHealthChangedUnregister = Architecture.RegisterEvent<BattleRoleHealthChangedEvent>(_ =>
+         {
+            RefreshPlayerHealth();
+            RefreshTeamHud();
+         });
+         mRoleDownedUnregister = Architecture.RegisterEvent<BattleRoleDownedEvent>(_ =>
+         {
+            ApplyRoleSwitch();
+            RefreshPlayerHealth();
+            RefreshTeamHud();
+         });
       }
 
       protected override void OnDeinit()
@@ -298,10 +344,11 @@ namespace TeaGame
          mRoleSwitchUnregister = null;
          mRollUnregister?.UnRegister();
          mRollUnregister = null;
-         mPlayerDamagedUnregister?.UnRegister();
-         mPlayerDamagedUnregister = null;
-         mPlayerDiedUnregister?.UnRegister();
-         mPlayerDiedUnregister = null;
+         mRoleHealthChangedUnregister?.UnRegister();
+         mRoleHealthChangedUnregister = null;
+         mRoleDownedUnregister?.UnRegister();
+         mRoleDownedUnregister = null;
+         DisposeTeamHud();
       }
 
       /// <summary>
@@ -311,6 +358,9 @@ namespace TeaGame
       {
          var controller = State.Controller;
          if (!controller || State.BattleDatas == null) return;
+
+         mHealthFullWidth = 0f; // 新场景血条宽度重新缓存
+         DisposeTeamHud();
 
          var roleParent = controller.Roles;
          var weaponParent = controller.GetWeaponParent();
@@ -333,6 +383,7 @@ namespace TeaGame
 
          ApplyRoleSwitch();
          RefreshPlayerHealth();
+         BuildTeamHud(controller);
 
          var currentAnimator = State.CurrentBattleData?.RoleAnimator;
          if (currentAnimator)
@@ -342,16 +393,18 @@ namespace TeaGame
       }
 
       /// <summary>
-      /// 刷新玩家血条表现（满血宽度 → 按当前血量比例缩放宽度）。
-      /// 由受击/死亡事件驱动，避免每帧刷新产生字符串拼接分配。
+      /// 刷新玩家血条表现（显示当前出战成员血量；T3.1B 成员级）。
+      /// 由血量变化/切换/阵亡事件驱动，避免每帧刷新产生字符串拼接分配。
       /// </summary>
       private void RefreshPlayerHealth()
       {
          var controller = State.Controller;
          if (!controller) return;
 
-         var maxHealth = Mathf.Max(1f, State.PlayerMaxHealth);
-         var ratio = Mathf.Clamp01(State.PlayerCurrentHealth / maxHealth);
+         var data = State.CurrentBattleData;
+         var maxHealth = data != null ? Mathf.Max(1f, data.MaxHealth) : 1f;
+         var current = data != null && !data.IsDowned ? data.CurrentHealth : 0f;
+         var ratio = Mathf.Clamp01(current / maxHealth);
 
          var healthImage = controller.Health_Main;
          if (healthImage)
@@ -368,8 +421,36 @@ namespace TeaGame
 
          if (controller.Health_Value)
          {
-            controller.Health_Value.text = $"{Mathf.RoundToInt(State.PlayerCurrentHealth)}/{Mathf.RoundToInt(maxHealth)}";
+            controller.Health_Value.text = data != null
+               ? $"{Mathf.RoundToInt(current)}/{Mathf.RoundToInt(maxHealth)}"
+               : "--/--";
          }
+      }
+
+      /// <summary>
+      /// 构建队伍血条列表（T3.1B 灰盒 HUD）：运行时生成在战斗 Canvas 左上角。
+      /// </summary>
+      private void BuildTeamHud(Battle_PlayerControl controller)
+      {
+         if (!controller.MainCanvas || State.BattleDatas == null || State.BattleDatas.Length == 0) return;
+
+         mTeamHud = BattleTeamHudView.Create(controller.MainCanvas, State.BattleDatas.Length);
+         mTeamHud?.Refresh(State.BattleDatas);
+      }
+
+      /// <summary>刷新队伍血条列表（事件驱动）。</summary>
+      private void RefreshTeamHud()
+      {
+         if (mTeamHud == null) return;
+         mTeamHud.Refresh(State.BattleDatas);
+      }
+
+      /// <summary>销毁队伍血条列表（场景重建/系统销毁时调用）。</summary>
+      private void DisposeTeamHud()
+      {
+         if (mTeamHud == null) return;
+         mTeamHud.Dispose();
+         mTeamHud = null;
       }
 
       /// <summary>
@@ -571,7 +652,7 @@ namespace TeaGame
       }
 
       /// <summary>
-      /// 根据当前角色索引刷新角色与武器显隐。
+      /// 根据当前角色索引与阵亡态刷新角色/武器显隐（T3.1B：阵亡成员恒隐藏）。
       /// </summary>
       private void ApplyRoleSwitch()
       {
@@ -579,15 +660,17 @@ namespace TeaGame
 
          for (var i = 0; i < State.BattleDatas.Length; i++)
          {
-            var enabled = i == State.SelectedRoleIndex;
-            if (State.BattleDatas[i]?.RoleInstance)
+            var data = State.BattleDatas[i];
+            var enabled = i == State.SelectedRoleIndex && data != null && !data.IsDowned;
+
+            if (data != null && data.RoleInstance)
             {
-               State.BattleDatas[i].RoleInstance.gameObject.SetActive(enabled);
+               data.RoleInstance.gameObject.SetActive(enabled);
             }
 
-            if (State.BattleDatas[i]?.WeaponInstance)
+            if (data != null && data.WeaponInstance)
             {
-               State.BattleDatas[i].WeaponInstance.gameObject.SetActive(enabled);
+               data.WeaponInstance.gameObject.SetActive(enabled);
             }
          }
       }

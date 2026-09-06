@@ -148,6 +148,13 @@ namespace TeaGame.App
             yield break;
          }
 
+         // 原地重载模式：先卸载全部旧玩法场景（仅保留入口常驻），再加载目标，
+         // 避免目标与旧实例同场景并存导致状态/HUD 错乱（重开本关用）。
+         if (request.UnloadFirst)
+         {
+            yield return UnloadPlayScenes(default);
+         }
+
          // 当前阶段按场景名经 Build Settings 加载；热更新接入后按同名 key 走资源系统
          var operation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
          if (operation == null)

@@ -25,7 +25,7 @@ namespace TeaGame
    /// - Prepare：关卡加载完成、首个目标点出现（等待玩家）；
    /// - Wave：玩家抵达首个站点、导演器开始刷怪（含后续站点整场波次）；
    /// - Victory：全部站点清剿（BattleStageClearedEvent）；
-   /// - Defeat：玩家死亡（BattlePlayerDiedEvent）或整场限时（BattleStageTimedOutEvent）；
+   /// - Defeat：全队阵亡（BattlePlayerDiedEvent，T3.1B 语义=无存活成员）或整场限时（BattleStageTimedOutEvent）；
    /// - Exit：离开关卡（灰盒 Restart=经 SceneFlow 加载遮罩重载当前场景；QuitToMainCity 占位日志）。
    ///
    /// 灰盒无 Boss 阶段（T2.1 取消 Boss/精英），Boss 并入 Wave 段；正式 Boss 关属 T3.2。
@@ -159,7 +159,8 @@ namespace TeaGame
       }
 
       /// <summary>
-      /// 重开本关：Exit → 经 SceneFlow 加载遮罩重载当前场景（config 常驻，v1.3）。
+      /// 重开本关：Exit → 先卸载旧战斗场景再重载（UnloadFirst），全程经 config 加载遮罩过渡（v1.3.1）。
+      /// 保证重开后是全新单实例战斗场景：成员血量/阵亡/HUD/敌人/关卡状态全部复位。
       /// </summary>
       public void Restart()
       {
@@ -175,7 +176,7 @@ namespace TeaGame
          Time.timeScale = 1f;
 
          var activeSceneName = SceneManager.GetActiveScene().name;
-         BattleSceneGate.TransitionTo(activeSceneName);
+         BattleSceneGate.ReloadCurrent(activeSceneName);
       }
 
       /// <summary>

@@ -199,8 +199,23 @@ namespace TeaGame
 
       /// <summary>
       /// 角色当前生命值。
-      /// 目前只做运行时缓存，为后续正式接入玩家血量系统做准备。
+      /// T3.1B 起为成员级血量：受击只扣当前出战角色的该值。
       /// </summary>
       public float CurrentHealth { get; set; }
+
+      /// <summary>
+      /// 成员是否已阵亡（T3.1B）。
+      /// 血量归零置 true；阵亡成员不可切换/施放，模型隐藏，本局结束前不恢复。
+      /// </summary>
+      public bool IsDowned { get; set; }
+
+      /// <summary>
+      /// 复位成员血量为满值并清除阵亡态（战斗初始化/重开时调用）。
+      /// </summary>
+      public void ResetHealth()
+      {
+         CurrentHealth = Mathf.Max(1f, MaxHealth);
+         IsDowned = false;
+      }
    }
 }

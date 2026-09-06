@@ -31,6 +31,13 @@ namespace TeaGame.App
       public bool KeepPrevious;
 
       /// <summary>
+      /// 是否先卸载旧玩法场景（仅保留入口常驻场景）再加载目标。
+      /// 默认 false：加载目标后再卸载旧玩法场景（首进场景用，避免黑屏等待）；
+      /// 置 true 用于「重开本关」等原地重载——先清场再加载，杜绝新旧同场景实例并存导致状态错乱。
+      /// </summary>
+      public bool UnloadFirst;
+
+      /// <summary>
       /// 加载完成回调（场景切换协程收尾后触发，成功或失败均调用一次）。
       /// 用于通知调用方切换流程已结束，可在此处执行后续逻辑。
       /// </summary>

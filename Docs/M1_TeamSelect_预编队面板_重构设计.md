@@ -230,4 +230,5 @@ Assets/02_Scripts/UIPanel/                  # 沿用 CodeGenKit UI 目录（Pref
 - **v1.0 2026-09-05：定稿**。A2=方案A、A3=返回 0ConfigScene（含来源机制）、A8=Editor 方式且先移除过时 Editor 方法、简介区弹窗右侧 + 双击 300ms。
 - **v1.1 2026-09-05：架构修正（待实施）**——编队模块迁出 Battle；按 Shell / Controller / View / Model 拆分。
 - **v1.2 2026-09-05：定稿**——`02_PlayerMeta` 局外养成工作台（覆盖持有/养成/编成/展示，M2 补齐 Grow/Profile/Bag）；Formation 子域名沿用；模型表现层采用方案①（轻契约+容器+适配器，灰盒只留缝）；Formation 代码归 `02_PlayerMeta/Formation/`。
+- **v1.3 2026-09-06：验收收口（用户 Play 验收通过）**——主路径=2MainScene 主菜单覆盖层 `Main_FormationPanel`（Shell+View 合并单文件 + CodeGen Designer 绑定），弹窗初始隐藏 + 取消按钮接线（契约增 `PopupCancelClicked`）；「退出」仅 `UIKit.ClosePanel` 不切场景；进出 Battle 经 `BattleSceneGate` → SceneFlow（0ConfigScene 加载遮罩）过渡，出战记录来源场景供返回；对应 07 卡 T3.1A 勾选。本设计 §9/§10 中基于「M1_Menu/M1_TeamSelect 场景链」的旧步骤已被覆盖层主路径取代（M1_TeamSelect 相关场景保留为历史灰盒入口）。
 

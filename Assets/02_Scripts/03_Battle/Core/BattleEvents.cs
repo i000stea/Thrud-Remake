@@ -46,8 +46,7 @@ namespace TeaGame
 
    /// <summary>
    /// 玩家受击事件。
-   /// 旧版逻辑中使用字符串通知广播玩家受击，
-   /// 迁移后统一改为强类型事件，便于后续接入血量系统、音效和受击反馈。
+   /// 敌方伤害经此事件送入健康系统；T3.1B 起由健康系统结算到「当前出战角色」的成员级血量。
    /// </summary>
    public struct BattlePlayerDamagedEvent
    {
@@ -58,9 +57,33 @@ namespace TeaGame
    }
 
    /// <summary>
+   /// 成员血量变化事件（T3.1B）。
+   /// 健康系统扣血/治疗结算后派发，HUD/血条订阅后刷新该成员与当前出战成员表现。
+   /// </summary>
+   public struct BattleRoleHealthChangedEvent
+   {
+      /// <summary>
+      /// 血量发生变化的成员索引（槽位序=切人序）。
+      /// </summary>
+      public int RoleIndex;
+   }
+
+   /// <summary>
+   /// 成员阵亡事件（T3.1B）。
+   /// 某成员血量归零、置 IsDowned 后派发；健康系统随后自动切下一存活成员，无存活才进入全灭判定。
+   /// </summary>
+   public struct BattleRoleDownedEvent
+   {
+      /// <summary>
+      /// 阵亡的成员索引。
+      /// </summary>
+      public int RoleIndex;
+   }
+
+   /// <summary>
    /// 玩家死亡事件。
-   /// 当玩家当前生命值归零时，由健康系统派发该事件，
-   /// 用于触发失败流程（关卡状态机）、死亡演出与埋点记录。
+   /// T3.1B 起语义收敛为「全队成员阵亡」→ 触发失败流程（关卡状态机 Defeat）；
+   /// 整场限时失败不经此事件。单名成员阵亡不派发本事件。
    /// </summary>
    public struct BattlePlayerDiedEvent
    {

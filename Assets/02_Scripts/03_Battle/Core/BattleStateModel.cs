@@ -61,21 +61,9 @@ namespace TeaGame
 
       /// <summary>
       /// 当前是否处于控制接管状态。
-      /// 例如过场动画、暂停、技能演出等都可能接管控制。
+      /// 例如过场动画、暂停、技能演出、全灭终局等都可能接管控制。
       /// </summary>
       public bool ControlTakenOver;
-
-      /// <summary>
-      /// 玩家最大生命值。
-      /// 由健康系统在战斗初始化时从配置读取并写入。
-      /// </summary>
-      public float PlayerMaxHealth = 100f;
-
-      /// <summary>
-      /// 玩家当前生命值。
-      /// 受击时由健康系统扣减，归零后触发死亡流程。
-      /// </summary>
-      public float PlayerCurrentHealth = 100f;
 
       /// <summary>
       /// 相机俯仰角缓存。

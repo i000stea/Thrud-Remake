@@ -110,6 +110,9 @@ namespace TeaGame
       {
          if (!instance) return;
 
+         // 取消待执行的延迟自动回收（弹道线等），避免回池后计时残留
+         CancelAutoReturn(instance);
+
          if (sPrefabOf.TryGetValue(instance, out var prefab)
              && prefab
              && sBuckets.TryGetValue(prefab, out var bucket))
@@ -134,6 +137,31 @@ namespace TeaGame
 
          // 非池化实例：兼容旧路径的直接销毁
          Object.Destroy(instance);
+      }
+
+      /// <summary>
+      /// 清空全部「在场（激活中）」的池化实例（战斗结束/重开前调用）。
+      /// 池根为 DontDestroyOnLoad，场景卸载不会带走激活子弹——
+      /// 不清理会导致重开/离开战斗后旧弹幕滞留在场景中。
+      /// </summary>
+      public static void DespawnAllActive()
+      {
+         if (sPrefabOf.Count == 0) return;
+
+         // 取快照：Despawn 可能改写 sPrefabOf（桶满销毁实例），不能在遍历中修改字典
+         var snapshot = new List<GameObject>(sPrefabOf.Count);
+         foreach (var instance in sPrefabOf.Keys)
+         {
+            if (instance != null && instance.activeSelf)
+            {
+               snapshot.Add(instance);
+            }
+         }
+
+         for (var i = 0; i < snapshot.Count; i++)
+         {
+            Despawn(snapshot[i]);
+         }
       }
 
       /// <summary>
@@ -240,6 +268,18 @@ namespace TeaGame
 
          rigidbody.velocity = Vector3.zero;
          rigidbody.angularVelocity = Vector3.zero;
+      }
+
+      /// <summary>
+      /// 取消实例上待执行的延迟自动回收（BattlePoolAutoReturn），防止回池后计时残留误回收。
+      /// </summary>
+      private static void CancelAutoReturn(GameObject instance)
+      {
+         var marker = instance.GetComponent<BattlePoolAutoReturn>();
+         if (marker)
+         {
+            marker.enabled = false;
+         }
       }
 
       /// <summary>

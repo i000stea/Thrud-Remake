@@ -275,6 +275,9 @@ namespace TeaGame
       /// <summary>控制器销毁时清理桥接层与事件注册。</summary>
       private void OnDestroy()
       {
+         // 池根为 DontDestroyOnLoad：战斗离场/重开前把仍在场的子弹/弹道清回对象池，防弹幕滞留跨场景
+         BattleObjectPool.DespawnAllActive();
+
          BattleRuntimeBridge.Clear(this);
          BattleElementBulletLibrary.Clear();
          mSkillHudSwitchUnregister?.UnRegister();
