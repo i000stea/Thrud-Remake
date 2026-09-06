@@ -14,19 +14,19 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/01_Scenes/2MainScene.unity
     guid: 3c251be4ef1189040bf3ce5b812dbf09
-  - enabled: 1
+  - enabled: 0
     path: Assets/01_Scenes/3GachaScene.unity
     guid: 07f8c673bf7e825458ecb689a0b99844
   - enabled: 1
-    path: Assets/01_Scenes/4BattleScene.unity
-    guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
-    path: Assets/01_Scenes/5BattleScene-Test0.unity
-    guid: 8144cefe4fa83c547b071bf18cd5c362
-  - enabled: 1
-    path: Assets/01_Scenes/5BattleScene-Test1.unity
-    guid: 4c73c0d82a7d070479f143287b47cf7d
-  - enabled: 1
     path: Assets/01_Scenes/BattleGraybox.unity
     guid: 5e21a089dab1b3741a55a04216ccce90
+  - enabled: 0
+    path: Assets/01_Scenes/4BattleScene.unity
+    guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 0
+    path: Assets/01_Scenes/5BattleScene-Test0.unity
+    guid: 8144cefe4fa83c547b071bf18cd5c362
+  - enabled: 0
+    path: Assets/01_Scenes/5BattleScene-Test1.unity
+    guid: 4c73c0d82a7d070479f143287b47cf7d
   m_configObjects: {}

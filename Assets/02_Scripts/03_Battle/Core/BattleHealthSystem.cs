@@ -11,6 +11,8 @@ namespace TeaGame
    /// - 当前角色血量归零 → IsDowned + 派发 <see cref="BattleRoleDownedEvent"/> → 自动切下一存活；
    /// - 无存活成员才派发 <see cref="BattlePlayerDiedEvent"/>（全灭 → 关卡 Defeat），单成员阵亡不接管控制。
    /// </summary>
+   // [调试提醒 2026-09-06] 伤害构成存在待查怀疑（玩家侧受击结算/成员归属/扣血与血条联动），
+   // 改动或调试本区域前请先读 Docs/12_伤害构成_怀疑存档.md 并向用户确认复现与期望值。
    public sealed class BattleHealthSystem : AbstractSystem
    {
       private IArchitecture Architecture => BattleArchitecture.Interface;

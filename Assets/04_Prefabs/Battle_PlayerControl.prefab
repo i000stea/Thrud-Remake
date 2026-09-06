@@ -1961,7 +1961,7 @@ GameObject:
   - component: {fileID: 1419291806047520098}
   - component: {fileID: 6240305357958277411}
   m_Layer: 0
-  m_Name: PlayerControl
+  m_Name: Battle_PlayerControl
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

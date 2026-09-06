@@ -1,3 +1,4 @@
+using System;
 using TeaGame.App;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,7 +17,8 @@ namespace TeaGame
       /// 请求带加载遮罩过渡到目标场景。
       /// </summary>
       /// <param name="sceneName">目标场景名（场景 key，决策 D25）。</param>
-      public static void TransitionTo(string sceneName)
+      /// <param name="onComplete">过渡完成回调（T3.1C Runner 装配用）。</param>
+      public static void TransitionTo(string sceneName, Action onComplete = null)
       {
          if (string.IsNullOrEmpty(sceneName))
          {
@@ -29,10 +31,11 @@ namespace TeaGame
          {
             Debug.LogWarning($"[BattleSceneGate] SceneFlow 不可用（0ConfigScene 未常驻），回退直接加载场景：{sceneName}");
             SceneManager.LoadScene(sceneName);
+            onComplete?.Invoke();
             return;
          }
 
-         flow.RequestLoad(new SceneRequest { SceneName = sceneName, ShowLoading = true });
+         flow.RequestLoad(new SceneRequest { SceneName = sceneName, ShowLoading = true, OnComplete = onComplete });
       }
 
       /// <summary>
@@ -40,7 +43,7 @@ namespace TeaGame
       /// 避免「目标=当前战斗场景」时新旧同场景实例并存导致状态/死亡标记/HUD 错乱。
       /// SceneFlow 不可用时回退旧式直载。
       /// </summary>
-      public static void ReloadCurrent(string sceneName)
+      public static void ReloadCurrent(string sceneName, Action onComplete = null)
       {
          if (string.IsNullOrEmpty(sceneName))
          {
@@ -53,6 +56,7 @@ namespace TeaGame
          {
             Debug.LogWarning($"[BattleSceneGate] SceneFlow 不可用（0ConfigScene 未常驻），回退直接加载场景：{sceneName}");
             SceneManager.LoadScene(sceneName);
+            onComplete?.Invoke();
             return;
          }
 
@@ -61,6 +65,7 @@ namespace TeaGame
             SceneName = sceneName,
             ShowLoading = true,
             UnloadFirst = true,
+            OnComplete = onComplete,
          });
       }
    }

@@ -13,7 +13,7 @@ namespace TeaGame.App
       /// <summary>
       /// 首个玩法场景 key（场景名称，可在 Inspector 调整）。
       /// </summary>
-      [SerializeField] private string firstSceneName = "1LoginScene";  
+      [SerializeField] private string firstSceneName = "1LoginScene";
 
       /// <summary>
       /// 场景切换控制器引用。
@@ -47,7 +47,7 @@ namespace TeaGame.App
             return;
          }
 
-         mSceneFlow.RequestLoad(new SceneRequest { SceneName = firstSceneName });
+         mSceneFlow.RequestLoad(new SceneRequest { SceneName = firstSceneName, ShowLoading = false });
       }
    }
 }

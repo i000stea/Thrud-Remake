@@ -3,8 +3,8 @@ using UnityEngine;
 namespace TeaGame
 {
    /// <summary>
-   /// T2.2 敌人类型目录（字符串 id ↔ 敌人 prefab 映射表）。
-   /// 敌人配置表（BattleStageAsset）中的条目以字符串 id 引用敌人；
+   /// 敌人类型目录（字符串 id ↔ 敌人 prefab 映射表）。
+   /// 波次配置（BattleLevelData.Sites 内嵌刷怪条目）以字符串 id 引用敌人；
    /// 运行时由目录解析出实际 prefab（含 BattleEnemyEntity，T2.1 资产）。
    /// 后续热更新新增敌人类型：只需在本目录追加一条（id + prefab），配置表即可下拉到新类型。
    /// </summary>

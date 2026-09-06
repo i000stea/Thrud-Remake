@@ -9,10 +9,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f5061728394a5b6c7d8e9f0a1b2c3d4, type: 3}
-  m_Name: StageConfig_Demo
+  m_Script: {fileID: 11500000, guid: 6499101d51f601b4b8a6aff787b2ff29, type: 3}
+  m_Name: level_01
   m_EditorClassIdentifier: 
-  Version: 5
+  LevelId: level_01
+  DisplayName: "\u6D4B\u8BD5\u5173 01 \xB7 \u6E05\u527F\uFF08\u5360\u4F4D\uFF09"
+  Intro: "\u4E09\u79CD\u6D4B\u8BD5\u73A9\u6CD5\u4E4B\u4E00\uFF1A\u6E05\u527F\u3002\nT3.1C
+    \u9636\u6BB5\u6CBF\u7528\u73B0\u6CE2\u6B21\u89C4\u5219\uFF0C\u6B63\u5F0F\u6E05\u527F\u6A21\u5F0F\u89C4\u5219\u4E8E
+    T3.2 \u63A5\u5165\u3002"
+  ArtSceneName: BattleGraybox
+  PlayerSpawnPosition: {x: 0, y: 2, z: 0}
+  PlayerSpawnEuler: {x: 0, y: 0, z: 0}
+  Mode: 0
   TimeLimitSeconds: 180
   Sites:
   - Note: "\u7AD91\uFF08\u98CE\xB7\u6DF7\u7F16\uFF09"

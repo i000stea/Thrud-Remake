@@ -1,24 +1,55 @@
-using TeaGame;
 using UnityEngine;
 
 namespace TeaGame
 {
    /// <summary>
-   /// T2.2 区域波次配置资产（数据优先，单一配置源）。
-   /// 结构：整场限时 → 站点[位置+到达半径+批次表] → 批次[击杀比例+刷怪条目]。
-   /// 敌人以"字符串 id"引用（字段标注 <see cref="EnemyIdAttribute"/>，
-   /// Inspector 重绘为 EnemyCatalog 提供的下拉），底层为字符串，便于热更新增敌人。
-   /// 站点位置为水平 (x,z)，刷怪位置按"相对站点方位角+距离+高度"自动换算——改配置只需在本表调整。
+   /// 关卡模式（T3.2 起：清剿/护送/防守 三种测试玩法；本卡先预留枚举与字段）。
+   /// T3.1C 阶段三种模式仍沿用现波次规则，仅作为入口占位区分。
    /// </summary>
-   [CreateAssetMenu(fileName = "BattleStageConfig", menuName = "Thrud/Battle/Stage Config")]
-   public class BattleStageAsset : ScriptableObject
+   public enum BattleLevelMode
    {
-      /// <summary>资产结构版本（向导据此重建旧资产，避免字段变更后旧资产缺数据）。</summary>
-      public const int CurrentVersion = 5;
+      Clear = 0,
+      Escort = 1,
+      Defend = 2,
+   }
 
-      [Tooltip("资产结构版本（勿手改；版本过低时运行 Create Default Stage Assets 向导会重建）。")]
-      public int Version = CurrentVersion;
+   /// <summary>
+   /// 逻辑关卡数据（T3.1C 薄场景化）。
+   /// 场景=纯美术素材（Art Scene），关卡的一切布局与玩法数据都在本 SO 中：
+   /// 玩家出生点、引用美术场景名、**波次/刷怪配置（原 BattleStageAsset 已并入本类）**等。
+   /// 同一美术场景可被多个 BattleLevelData 复用（1:N，D8/D9）。
+   /// 波次结构：整场限时 → 站点[位置+到达半径+批次表] → 批次[击杀比例+刷怪条目]；
+   /// 敌人以"字符串 id"引用（<see cref="EnemyIdAttribute"/> 下拉），站点位置为水平 (x,z)。
+   /// </summary>
+   [CreateAssetMenu(fileName = "BattleLevel", menuName = "Thrud/Battle/Level Data")]
+   public class BattleLevelData : ScriptableObject
+   {
+      [Header("标识")]
+      [Tooltip("关卡 id（跨场景流程/缓存用 key）。")]
+      public string LevelId;
 
+      [Tooltip("展示名（关卡选择页显示）。")]
+      public string DisplayName;
+
+      [TextArea]
+      [Tooltip("关卡介绍（关卡选择页显示）。")]
+      public string Intro;
+
+      [Header("归属（D8：场景=纯美术，多关卡复用）")]
+      [Tooltip("美术场景名（本 SO 在该场景的坐标系内定义布局；须加入 Build Settings）。")]
+      public string ArtSceneName;
+
+      [Tooltip("玩家出生点（ArtScene 世界坐标系，基准=美术场景原点 +Y 上，D9）。")]
+      public Vector3 PlayerSpawnPosition = new Vector3(0f, 2f, 0f);
+
+      [Tooltip("玩家出生朝向（欧拉角，ArtScene 坐标系）。")]
+      public Vector3 PlayerSpawnEuler = Vector3.zero;
+
+      [Header("模式（T3.2 起生效；本卡占位）")]
+      [Tooltip("模式规则类型（T3.2 三种测试玩法接入后驱动不同 LevelDirector 规则）。")]
+      public BattleLevelMode Mode;
+
+      [Header("波次/刷怪（原 BattleStageAsset 已并入，改关卡只编辑本表）")]
       [Tooltip("整场限时（秒）；0 = 不限时。")]
       public int TimeLimitSeconds = 180;
 

@@ -282,6 +282,8 @@ namespace TeaGame
       /// <param name="damage">原始伤害。</param>
       /// <param name="attackElement">攻击元素（none=无元素）。</param>
       /// <returns>实际结算伤害（含克制/易伤）。</returns>
+      // [调试提醒 2026-09-06] 伤害构成存在待查怀疑（克制/易伤/元素状态/新旧子弹兼容），
+      // 改动或调试本区域前请先读 Docs/12_伤害构成_怀疑存档.md 并向用户确认复现与期望值。
       public float ApplyElementalDamage(float damage, DamageElement attackElement)
       {
          var multiplier = BattleElementBalance.GetMultiplier(attackElement, Element);

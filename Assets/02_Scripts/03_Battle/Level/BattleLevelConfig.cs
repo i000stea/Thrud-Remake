@@ -5,8 +5,8 @@ namespace TeaGame
    /// <summary>
    /// T3.1 关卡定义（数据优先，ScriptableObject）。
    /// 灰盒阶段由 BattleLevelFlow 持有"运行时兜底默认值"即可运行（场景零改动）；
-   /// 真实资产（每个灰盒关卡一个）在 T3.2 关卡模式接入时按本类型创建并绑定，
-   /// 波次内容本身复用 T2.2 BattleStageAsset（BattleStageDirector 引用）组织。
+   /// 真实关卡数据（每个逻辑关卡一个）已由 BattleLevelData(SO) 承载（T3.1C 起，
+   /// 含出生点/波次/限时等；本类仅保留流程侧标识字段，T3.2 统一时并入）。
    /// </summary>
    [CreateAssetMenu(menuName = "TeaGame/Battle/Level Config", fileName = "LevelConfig_")]
    public sealed class BattleLevelConfig : ScriptableObject

@@ -6,10 +6,10 @@ using UnityEngine;
 namespace TeaGame
 {
    /// <summary>
-   /// T2.2 区域波次与条件生成器（新配置方案：BattleStageAsset + EnemyCatalog 驱动）。
-   /// BattleStageDirector 只持配置引用；运行时按配置自动生成目标点（光柱+到达圈）与刷怪，
+   /// T2.2 区域波次与条件生成器。
+   /// T3.1C（D14）：由场景引导 battle_runtime 经 <see cref="Setup"/> 注入 BattleLevelData（内嵌波次表）与敌人目录；
+   /// 旧 BattleStageAsset 配置资产已删除（迁移步骤6），本组件不再持有任何序列化关卡配置。
    /// 玩家进入站点半径 → 刷首批 → 在场击杀比例 ≥X% → 刷下一批 → 清场激活下一站 → 整场限时。
-   /// 调整配置 = 编辑 BattleStageAsset 表格（敌人字段为下拉），场景无需改动。
    /// 站点状态机：Inactive → Active → Arrived(刷首批) → Clearing(逐批) → Cleared → 下一站 → AllCleared。
    /// </summary>
    public class BattleStageDirector : MonoBehaviour
@@ -20,9 +20,30 @@ namespace TeaGame
       /// <summary>环 Plane 原始尺寸（10×10）换算常量。</summary>
       private const float RingPlaneSize = 10f;
 
-      [Header("配置资产（改配置只需编辑资产，无需动场景）")]
-      [SerializeField] private BattleStageAsset config;
-      [SerializeField] private EnemyCatalog catalog;
+      [Header("装配注入（BattleSceneRuntimeHost/battle_runtime 于 Awake 注入；本组件不再序列化任何关卡配置资产）")]
+      private BattleLevelData mLevelData;
+
+      /// <summary>敌人目录（经 <see cref="Setup"/> 注入）。</summary>
+      private EnemyCatalog mCatalog;
+
+      /// <summary>
+      /// 装配入口：注入关卡数据（<see cref="BattleLevelData"/> 内嵌波次表）与敌人目录。
+      /// T3.1C（D14）：由场景引导 battle_runtime 调用；旧 BattleStageAsset 数据源已删除。
+      /// </summary>
+      public void Setup(BattleLevelData level, EnemyCatalog enemyCatalog)
+      {
+         mLevelData = level;
+         if (enemyCatalog != null)
+         {
+            mCatalog = enemyCatalog;
+         }
+      }
+
+      /// <summary>生效站点表：仅来自装配注入的关卡数据。</summary>
+      private BattleSiteRow[] SitesRows => mLevelData == null ? null : mLevelData.Sites;
+
+      /// <summary>生效整场限时。</summary>
+      private int TimeLimitSecondsValue => mLevelData == null ? 0 : mLevelData.TimeLimitSeconds;
 
       [Header("表现")]
       [Tooltip("目标点光柱半透明色。")]
@@ -54,16 +75,16 @@ namespace TeaGame
 
       private void Start()
       {
-         if (config == null)
+         if (SitesRows == null || SitesRows.Length == 0)
          {
-            Debug.LogWarning("[T2.2] BattleStageDirector 未配置 BattleStageAsset。");
+            Debug.LogWarning("[T2.2] BattleStageDirector 缺少站点数据（请由 BattleFlowRunner 装配 BattleLevelData，或检查旧配置资产）。");
             return;
          }
 
          BuildSiteMarkers();
          if (mSites.Count == 0)
          {
-            Debug.LogWarning("[T2.2] 配置资产内没有站点。");
+            Debug.LogWarning("[T2.2] 关卡数据内没有站点。");
             return;
          }
 
@@ -81,7 +102,7 @@ namespace TeaGame
          if (mFinished) return;
 
          mElapsed += Time.deltaTime;
-         if (config.TimeLimitSeconds > 0 && mElapsed >= config.TimeLimitSeconds)
+         if (TimeLimitSecondsValue > 0 && mElapsed >= TimeLimitSecondsValue)
          {
             TimeUp();
             return;
@@ -261,7 +282,7 @@ namespace TeaGame
       private void TimeUp()
       {
          mFinished = true;
-         Debug.LogWarning($"[T2.2] 整场限时 {config.TimeLimitSeconds}s 到，判负（占位，正式结算归 T3.4）。");
+         Debug.LogWarning($"[T2.2] 整场限时 {TimeLimitSecondsValue}s 到，判负（占位，正式结算归 T3.4）。");
 
          // T3.1：限时到 → 关卡状态机 Wave → Defeat
          BattleArchitecture.Interface.SendEvent(new BattleStageTimedOutEvent());
@@ -271,7 +292,7 @@ namespace TeaGame
 
       private void BuildSiteMarkers()
       {
-         var rows = config.Sites;
+         var rows = SitesRows;
          if (rows == null) return;
 
          var container = new GameObject("RuntimeStageMarkers");
@@ -337,8 +358,8 @@ namespace TeaGame
       /// <summary>按字符串 id 从目录解析敌人 prefab。</summary>
       private GameObject ResolveEnemyPrefab(string enemyId)
       {
-         if (catalog == null) return null;
-         return catalog.ResolvePrefab(enemyId);
+         if (mCatalog == null) return null;
+         return mCatalog.ResolvePrefab(enemyId);
       }
 
       /// <summary>

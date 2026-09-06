@@ -18,24 +18,20 @@ namespace TeaGame
             null,
             QAssetBundle.Main_menupanel_prefab.BundleName);
 
-         a.btn_Test.clickEvent.AddListener(OpenTestTeam);
+         a.btn_Test.clickEvent.AddListener(OpenLevelSelect);
       }
 
-      private void OpenTestTeam()
+      /// <summary>
+      /// T3.1C 步骤7（D10 入口链路）：测试按钮 → 关卡选择覆盖层 →（进入）→ 角色选择。
+      /// 原实现直接打开角色选择；现按选关-介绍-进入链路先在 Main_FormationPanel 之前插入关卡选择。
+      /// </summary>
+      private void OpenLevelSelect()
       {
-        //  // 经 SceneFlow 加载编队场景：保留旧场景不卸载、不显示 Loading 遮罩，完成后打印日志
-        //  TeaGame.App.SceneFlow.Instance?.RequestLoad(new TeaGame.App.SceneRequest
-        //  {
-        //     SceneName = "M1_TeamSelect",
-        //     ShowLoading = false,
-        //     KeepPrevious = true,
-        //     OnComplete = () => Debug.Log("[OpenTestTeam] 编队场景加载完成")
-        //  });
-         var a = UIKit.OpenPanel<Main_FormationPanel>(
+         // 经 UIKit 打开关卡选择覆盖层（数据由预置体上序列化的关卡目录提供）
+         var a = UIKit.OpenPanel<LevelSelectPanel>(
             UILevel.PopUI,
             null,
-            QAssetBundle.Main_battleteamselectpanel_prefab.BundleName);
-
+            LevelSelectPanel.AssetBundleName);
       }
    }
 }
