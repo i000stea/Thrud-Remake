@@ -68,6 +68,7 @@ namespace TeaGame
          mView.StartClicked += OnStartBattle;
          mView.BackClicked += OnBack;
          mView.ItemClicked += OnItemClicked;
+         mView.PopupCancelClicked += OnPopupCancel;
 
          if (catalog == null)
          {
@@ -94,6 +95,7 @@ namespace TeaGame
          mView.StartClicked -= OnStartBattle;
          mView.BackClicked -= OnBack;
          mView.ItemClicked -= OnItemClicked;
+         mView.PopupCancelClicked -= OnPopupCancel;
 
          ClosePopupInternal();
       }
@@ -372,11 +374,22 @@ namespace TeaGame
 
       private void OnBack()
       {
-         OnRequestExitScene?.Invoke(BattleTeamSession.ReturnSceneName);
+         // v1.3：编队面板是主场景覆盖层——「退出」仅请求关闭面板（无场景切换），由 Shell 执行 UIKit.ClosePanel
+         OnRequestClosePanel?.Invoke();
       }
 
-      /// <summary>请求切换场景（Shell 订阅执行：ClosePanel + LoadScene）。</summary>
+      /// <summary>请求关闭当前面板（Shell 订阅执行：UIKit.ClosePanel，不加载场景）。</summary>
+      public event Action OnRequestClosePanel;
+
+      /// <summary>请求切换场景（Shell 订阅执行：经 SceneFlow 加载遮罩过渡到目标场景）。</summary>
       public event Action<string> OnRequestExitScene;
+
+      /// <summary>弹窗「取消/退出」：放弃本次未应用的选择，仅关闭弹窗并复位弹窗状态机。</summary>
+      private void OnPopupCancel()
+      {
+         if (!mOpen) return;
+         ClosePopupInternal();
+      }
 
       private void ClosePopupInternal()
       {

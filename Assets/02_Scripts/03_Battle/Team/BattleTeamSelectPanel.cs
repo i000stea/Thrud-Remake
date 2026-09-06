@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using QFramework;
 using TeaGame;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace TeaGame
@@ -181,14 +180,15 @@ namespace TeaGame
             UIKit.ClosePanel<BattleTeamSelectPanel>();
          }
 
-         SceneManager.LoadScene(BattleTeamSession.BattleSceneName);
+         // v1.3：进战斗统一经 SceneFlow 加载遮罩过渡（无 SceneFlow 时回退直载）
+         BattleSceneGate.TransitionTo(BattleTeamSession.BattleSceneName);
       }
 
       private void BackToMain()
       {
          // v1.0：旧灰盒返回目标改为来源场景/0ConfigScene（M1_MainHub 已废弃）；清面板表防跨场景残留
          UIKit.CloseAllPanel();
-         SceneManager.LoadScene(BattleTeamSession.ReturnSceneName);
+         BattleSceneGate.TransitionTo(BattleTeamSession.ReturnSceneName);
       }
 
       // ---------------- 刷新 ----------------

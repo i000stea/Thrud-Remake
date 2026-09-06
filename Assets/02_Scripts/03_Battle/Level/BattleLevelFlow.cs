@@ -26,7 +26,7 @@ namespace TeaGame
    /// - Wave：玩家抵达首个站点、导演器开始刷怪（含后续站点整场波次）；
    /// - Victory：全部站点清剿（BattleStageClearedEvent）；
    /// - Defeat：玩家死亡（BattlePlayerDiedEvent）或整场限时（BattleStageTimedOutEvent）；
-   /// - Exit：离开关卡（灰盒 Restart=重载当前场景；QuitToMainCity 占位日志）。
+   /// - Exit：离开关卡（灰盒 Restart=经 SceneFlow 加载遮罩重载当前场景；QuitToMainCity 占位日志）。
    ///
    /// 灰盒无 Boss 阶段（T2.1 取消 Boss/精英），Boss 并入 Wave 段；正式 Boss 关属 T3.2。
    /// 状态步进纪律（state-step）：每个转移都由独立事件触发并打印日志，禁止自动连跳；
@@ -159,7 +159,7 @@ namespace TeaGame
       }
 
       /// <summary>
-      /// 重开本关：Exit → 重载当前场景。
+      /// 重开本关：Exit → 经 SceneFlow 加载遮罩重载当前场景（config 常驻，v1.3）。
       /// </summary>
       public void Restart()
       {
@@ -174,8 +174,8 @@ namespace TeaGame
          State.Paused = false;
          Time.timeScale = 1f;
 
-         var activeScene = SceneManager.GetActiveScene();
-         SceneManager.LoadScene(activeScene.buildIndex);
+         var activeSceneName = SceneManager.GetActiveScene().name;
+         BattleSceneGate.TransitionTo(activeSceneName);
       }
 
       /// <summary>

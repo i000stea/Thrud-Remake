@@ -1,6 +1,5 @@
 using QFramework;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace TeaGame
@@ -63,7 +62,8 @@ namespace TeaGame
          }
 
          BattleTeamSession.Clear(); // 新一次出战：旧编队作废
-         SceneManager.LoadScene(BattleTeamSession.TeamSelectSceneName);
+         // v1.3：场景切换统一经 SceneFlow 加载遮罩过渡（无 SceneFlow 时回退直载）
+         BattleSceneGate.TransitionTo(BattleTeamSession.TeamSelectSceneName);
       }
    }
 }

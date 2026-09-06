@@ -326,7 +326,7 @@ namespace TeaGame
          Debug.LogError(
             $"[T3.1A] 正式环境进入战斗但缺少出战编队会话——请从「{BattleTeamSession.TeamSelectSceneName}」进入。已退回 {BattleTeamSession.ReturnSceneName}。");
          QFramework.UIKit.CloseAllPanel(); // 清面板表防跨场景残留已销毁面板
-         UnityEngine.SceneManagement.SceneManager.LoadScene(BattleTeamSession.ReturnSceneName);
+         BattleSceneGate.TransitionTo(BattleTeamSession.ReturnSceneName);
          return Array.Empty<BattleRoleRuntimeData>();
       }
 

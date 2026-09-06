@@ -17,9 +17,10 @@ namespace TeaGame
    }
 
    /// <summary>
-   /// Main_FormationPanel（Shell + View 合并为单文件，v1.2 MVC 细则调整版）。
+   /// Main_FormationPanel（Shell + View 合并为单文件，v1.3 MVC 细则调整版）。
    /// Shell 部分：UIKit 生命周期与装配——创建 <see cref="Main_FormationController"/>（C），
-   /// 以自身（实现 <see cref="IMainFormationPanelView"/>）注入；把控制器“切换场景”请求落为 CloseAllPanel + LoadScene。
+   /// 以自身（实现 <see cref="IMainFormationPanelView"/>）注入；「退出」请求落为仅 ClosePanel，
+   /// 「开始出战」请求落为记录来源场景 + CloseAllPanel + <see cref="BattleSceneGate"/>（config 加载遮罩过渡）。
    /// View 部分：使用 CodeGen Designer 绑定字段（Title_Text / Formation_Slot_01~04 / 底部按钮 / Toast / 弹窗容器）
    /// 与 <see cref="Formation_Slot"/> 拆分显示（主名+副标签），只渲染 + 把点击上抛事件；不含业务判定、不写数据。
    /// </summary>
@@ -44,6 +45,7 @@ namespace TeaGame
 
          mController = new Main_FormationController(this);
          mController.OnRequestExitScene += HandleRequestExitScene;
+         mController.OnRequestClosePanel += HandleRequestClosePanel;
          mController.Open(resolvedCatalog);
       }
 
@@ -52,6 +54,7 @@ namespace TeaGame
          if (mController != null)
          {
             mController.OnRequestExitScene -= HandleRequestExitScene;
+            mController.OnRequestClosePanel -= HandleRequestClosePanel;
             mController.Close();
             mController = null;
          }
@@ -68,12 +71,29 @@ namespace TeaGame
          return catalog;
       }
 
+      /// <summary>「退出」：仅关闭本面板（覆盖层语义），不加载任何场景。</summary>
+      private void HandleRequestClosePanel()
+      {
+         UIKit.ClosePanel<Main_FormationPanel>();
+      }
+
+      /// <summary>
+      /// 「开始出战」：先记录来源场景（供 Battle 离开后经遮罩回到本场景），
+      /// 再清空 UIKit 面板表并走 SceneFlow（0ConfigScene 的加载遮罩）过渡到目标场景。
+      /// </summary>
       private void HandleRequestExitScene(string sceneName)
       {
+         var activeSceneName = SceneManager.GetActiveScene().name;
+         if (!string.IsNullOrEmpty(activeSceneName) && activeSceneName != BattleTeamSession.ConfigSceneName)
+         {
+            BattleTeamSession.SourceSceneName = activeSceneName;
+         }
+
          // 离开前清空 UIKit 面板表，避免场景级 UIRoot 卸载后 Table 残留已销毁面板
          // （IPanel == null 不触发 Unity 判空 → 下次 OpenPanel 复用已销毁实例抛 MissingReference）
          UIKit.CloseAllPanel();
-         SceneManager.LoadScene(sceneName);
+
+         BattleSceneGate.TransitionTo(sceneName);
       }
 
       // ===================== View：事件（IMainFormationPanelView） =====================
@@ -83,6 +103,7 @@ namespace TeaGame
       public event Action StartClicked;
       public event Action BackClicked;
       public event Action<int> ItemClicked;
+      public event Action PopupCancelClicked;
 
       private bool mViewWired;
       private Coroutine mToastCoroutine;
@@ -128,6 +149,46 @@ namespace TeaGame
          {
             BackButton.onClick.AddListener(() => BackClicked?.Invoke());
          }
+
+         // 弹窗「取消/退出」按钮：点击 = 放弃本次未应用的选择并关闭弹窗
+         var popupCancel = ResolvePopupCancelButton();
+         if (popupCancel)
+         {
+            popupCancel.onClick.AddListener(() => PopupCancelClicked?.Invoke());
+         }
+         else if (PopupWindow)
+         {
+            Debug.LogWarning("[Main_FormationPanel] 未在 PopupWindow 下找到 PopupCancel 按钮，弹窗只能经条目双击应用/清空来关闭。");
+         }
+
+         // 弹窗初始化隐藏（兜底：与 prefab 默认态一致，避免首帧闪现）
+         if (PopupWindow)
+         {
+            PopupWindow.gameObject.SetActive(false);
+         }
+      }
+
+      /// <summary>
+      /// 解析弹窗「取消/退出」按钮。
+      /// 优先方式：日后在 prefab 上给该按钮加 CodeGen Bind（如 PopupCancelButton）并重新生成 Designer 后，
+      /// 可在此改为直接引用绑定字段。
+      /// 当前实现：在 PopupWindow 下按层级名查找名为 PopupCancel 的 Button（其子 Text=「取消」），
+      /// 不依赖重新生成 Designer。
+      /// </summary>
+      private Button ResolvePopupCancelButton()
+      {
+         if (PopupWindow == null) return null;
+
+         var transforms = PopupWindow.GetComponentsInChildren<Transform>(true);
+         for (var i = 0; i < transforms.Length; i++)
+         {
+            if (transforms[i].name != "PopupCancel") continue;
+
+            var button = transforms[i].GetComponent<Button>();
+            if (button != null) return button;
+         }
+
+         return null;
       }
 
       void IMainFormationPanelView.RefreshSlots(IReadOnlyList<MainFormationSlotView> slotViews)

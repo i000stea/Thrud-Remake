@@ -1,6 +1,5 @@
 using QFramework;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace TeaGame
@@ -15,7 +14,7 @@ namespace TeaGame
    /// 由 BattleUiSystem 在暂停/恢复时经 UIKit OpenPanel/ClosePanel 添加/移除（UIRoot PopUI 层）；
    /// 「继续」→ 派发 <see cref="BattlePauseResumeRequestedEvent"/>（timeScale/暂停态由 UiSystem 复位）；
    /// 「重新开始」→ ClosePanel（移除）+ BattleLevelFlow.Restart（内部先复位 timeScale/Paused）；
-   /// 「退出」→ 复位暂停态并回到主场景 <see cref="BattleTeamSession.MainSceneName"/>（T3.1A）。
+   /// 「退出」→ 复位暂停态并经 SceneFlow 加载遮罩回来源场景/0ConfigScene（v1.3，<see cref="BattleSceneGate"/>）。
    /// </summary>
    public partial class BattlePauseMenuPanel : UIPanel
    {
@@ -66,7 +65,7 @@ namespace TeaGame
          BattleArchitecture.Interface.GetSystem<BattleLevelFlow>().Restart();
       }
 
-      /// <summary>退出本关：复位暂停态（timeScale/Paused）后回到来源场景/0ConfigScene（v1.0 A3）。</summary>
+      /// <summary>退出本关：复位暂停态（timeScale/Paused）后经 SceneFlow 加载遮罩回来源场景/0ConfigScene（v1.3）。</summary>
       private void ExitToMainScene()
       {
          // 清空面板表再离场，避免 UIRoot 随场景卸载后 Table 残留已销毁面板
@@ -79,7 +78,7 @@ namespace TeaGame
          }
 
          Time.timeScale = 1f;
-         SceneManager.LoadScene(BattleTeamSession.ReturnSceneName);
+         BattleSceneGate.TransitionTo(BattleTeamSession.ReturnSceneName);
       }
    }
 }

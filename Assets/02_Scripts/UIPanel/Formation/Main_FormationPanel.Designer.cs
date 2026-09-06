@@ -5,7 +5,7 @@ using QFramework;
 
 namespace TeaGame
 {
-	// Generate Id:86eb8d73-d30a-4427-a9dc-e92a583a0fbd
+	// Generate Id:e239d4e1-9abf-416c-94ae-318373b23b66
 	public partial class Main_FormationPanel
 	{
 		public const string Name = "Main_FormationPanel";

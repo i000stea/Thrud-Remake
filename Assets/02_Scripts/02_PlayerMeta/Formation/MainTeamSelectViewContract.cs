@@ -29,7 +29,7 @@ namespace TeaGame
    /// 预编队 View 契约（v1.2 MVC：Shell→Controller→IMainFormationPanelView）。
    /// View 只做：按 Designer/Formation_Slot 渲染、弹窗显隐、列表/详情/提示展示；把点击以「事件」上抛给 Controller。
    /// 事件签名只用基础类型，避免 View 反向依赖数据/业务对象。
-   /// 注：新版 prefab 未绑定遮罩/取消按钮，故不提供 Cancel 交互。
+   /// 弹窗关闭：popup 底部「取消」按钮（prefab 层级名 PopupCancel）点击 = 放弃本次未应用的选择。
    /// </summary>
    public interface IMainFormationPanelView
    {
@@ -42,6 +42,9 @@ namespace TeaGame
 
       /// <summary>点击弹窗列表第 index 项。</summary>
       event Action<int> ItemClicked;
+
+      /// <summary>点击弹窗「取消/退出」按钮：关闭弹窗、放弃未应用的选择。</summary>
+      event Action PopupCancelClicked;
 
       /// <summary>绑定静态按钮/槽区域 → 事件（幂等，Shell 在 OnInit 调用一次）。</summary>
       void WireView();
