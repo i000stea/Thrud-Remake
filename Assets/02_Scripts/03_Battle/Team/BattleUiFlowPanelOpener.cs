@@ -18,7 +18,8 @@ namespace TeaGame
          if (prefab != null) return true;
 
          Debug.LogWarning($"[T3.1A] 未找到流程面板 prefab（bundle={bundleName}, asset={assetName}）。" +
-                          "请运行 TeaGame → Battle → Team Flow → Setup All，并确认已重新打 AB（含新 prefab）。");
+                          "请确认新版预编队面板（04_Prefabs/Panel/Main_BattleTeamSelectPanel）已用对应 Editor 工具生成并重新打 AB；" +
+                          "旧的 TeaGame → Battle → Team Flow → Setup All 已随 v1.0 重构移除。");
          return false;
       }
    }
