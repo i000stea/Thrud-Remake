@@ -72,10 +72,8 @@ namespace TeaGame
       /// <summary>退出到来源场景/0ConfigScene（v1.0 A3）。</summary>
       private void ExitToMainScene()
       {
-         if (UIKit.GetPanel<BattleLevelResultPanel>() != null)
-         {
-            UIKit.ClosePanel<BattleLevelResultPanel>();
-         }
+         // 清空面板表再离场，避免 UIRoot 随场景卸载后 Table 残留已销毁面板
+         UIKit.CloseAllPanel();
 
          Time.timeScale = 1f;
          SceneManager.LoadScene(BattleTeamSession.ReturnSceneName);

@@ -53,11 +53,9 @@ namespace TeaGame
 
       private void HandleRequestExitScene(string sceneName)
       {
-         if (UIKit.GetPanel<Main_BattleTeamSelectPanel>() != null)
-         {
-            UIKit.ClosePanel<Main_BattleTeamSelectPanel>();
-         }
-
+         // 离开前清空 UIKit 面板表，避免场景级 UIRoot 卸载后 Table 残留已销毁面板
+         // （IPanel == null 不触发 Unity 判空 → 下次 OpenPanel 复用已销毁实例抛 MissingReference）
+         UIKit.CloseAllPanel();
          SceneManager.LoadScene(sceneName);
       }
    }

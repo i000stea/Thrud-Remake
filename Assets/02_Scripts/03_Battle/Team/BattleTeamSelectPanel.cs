@@ -186,12 +186,8 @@ namespace TeaGame
 
       private void BackToMain()
       {
-         if (UIKit.GetPanel<BattleTeamSelectPanel>() != null)
-         {
-            UIKit.ClosePanel<BattleTeamSelectPanel>();
-         }
-
-         // v1.0：旧灰盒返回目标改为来源场景/0ConfigScene（M1_MainHub 已废弃）
+         // v1.0：旧灰盒返回目标改为来源场景/0ConfigScene（M1_MainHub 已废弃）；清面板表防跨场景残留
+         UIKit.CloseAllPanel();
          SceneManager.LoadScene(BattleTeamSession.ReturnSceneName);
       }
 

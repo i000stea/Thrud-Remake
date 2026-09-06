@@ -69,10 +69,8 @@ namespace TeaGame
       /// <summary>退出本关：复位暂停态（timeScale/Paused）后回到来源场景/0ConfigScene（v1.0 A3）。</summary>
       private void ExitToMainScene()
       {
-         if (UIKit.GetPanel<BattlePauseMenuPanel>() != null)
-         {
-            UIKit.ClosePanel<BattlePauseMenuPanel>();
-         }
+         // 清空面板表再离场，避免 UIRoot 随场景卸载后 Table 残留已销毁面板
+         UIKit.CloseAllPanel();
 
          var state = BattleArchitecture.Interface.GetModel<BattleStateModel>();
          if (state.Paused)
