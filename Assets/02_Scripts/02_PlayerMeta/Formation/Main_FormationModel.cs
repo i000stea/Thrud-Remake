@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,7 +9,7 @@ namespace TeaGame
    /// 职责：4 槽草稿（含唯一性规则）、可用列表查询、变更入口、变更事件。
    /// 持久化不在 Model 内：面板每次变更后调用 <see cref="IBattlePlayerDataService.SaveFormation"/>。
    /// </summary>
-   public sealed class Main_BattleTeamSelectModel
+   public sealed class Main_FormationModel
    {
       private readonly Main_TeamSlotDraft[] mSlots;
 
@@ -23,7 +23,7 @@ namespace TeaGame
       public IReadOnlyList<RoleItem_Data> Roles { get; }
       public IReadOnlyList<WeaponItem_Data> Weapons { get; }
 
-      public Main_BattleTeamSelectModel(IBattlePlayerDataService service)
+      public Main_FormationModel(IBattlePlayerDataService service)
       {
          Roles = service.Roles;
          Weapons = service.Weapons;

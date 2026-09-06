@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -7,18 +7,18 @@ namespace TeaGame
 {
    /// <summary>
    /// 预编队 Controller（v1.2 MVC 细则：C 层）。
-   /// 纯 C#：持有交互状态机、唯一性应用、校验与数据写回；只经 <see cref="IMainTeamSelectView"/> 触达 UI，
+   /// 纯 C#：持有交互状态机、唯一性应用、校验与数据写回；只经 <see cref="IMainFormationPanelView"/> 触达 UI，
    /// 不直接引用任何 serialized 字段。
-   /// 数据读写走 <see cref="Main_BattleTeamSelectModel"/>（M）+ <see cref="IBattlePlayerDataService"/>（M·Data，
+   /// 数据读写走 <see cref="Main_FormationModel"/>（M）+ <see cref="IBattlePlayerDataService"/>（M·Data，
    /// M2 换账号实现接入 Profile/Grow/Bag）。
    /// 战斗只消费 <see cref="BattleTeamSession"/> 快照（写入口在本类 StartBattle）。
    /// </summary>
-   public sealed class Main_BattleTeamSelectController
+   public sealed class Main_FormationController
    {
       private const float DoubleClickWindow = 0.3f;
 
-      private readonly IMainTeamSelectView mView;
-      private Main_BattleTeamSelectModel mModel;
+      private readonly IMainFormationPanelView mView;
+      private Main_FormationModel mModel;
       private IBattlePlayerDataService mService;
       private bool mOpen;
 
@@ -46,7 +46,7 @@ namespace TeaGame
       private int mLastClickEntry = -1;
       private float mLastClickTime = -1000f;
 
-      public Main_BattleTeamSelectController(IMainTeamSelectView view)
+      public Main_FormationController(IMainFormationPanelView view)
       {
          mView = view ?? throw new ArgumentNullException(nameof(view));
       }
@@ -60,7 +60,7 @@ namespace TeaGame
          mOpen = true;
 
          mService = BattlePlayerDataServiceLocator.Ensure(catalog);
-         mModel = new Main_BattleTeamSelectModel(mService);
+         mModel = new Main_FormationModel(mService);
          mModel.FormationChanged += OnFormationChanged;
 
          mView.SlotClicked += OnSlotClicked;
@@ -68,7 +68,6 @@ namespace TeaGame
          mView.StartClicked += OnStartBattle;
          mView.BackClicked += OnBack;
          mView.ItemClicked += OnItemClicked;
-         mView.CancelClicked += OnCancel;
 
          if (catalog == null)
          {
@@ -95,7 +94,6 @@ namespace TeaGame
          mView.StartClicked -= OnStartBattle;
          mView.BackClicked -= OnBack;
          mView.ItemClicked -= OnItemClicked;
-         mView.CancelClicked -= OnCancel;
 
          ClosePopupInternal();
       }
@@ -109,16 +107,27 @@ namespace TeaGame
 
       private void RefreshSlots()
       {
-         var roleLabels = new string[BattleTeamSession.MaxTeamSize];
-         var weaponLabels = new string[BattleTeamSession.MaxTeamSize];
+         var views = new List<MainFormationSlotView>(BattleTeamSession.MaxTeamSize);
          for (var i = 0; i < BattleTeamSession.MaxTeamSize; i++)
          {
             var slot = mModel?.GetSlot(i);
-            roleLabels[i] = slot != null && slot.IsRoleFilled ? FormatRole(slot.Role) : "空";
-            weaponLabels[i] = slot != null && slot.IsWeaponFilled ? FormatWeapon(slot.Weapon) : "空";
+            var view = new MainFormationSlotView { Label = $"槽 {i + 1}" };
+            if (slot != null && slot.IsRoleFilled)
+            {
+               view.RoleName = slot.Role.itemName;
+               view.RoleTag = ToRoleTag(slot.Role.damageElement);
+            }
+
+            if (slot != null && slot.IsWeaponFilled)
+            {
+               view.WeaponName = slot.Weapon.itemName;
+               view.WeaponTag = ToWeaponTag(slot.Weapon.weaponType);
+            }
+
+            views.Add(view);
          }
 
-         mView.RefreshSlots(roleLabels, weaponLabels);
+         mView.RefreshSlots(views);
       }
 
       // ---------------- 槽点击 → 弹窗 ----------------
@@ -368,11 +377,6 @@ namespace TeaGame
 
       /// <summary>请求切换场景（Shell 订阅执行：ClosePanel + LoadScene）。</summary>
       public event Action<string> OnRequestExitScene;
-
-      private void OnCancel()
-      {
-         ClosePopupInternal();
-      }
 
       private void ClosePopupInternal()
       {
