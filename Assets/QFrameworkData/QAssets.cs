@@ -29,12 +29,18 @@ namespace QAssetBundle
     public class Battleteamselectpanel_prefab
     {
         public const string BundleName = "battleteamselectpanel_prefab";
+        public const string Main_BattleTeamSelect = "Main_BattleTeamSelect";
         public const string BattleTeamSelectPanel = "BattleTeamSelectPanel";
     }
     public class Loadinggroup_prefab
     {
         public const string BundleName = "loadinggroup_prefab";
         public const string LoadingGroup = "LoadingGroup";
+    }
+    public class Main_battleteamselectpanel_prefab
+    {
+        public const string BundleName = "main_battleteamselectpanel_prefab";
+        public const string Main_BattleTeamSelectPanel = "Main_BattleTeamSelectPanel";
     }
     public class Main_menupanel_prefab
     {

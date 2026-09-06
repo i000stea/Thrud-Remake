@@ -19,14 +19,29 @@ MonoBehaviour:
     From: 0
     NameToFullName: []
     BindInfos:
-    - TypeName: Transform
-      PathToRoot: Role
-      MemberName: Role
-    - TypeName: Transform
-      PathToRoot: Env
-      MemberName: Env
-    ScriptsFolder: Assets/02_Scripts/01_Menu
-    ClassName: Main_Root
+    - TypeName: UnityEngine.UI.Text
+      PathToRoot: SlotLabel/SlotLabel_Text
+      MemberName: SlotLabel_Text
+    - TypeName: UnityEngine.UI.Button
+      PathToRoot: RoleArea
+      MemberName: RoleArea
+    - TypeName: UnityEngine.UI.Text
+      PathToRoot: RoleArea/Role_Text
+      MemberName: Role_Text
+    - TypeName: UnityEngine.UI.Text
+      PathToRoot: RoleArea/Role_Text2
+      MemberName: Role_Text2
+    - TypeName: UnityEngine.UI.Button
+      PathToRoot: WeaponArea
+      MemberName: WeaponArea
+    - TypeName: UnityEngine.UI.Text
+      PathToRoot: WeaponArea/Wep_Text
+      MemberName: Wep_Text
+    - TypeName: UnityEngine.UI.Text
+      PathToRoot: WeaponArea/Wep_Text2
+      MemberName: Wep_Text2
+    ScriptsFolder: Assets/02_Scripts
+    ClassName: Formation_Slot
     Namespace: TeaGame
     MainCode: 
     DesignerCode: 

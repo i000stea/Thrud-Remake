@@ -100,7 +100,17 @@ namespace TeaGame.App
             return;
          }
 
-         StartCoroutine(LoadRoutine(request));
+         // 经包装协程执行切换，收尾后统一触发完成回调（保证恰好一次）
+         StartCoroutine(RunLoadWithCallback(request));
+      }
+
+      /// <summary>
+      /// 切换协程包装：执行 <see cref="LoadRoutine"/> 后触发请求的 <see cref="SceneRequest.OnComplete"/> 回调。
+      /// </summary>
+      private IEnumerator RunLoadWithCallback(SceneRequest request)
+      {
+         yield return LoadRoutine(request);
+         request.OnComplete?.Invoke();
       }
 
       /// <summary>

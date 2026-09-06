@@ -1,3 +1,5 @@
+using System;
+
 namespace TeaGame.App
 {
    /// <summary>
@@ -27,5 +29,11 @@ namespace TeaGame.App
       /// 置 true 时按需保留（如主城常驻等场景），由调用方显式声明。
       /// </summary>
       public bool KeepPrevious;
+
+      /// <summary>
+      /// 加载完成回调（场景切换协程收尾后触发，成功或失败均调用一次）。
+      /// 用于通知调用方切换流程已结束，可在此处执行后续逻辑。
+      /// </summary>
+      public Action OnComplete;
    }
 }
