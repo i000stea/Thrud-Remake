@@ -167,29 +167,33 @@ Assets/02_Scripts/UIPanel/
 
 - [ ] 结算/暂停「退出」回 0ConfigScene（或 SourceScene）；直连 BattleGraybox 默认编队兜底回归。
 
-## 11. 架构修正与 MVC 细则拆分（v1.1 · 待确认后实施）
+## 11. 架构修正与 MVC 细则拆分（v1.2 · 已确认）
 
 ### 11.1 层归属修正（用户反馈）
 
 问题：上一版把编队数据/逻辑放在 `03_Battle/Team/MainTeamSelect/`（战斗模块）——归属错误。
 
-对齐 `Docs/Modules/04_Formation_模块设计.md`：
-- **Formation = 独立战前编队模块**（menu 与 battle 之间的中间层，玩法/培养侧 M2 深化），不属于 Battle、不并入 Grow；
-- **Battle 只接收编队结果（快照）**，不反向修改编队状态（现有 `BattleTeamSession` 只读消费保持不变）；
-- 本卡（T3.1A 灰盒）Formation 只做到“战前出战准备”深度：上阵位编辑 + 唯一性 + 出战胜负前组装；M2 在其上接 Profile/Grow/Bag（持有、成长数值、配装约束、预设）。
+对齐 `Docs/Modules/00_模块索引.md / 04_Formation_模块设计.md / 06_Grow_模块设计.md`：
+- **`02_PlayerMeta` = 局外养成工作台（Out-of-Battle / Player Meta）**：覆盖 持有与档案(Profile/Bag) → 养成线(Grow) → 编成(Formation) → 详情与展示，是菜单侧对玩家开放的“培养 + 组队”总区；**Formation 子域仍沿用该名**（上阵位编辑/唯一性/预设/入场快照，不属于 Battle）；
+- **Battle 只接收编队结果快照**（`BattleTeamSession`），不反向修改编队状态；
+- 模型表现层采用**方案①（轻契约+容器+上下文适配器）**，当前灰盒不实现、仅留接入缝（见 §11.4）。
+- 本卡（T3.1A 灰盒）PlayerMeta 只落 Formation 的“战前出战准备”深度；Grow/Profile/Bag 依赖留到 M2。
 
-### 11.2 建议目录（待确认）
+### 11.2 目录（定稿）
 
 ```
-Assets/02_Scripts/02_Formation/                # 新增 Formation 模块（菜单↔战斗中间层）
-├── Main_TeamSlotDraft.cs                       # 迁入：槽草稿（角色×武器 绑定）
-├── Main_BattleTeamSelectModel.cs               # 迁入：4 槽+唯一性规则（纯 C# Model）
-├── BattlePlayerDataService.cs                  # 迁入：IBattlePlayerDataService + Memory + 定位器
-├── Main_BattleTeamSelectController.cs          # 新增：纯 C# Controller（细则拆分的核心）
-Assets/02_Scripts/UIPanel/                      # 沿用 CodeGenKit UI 目录（Prefab 根脚本仍在此）
-├── Main_BattleTeamSelectPanel.cs               # 改：薄壳（UIKit 生命周期 + 组装 Controller/View）
-├── Main_BattleTeamSelectPanel.View.cs          # 新增 partial：纯 View（字段+渲染，不含业务判定）
-└── Main_BattleTeamSelectPanel.Designer.cs      # CodeGen 产物（不变）
+Assets/02_Scripts/02_PlayerMeta/            # 局外养成工作台（Player Meta，新）
+├── Formation/                              # 编成子域（本卡 T3.1A）
+│   ├── Main_TeamSlotDraft.cs               # 槽草稿（角色×武器 绑定）
+│   ├── Main_BattleTeamSelectModel.cs       # 4 槽 + 唯一性规则（纯 C# Model）
+│   ├── BattlePlayerDataService.cs          # IBattlePlayerDataService + Memory + 定位器
+│   ├── MainTeamSelectViewContract.cs       # IMainTeamSelectView（V 接口）+ 列表项 VO
+│   └── Main_BattleTeamSelectController.cs  # 纯 C# Controller（细则拆分的核心）
+├── Grow/  Profile/  Bag/  …                # M2 起按模块补齐（含 VisualDescriptor 表现契约）
+Assets/02_Scripts/UIPanel/                  # 沿用 CodeGenKit UI 目录（Prefab 根脚本仍在此）
+├── Main_BattleTeamSelectPanel.cs           # 薄壳（UIKit 生命周期 + 组装 Controller/View）
+├── Main_BattleTeamSelectPanel.View.cs      # partial：纯 View（字段+渲染，不含业务判定）
+└── Main_BattleTeamSelectPanel.Designer.cs  # CodeGen 产物（不变）
 ```
 
 > 说明：prefab/AB 脚本引用按 **.meta GUID**，移动/新增 partial 不改类名，prefab 无需重建、AB 名不变。
@@ -200,15 +204,22 @@ Assets/02_Scripts/UIPanel/                      # 沿用 CodeGenKit UI 目录（
 |----|------|------|------|
 | M(Model) | `Main_TeamSlotDraft` | 槽数据（可空/IsComplete） | 无 UI |
 | M | `Main_BattleTeamSelectModel` | 4 槽状态、唯一性规则、变更入口、`FormationChanged` | 不读 UI；不含存取 |
-| M·Data | `IBattlePlayerDataService`（接口） | 可用角色/武器池 + 出战配置读写（M2 换成账号实现=Profile/Grow/Bag） | 无 UI |
+| M·Data | `IBattlePlayerDataService`（接口） | 可用角色/武器池 + 出战配置读写（M2 换账号实现=Profile/Grow/Bag） | 无 UI |
 | M·Data | `MemoryBattlePlayerDataService`+Locator | 灰盒内存实现/定位 | 不落盘 |
-| C | `Main_BattleTeamSelectController` | 编排全部交互：槽点击→开列表；条目单击/双击判定(300ms)→Model 变更→Save→刷新；清空/开始(校验→写 `BattleTeamSession`)/返回；空编目/空队/半满提示；弹窗开关状态机 | 不直接碰字段（只经 View 接口） |
-| V | `Main_BattleTeamSelectPanel.View`(partial) | 持有全部 serialized 字段；槽文本刷新；列表渲染（`TeamSelectItem`→Button）；DetailPane/Toast/弹窗显隐；把用户点击以事件上抛 | 不做业务判定/数据写 |
-| Shell | `Main_BattleTeamSelectPanel`(partial) | `OnInit/OnOpen/OnClose`：创建 Controller、注入 View(Model 由 Controller 建)、挂/解事件 | 不写玩法逻辑 |
+| C | `Main_BattleTeamSelectController` | 编排交互：槽点击→开列表；单击/双击(300ms)→Model 变更→Save→刷新；清空/开始(校验→写 `BattleTeamSession`)/返回；提示；弹窗状态机 | 不直接碰字段（只经 View 接口） |
+| V | `Main_BattleTeamSelectPanel.View`(partial) | 持有 serialized 字段；槽文本刷新；列表渲染；Detail/Toast/弹窗显隐；点击以事件上抛（事件签名不含业务对象） | 不做业务判定/数据写 |
+| Shell | `Main_BattleTeamSelectPanel`(partial) | `OnInit/OnOpen/OnClose`：创建 Controller、注入 View、挂/解事件 | 不写玩法逻辑 |
 
-**交互状态机归属 Controller**：`Idle → ListOpen(kind,slot) →（单击 Preview / 双击 Apply→Idle）`；双击窗口、占用置灰、[空] 第 1 项等规则全部内聚在 Controller（或 Model 只读查询供 View 列表使用）。
+**交互状态机归属 Controller**：`Idle → ListOpen(kind,slot) →（单击 Preview / 双击 Apply→Idle）`；双击窗口、占用置灰、[空] 第 1 项等规则全部内聚 Controller/Model。
 
-**M2 接入缝**：换 `IBattlePlayerDataService` 实现即可接入账号持有/成长；新增关卡合法性/预设由 Controller 调 Formation 校验口（占位）实现，View/Model 不变。
+### 11.4 模型表现层决策（方案①，本卡只留缝不实现）
+
+- 三件套（后续首个需要模型实机展示的局外面立项时落地）：
+  1. `VisualDescriptor`（数据）：prefab/默认姿态/挂点约定/材质变体(元素·稀有度)/展示相机点；
+  2. 展示层（轻服务+容器）：`BattleSlot`（走现有 `BattleRoleRuntimeData`/武器适配器，几乎零改）与 `StageView`（局外展示台：相机/灯光/Idle/入场动画，供 详情/编成/Gacha 复用）；
+  3. 上下文适配器：战斗由战斗管线驱动；局外页面只声明“展示 X 的姿态/抽卡姿态”，由展示层装配。
+- 边界（已确认）：**战斗内展示不并入局外框架，只共享表现描述**。
+- 编成页当前为文本占位（A6/D7），将来经 `StageView` 接入同一表现层，不各自写模型逻辑。
 
 ## 12. 变更记录
 
@@ -217,5 +228,6 @@ Assets/02_Scripts/UIPanel/                      # 沿用 CodeGenKit UI 目录（
 - v0.2 2026-09-05：整合第二轮决策（单击简介/双击执行、占用置灰末尾、空项第一、M1\_Menu 废弃、A2 分层建议）；
 
 - **v1.0 2026-09-05：定稿**。A2=方案A、A3=返回 0ConfigScene（含来源机制）、A8=Editor 方式且先移除过时 Editor 方法、简介区弹窗右侧 + 双击 300ms。
-- **v1.1 2026-09-05：架构修正（待实施）**——编队模块迁出 Battle 至独立 `02_Formation`（菜单↔Battle 中间层，M2 深化培养）；Main_BattleTeamSelectPanel 按 Shell / Controller / View / Model 文件级拆分。待确认：① 目录命名 ② 类名是否保留（`Main_TeamSlotDraft` 等）或按 Formation 命名收敛（`FormationSlotDraft`/`IFormationDataSource`…）。
+- **v1.1 2026-09-05：架构修正（待实施）**——编队模块迁出 Battle；按 Shell / Controller / View / Model 拆分。
+- **v1.2 2026-09-05：定稿**——`02_PlayerMeta` 局外养成工作台（覆盖持有/养成/编成/展示，M2 补齐 Grow/Profile/Bag）；Formation 子域名沿用；模型表现层采用方案①（轻契约+容器+适配器，灰盒只留缝）；Formation 代码归 `02_PlayerMeta/Formation/`。
 
