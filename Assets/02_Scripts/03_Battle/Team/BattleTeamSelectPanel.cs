@@ -191,7 +191,8 @@ namespace TeaGame
             UIKit.ClosePanel<BattleTeamSelectPanel>();
          }
 
-         SceneManager.LoadScene(BattleTeamSession.MainSceneName);
+         // v1.0：旧灰盒返回目标改为来源场景/0ConfigScene（M1_MainHub 已废弃）
+         SceneManager.LoadScene(BattleTeamSession.ReturnSceneName);
       }
 
       // ---------------- 刷新 ----------------

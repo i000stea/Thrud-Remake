@@ -36,8 +36,11 @@ namespace TeaGame
    /// </summary>
    public static class BattleTeamSession
    {
-      /// <summary>极简主场景名（暂停/结算「退出」与正式环境守卫的目标）。</summary>
+      /// <summary>极简主场景名（历史 T3.1A-4b：M1_MainHub 已随 v1.0 废弃，勿再用于跳转）。</summary>
       public const string MainSceneName = "M1_MainHub";
+
+      /// <summary>0ConfigScene 主入口（无来源时的兜底返回目标，v1.0 A3）。</summary>
+      public const string ConfigSceneName = "0ConfigScene";
 
       /// <summary>出战编队场景名（主场景入口进入）。</summary>
       public const string TeamSelectSceneName = "M1_TeamSelect";
@@ -47,6 +50,22 @@ namespace TeaGame
 
       /// <summary>编队人数上限（=切人上限）。</summary>
       public const int MaxTeamSize = 4;
+
+      private static string sSourceSceneName;
+
+      /// <summary>
+      /// 来源场景（v1.0 A3）：由流程入口/未来 ConfigScene battle 启动类写入。
+      /// 暂停/结算「退出」与预编队「返回」统一回到该场景。
+      /// </summary>
+      public static string SourceSceneName
+      {
+         get => sSourceSceneName;
+         set => sSourceSceneName = value;
+      }
+
+      /// <summary>实际返回目标：有来源回来源，否则回 0ConfigScene。</summary>
+      public static string ReturnSceneName =>
+         string.IsNullOrEmpty(sSourceSceneName) ? ConfigSceneName : sSourceSceneName;
 
       private static readonly List<BattleTeamMemberDraft> sMembers = new(MaxTeamSize);
 

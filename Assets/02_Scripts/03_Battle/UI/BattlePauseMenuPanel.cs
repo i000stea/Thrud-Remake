@@ -66,7 +66,7 @@ namespace TeaGame
          BattleArchitecture.Interface.GetSystem<BattleLevelFlow>().Restart();
       }
 
-      /// <summary>退出本关：复位暂停态（timeScale/Paused）后回到主场景（T3.1A）。</summary>
+      /// <summary>退出本关：复位暂停态（timeScale/Paused）后回到来源场景/0ConfigScene（v1.0 A3）。</summary>
       private void ExitToMainScene()
       {
          if (UIKit.GetPanel<BattlePauseMenuPanel>() != null)
@@ -81,7 +81,7 @@ namespace TeaGame
          }
 
          Time.timeScale = 1f;
-         SceneManager.LoadScene(BattleTeamSession.MainSceneName);
+         SceneManager.LoadScene(BattleTeamSession.ReturnSceneName);
       }
    }
 }

@@ -69,7 +69,7 @@ namespace TeaGame
          BattleArchitecture.Interface.GetSystem<BattleLevelFlow>().Restart();
       }
 
-      /// <summary>退出到主场景（T3.1A）。</summary>
+      /// <summary>退出到来源场景/0ConfigScene（v1.0 A3）。</summary>
       private void ExitToMainScene()
       {
          if (UIKit.GetPanel<BattleLevelResultPanel>() != null)
@@ -78,7 +78,7 @@ namespace TeaGame
          }
 
          Time.timeScale = 1f;
-         SceneManager.LoadScene(BattleTeamSession.MainSceneName);
+         SceneManager.LoadScene(BattleTeamSession.ReturnSceneName);
       }
    }
 }
