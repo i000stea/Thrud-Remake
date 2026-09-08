@@ -32,6 +32,11 @@ namespace QAssetBundle
         public const string Main_BattleTeamSelect = "Main_BattleTeamSelect";
         public const string BattleTeamSelectPanel = "BattleTeamSelectPanel";
     }
+    public class Levelselectpanel_prefab
+    {
+        public const string BundleName = "levelselectpanel_prefab";
+        public const string LevelSelectPanel = "LevelSelectPanel";
+    }
     public class Loadinggroup_prefab
     {
         public const string BundleName = "loadinggroup_prefab";
@@ -40,7 +45,7 @@ namespace QAssetBundle
     public class Main_battleteamselectpanel_prefab
     {
         public const string BundleName = "main_battleteamselectpanel_prefab";
-        public const string Main_BattleTeamSelectPanel = "Main_BattleTeamSelectPanel";
+        public const string Main_FormationPanel = "Main_FormationPanel";
     }
     public class Main_menupanel_prefab
     {
