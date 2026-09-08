@@ -1,6 +1,6 @@
 # Battle Arena 薄场景化重构 · 设计（T3.1C · 2026-09-06）
 
-> 状态：**步骤2-4 已按用户方向修正改版（2026-09-06，D14）**：关卡数据/目录/battle_runtime 场景引导已落地（编译绿）；固定固件（rig/飘字/Director/UIRoot）放回场景由编辑器工具检查放置。**Anchor + 常驻 Runner 按需装配方案撤销**（对应文件已删除）。
+> 状态：**T3.1C 完成（2026-09-08 归档）**：主体实现 2026-09-06 提交（`22f09dfd` 功能 + `500d10e4` 文档）；步骤 4 工具复跑幂等收敛、步骤 6 Play 回归 §7 六项全绿（用户 2026-09-08 验证），步骤 8 已归档至 07/09。
 > 位置：介于 T3.1B（已验收）与 T3.2（三种关卡模式）之间；先重构并回归，再在干净架构上开 T3.2。
 
 ***
@@ -168,24 +168,20 @@ Battle 运行时/规则
 1. **现状盘点清单**（已完，见上）——分类结论：美术留场景；玩法/装配/表现服务迁 prefab/系统；无布局标记需导出。
 2. **关卡数据归位（2026-09-06 已实现 §5.3）**：新建 `BattleLevelData` 01/02/03；波次表由生成器从 `StageConfig_Demo` **深拷贝内嵌**（原 BattleStageAsset 字段已并入本类，改关只改本表，各关卡副本独立）；玩家出生点数据化 (0,2,0)；`StageConfig_Demo`/`BattleStageAsset` 过渡保留（旧场景路径仍引用）待步骤 6 删除。
 3. **抽 PlayerRig.prefab（D6；场景固定实例）**：Battle_PlayerControl.prefab 已含角色控制 + HUD 整包；BattleGraybox 内以**场景固定实例**存在（出生点数据化后由 battle_runtime 应用，不再依赖场景硬编 (0,2,0)）。
-4. **场景引导 + 固件治理（D14 修正版；代码已实现，编译绿；工具 BattleArenaSceneThinner.cs）**：`BattleSceneRuntimeHost.cs`（battle_runtime 场景引导：框架初始化 + 解析关卡[会话/目录 D12] + 应用出生点 + 注入 Director）+ `BattleLevelCatalog.cs`（目录）。**Editor 待做**：跑 `Thrud/Battle/T3.1C/1. 检查并放置战斗固定固件 (BattleGraybox)` —— 幂等收敛：确保 3 预设+目录 → 撤销旧 prefab 内建飘字（若有）→ 移除 BattleRoleRepository/LevelSceneAnchor → 放置 PlayerControl rig 实例/Damage-Texts/BattleStageDirector/battle_runtime 并接线（rig.env 覆盖 → Damage-Texts；host 回填引用）→ 保存并报告根对象清单。
+4. **场景引导 + 固件治理（D14 修正版；代码已实现，编译绿；工具 BattleArenaSceneThinner.cs）**：`BattleSceneRuntimeHost.cs`（battle_runtime 场景引导：框架初始化 + 解析关卡[会话/目录 D12] + 应用出生点 + 注入 Director）+ `BattleLevelCatalog.cs`（目录）。**Editor 工具已复跑（2026-09-08，幂等收敛）**：`Thrud/Battle/T3.1C/1. 检查并放置战斗固定固件 (BattleGraybox)` —— 确保 3 预设+目录 → 撤销旧 prefab 内建飘字（若有）→ 移除 BattleRoleRepository/LevelSceneAnchor → 放置 PlayerControl rig 实例/Damage-Texts/BattleStageDirector/battle_runtime 并接线（rig.env 覆盖 → Damage-Texts；host 回填引用）→ 保存并报告根对象清单。复跑结果：rig/Damage-Texts/Director 均"已存在/就绪"、battle_runtime 引用已序列化就位（catalog/playerControl/stageDirector），场景无残留对象，报告无异常。
 5. **正式路径验收（battle_runtime 自动生效；用户验收通过 2026-09-06）**：编队确认 → Gate 进 BattleGraybox，rig 为场景固定存在（不再依赖"按需创建"），`battle_runtime` Awake 完成装配（会话关卡优先，无选关回落目录 D12 默认关）；回归基线（见 §7）全绿。后续步骤7 选关接入后自然按所选关卡装配。
-6. **LevelDirector 切新数据源 + 清理旧类（已执行 2026-09-06）**：BattleStageDirector 改为纯注入（移除旧 `config`/`catalog` 序列化字段，消费 `BattleLevelData`）；`BattleStageAsset` 类与 `StageConfig_Demo.asset` 已删除（引用审计：其 GUID 仅存在于自身 meta 与待删资产，无场景/代码引用）；生成器波次源改为「首个含波次内容的既有预设」模板；运行时编译绿。**待本步 Play 回归**（建议先跑 `Thrud/Battle/T3.1C/1.` 保存场景清除旧序列化残留）。
+6. **LevelDirector 切新数据源 + 清理旧类（已执行 2026-09-06）**：BattleStageDirector 改为纯注入（移除旧 `config`/`catalog` 序列化字段，消费 `BattleLevelData`）；`BattleStageAsset` 类与 `StageConfig_Demo.asset` 已删除（引用审计：其 GUID 仅存在于自身 meta 与待删资产，无场景/代码引用）；生成器波次源改为「首个含波次内容的既有预设」模板；运行时编译绿。**本步 Play 回归于 2026-09-08 完成**（先跑 `Thrud/Battle/T3.1C/1.` 保存场景清除旧序列化残留后逐项回归，§7 全绿）。
 7. **入口链路接线（D10/D11；已实现并验收——用户反馈无严重问题）**：2MainScene 测试按钮（MainMenu_Runtime.OpenLevelSelect）→ `LevelSelectPanel`（代码：`UIPanel/LevelSelect/LevelSelectPanel.cs`+Designer；目录数据源= prefab 上序列化的 `BattleLevelCatalog`）→ 点选显示介绍 + 「进入」（写 `BattleLevelSession`）→ `Main_FormationPanel`（现有 MVC 不动）→「开始出战」经 Gate 进 battle（battle_runtime 读会话关卡装配）。预置体已由生成器创建（`Thrud/Battle/T3.1C/7. Create LevelSelect Panel (prefab)`，绑定+AB：`levelselectpanel_prefab`+目录回填）。
-8. **勾选/归档**：更新 07/09 文档，用户 Play 验收后提交；随后 T3.2 在此架构上实现三种模式（同美术场景可挂多关数据）。
+8. **勾选/归档（2026-09-08 完成）**：步骤 4 工具复跑幂等收敛（场景引用已就位，无残留对象）、步骤 6 Play 回归全绿（见 §7 勾选）、07/09 文档同步登记 T3.1C 卡；随后 T3.2 在此架构上实现三种模式（同美术场景可挂多关数据）。
 
-## 7. 回归基线（每步必须全绿）
+## 7. 回归基线（每步必须全绿 · 2026-09-08 全部通过）
 
-- [ ] 主菜单编队（1-4 人）→ 进战斗：按所选编队出战/切人（切人序=槽序）；
-- [ ] 入口链路（D10）：测试按钮 → 关卡选择（3 预设）→ 显示介绍并「进入」（缓存 `BattleLevelSession`）→ 编队 → 进对应关卡；回主场景重新选关会覆盖缓存；
-
-- [ ] 暂停/结算「退出」经 SceneFlow 遮罩回来源场景；「重新开始/再来一次」= 先卸后载（无残留弹幕/状态/HUD 错乱）；
-
-- [ ] 编辑器直连 `BattleGraybox`：`battle_runtime` 自启装配（目录 D12 默认关；rig 为场景固定存在，必出现）；直连时场景可独立做地形/光照迭代；
-
-- [ ] T3.1B 成员级血量/阵亡/自动切人/队伍血条 HUD 行为不回退；
-
-- [ ] `BattleObjectPool` 清场纪律保持（DDOL 池根不滞留跨场景子弹）。
+- [x] 主菜单编队（1-4 人）→ 进战斗：按所选编队出战/切人（切人序=槽序）；
+- [x] 入口链路（D10）：测试按钮 → 关卡选择（3 预设）→ 显示介绍并「进入」（缓存 `BattleLevelSession`）→ 编队 → 进对应关卡；回主场景重新选关会覆盖缓存；
+- [x] 暂停/结算「退出」经 SceneFlow 遮罩回来源场景；「重新开始/再来一次」= 先卸后载（无残留弹幕/状态/HUD 错乱）；
+- [x] 编辑器直连 `BattleGraybox`：`battle_runtime` 自启装配（目录 D12 默认关；rig 为场景固定存在，必出现）；直连时场景可独立做地形/光照迭代；
+- [x] T3.1B 成员级血量/阵亡/自动切人/队伍血条 HUD 行为不回退；
+- [x] `BattleObjectPool` 清场纪律保持（DDOL 池根不滞留跨场景子弹）。
 
 ## 8. 硬边界与后续衔接
 

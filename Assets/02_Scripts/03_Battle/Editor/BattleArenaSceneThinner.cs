@@ -74,7 +74,7 @@ namespace TeaGame.Battle.Editor
             report.AppendLine($"  rig 实例：{(rigCreated ? "新建" : "已存在")}（{RigPrefabPath}）");
             report.AppendLine($"  飘字服务：{(damageController != null ? "Damage-Texts 就绪" : "缺失(见警告)")}");
             report.AppendLine($"  敌人管理 Director：{(director != null ? "BattleStageDirector 就绪" : "缺失(见警告)")}");
-            report.AppendLine($"  battle_runtime：{(hostCreated ? "新建" : "已存在")}；引用回填：{(hostWired ? "完成" : "跳过(见警告)")}");
+            report.AppendLine($"  battle_runtime：{(hostCreated ? "新建" : "已存在")}；引用回填：{(hostWired ? "完成(含本就一致)" : "未接线(见警告/错误)")}");
             report.Append("  场景根对象：");
             var names = new System.Collections.Generic.List<string>();
             foreach (var root in scene.GetRootGameObjects())
@@ -309,6 +309,13 @@ namespace TeaGame.Battle.Editor
          if (so.hasModifiedProperties)
          {
             so.ApplyModifiedPropertiesWithoutUndo();
+            wired = true;
+         }
+         else if (catalog != null && catalogProp != null
+                  && rigProp != null && rigProp.objectReferenceValue == rig
+                  && directorProp != null && directorProp.objectReferenceValue == director)
+         {
+            // 引用本就一致（幂等收敛）：无需回填，但视为接线完成
             wired = true;
          }
 
