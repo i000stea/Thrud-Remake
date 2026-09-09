@@ -62,7 +62,7 @@ namespace TeaGame
          SetupBattleSystems();
 
          // 2. 触摸层（跨场景进入须等 UIRoot 归属稳定，见 OpenTouchUiWhenSceneReady）
-         StartCoroutine(OpenTouchUiWhenSceneReady());
+         StartCoroutine(OpenTouchUiWhenSceneReady()); 
       }
 
       private void OnDestroy()
