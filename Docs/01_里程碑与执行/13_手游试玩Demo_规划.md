@@ -96,11 +96,25 @@ Android 单包:登录→主菜单(测试按钮)→ 选关 → 编队 → 进「�
 
 ### 3.3 T2 · 打包收口与外放(0.5\~1 天)
 
+> **状态（2026-09-08）：一键构建脚本已落盘（待编辑器执行验证出包）**。实现记录见本节末尾。
+
 - Android 一键构建(Editor 菜单:命名/版本/keystore/AB 打包→出包) + 文档
 
 - 真机回归清单:全链路可玩、按键无死角、面板不空屏、帧率/发热粗测、防误触退出、包体控制目标(<200MB)
 
 - 分发:debug 签名 apk 直接外放(内测),正式签名后补
+
+**实现记录（2026-09-08）**
+
+- 工具：`Assets/02_Scripts/Tools/Editor/AndroidDemoBuilder.cs`（`TeaGame.Tools.Editor`，已引用 ResKit.Editor）。
+  菜单 **`Thrud/Demo/Android/`**：① Switch Platform to Android ② Build AssetBundles (Android)
+  ③ Build APK (Release · debug keystore) ④ Build APK (Development · 联调) ⑤ Build All (One-Click = AB + Release APK)。
+- 每次构建幂等应用 Android 设置：包名 `com.i000stea.thrudremark`、IL2CPP + ARM64、横屏、MinSdk 28；
+  场景取 Build Settings enabled（0Config/1Login/2Main/BattleGraybox）；AB 走 `ResKitEditorAPI.BuildAssetBundles()`（按当前活动目标）。
+- 产物 `Build/Android/ThrudDemo_&lt;版本&gt;_&lt;verCode&gt;_&lt;dev/release&gt;.apk`（`Build/` 已 .gitignore，不入库）；
+  成功后 `RevealInFinder`；失败打印 BuildReport 错误步骤。
+- **真机验收清单 v0（随出包执行）**：全链路（登录→主菜单→选关→编队→进关出 rig）可玩、
+  触摸按键无死角、面板不空屏、帧率/发热粗测、防误触退出、包体 &lt;200MB。
 
 ## 4. 风险与对策
 
