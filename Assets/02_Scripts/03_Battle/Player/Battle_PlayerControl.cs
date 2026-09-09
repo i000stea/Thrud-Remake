@@ -23,10 +23,6 @@ namespace TeaGame
       [SerializeField] private bool controlTakeOff;
       [SerializeField] private int initialRoleIndex;
 
-      [Header("数据仓库")]
-      [SerializeField] private BattleRoleRepository dataRepository;
-      [SerializeField] private StoreBattleRoleData legacyDataStore;
-
       [Header("场景引用（Designer 绑定）")]
       [SerializeField] private BattleEnvironmentEffectController environmentEffectController;
 
