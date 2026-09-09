@@ -87,7 +87,7 @@ namespace TeaGame.Login
 
       /// <summary>
       /// 登录完成：音频淡出收尾（场景切换由 SceneFlow 在 LoginSystem 中发起）。
-      /// </summary>
+      /// </summary> 
       private void OnLoginCompleted(LoginCompletedEvent e)
       {
          if (_audioSource != null)

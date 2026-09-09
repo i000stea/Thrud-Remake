@@ -1,9 +1,9 @@
-// Generate Id:f64c16da-9c79-408a-a916-c81c84980e0a
+// Generate Id:1dc17422-8b45-432e-9756-ef9f15e329c9
 using UnityEngine;
 
 namespace TeaGame
 {
-	public partial class Battle_PlayerControl
+	public partial class Battle_PlayerControl : QFramework.IController
 	{
 		public Transform ControlXAxis;
 		
@@ -19,6 +19,26 @@ namespace TeaGame
 		
 		public TMPro.TextMeshProUGUI Health_Value;
 		
+		/// <summary>
+		/// 当前角色名 · 元素
+		/// </summary>
+		public UnityEngine.UI.Text SkillHudRoleLine;
+		
+		/// <summary>
+		/// 序曲 E 技能
+		/// </summary>
+		public UnityEngine.UI.Text SkillHudELine;
+		
+		/// <summary>
+		/// 极奏 Q 技能 · 能量
+		/// </summary>
+		public UnityEngine.UI.Text SkillHudQLine;
+		
+		/// <summary>
+		/// 切人提示
+		/// </summary>
+		public UnityEngine.UI.Text SkillHudSwitchLine;
+		
 		public Transform ViewRotateAxis;
 		
 		public Transform Roles;
@@ -31,13 +51,6 @@ namespace TeaGame
 		
 		public UnityEngine.Rigidbody SelfRigidbody;
 		
-		public UnityEngine.UI.Text SkillHudRoleLine;
-		
-		public UnityEngine.UI.Text SkillHudELine;
-		
-		public UnityEngine.UI.Text SkillHudQLine;
-		
-		public UnityEngine.UI.Text SkillHudSwitchLine;
-		
+		QFramework.IArchitecture QFramework.IBelongToArchitecture.GetArchitecture()=>TeaGame.BattleArchitecture.Interface;
 	}
 }
