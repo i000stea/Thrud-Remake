@@ -32,6 +32,11 @@ namespace QAssetBundle
         public const string Main_BattleTeamSelect = "Main_BattleTeamSelect";
         public const string BattleTeamSelectPanel = "BattleTeamSelectPanel";
     }
+    public class Battletouchinputpanel_prefab
+    {
+        public const string BundleName = "battletouchinputpanel_prefab";
+        public const string BattleTouchInputPanel = "BattleTouchInputPanel";
+    }
     public class Levelselectpanel_prefab
     {
         public const string BundleName = "levelselectpanel_prefab";
