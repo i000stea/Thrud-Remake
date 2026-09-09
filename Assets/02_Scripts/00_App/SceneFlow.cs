@@ -129,99 +129,110 @@ namespace TeaGame.App
       private IEnumerator LoadRoutine(SceneRequest request)
       {
          mSwitching = true;
-
-         var showLoading = request.ShowLoading;
-         if (showLoading)
+         try
          {
-            EnsureLoadingGroupReady();
-            if (mLoadingCanvasGroup != null)
+            var showLoading = request.ShowLoading;
+            if (showLoading)
             {
-               yield return FadeCanvasGroup(mLoadingCanvasGroup, 0f, 1f, fadeInDuration, easeOut: true);
-            }
-         }
-
-         var sceneName = request.SceneName;
-         if (string.IsNullOrEmpty(sceneName))
-         {
-            Debug.LogError("[SceneFlow] 场景 key（名称）为空，无法切换。");
-            yield return FinishWithError(showLoading);
-            yield break;
-         }
-
-         // 原地重载模式：先卸载全部旧玩法场景（仅保留入口常驻），再加载目标，
-         // 避免目标与旧实例同场景并存导致状态/HUD 错乱（重开本关用）。
-         if (request.UnloadFirst)
-         {
-            yield return UnloadPlayScenes(default);
-         }
-
-         // 当前阶段按场景名经 Build Settings 加载；热更新接入后按同名 key 走资源系统
-         var operation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
-         if (operation == null)
-         {
-            Debug.LogError($"[SceneFlow] 场景加载失败，请确认已加入 Build Settings：{sceneName}");
-            yield return FinishWithError(showLoading);
-            yield break;
-         }
-
-         // 预加载：进度到 0.9 前不激活场景，遮罩保持
-         operation.allowSceneActivation = false;
-         while (operation.progress < 0.9f)
-         {
-            UpdateProgressText(operation.progress);
-            yield return null;
-         }
-
-         UpdateProgressText(0.9f);
-
-         // 加载完成后再保持最少时长，避免过渡瞬间结束
-         var holdEndTime = Time.time + minHoldDuration;
-         while (Time.time < holdEndTime)
-         {
-            yield return null;
-         }
-
-         // 激活场景并设为 active
-         operation.allowSceneActivation = true;
-         while (!operation.isDone)
-         {
-            yield return null;
-         }
-
-         var target = SceneManager.GetSceneByName(sceneName);
-         if (!target.IsValid())
-         {
-            Debug.LogError($"[SceneFlow] 场景无效：{sceneName}");
-            yield return FinishWithError(showLoading);
-            yield break;
-         }
-
-         SceneManager.SetActiveScene(target);
-         mCurrentRequest = request;
-
-         // 卸载旧玩法场景（可按请求保留；入口场景始终保护）
-         if (!request.KeepPrevious)
-         {
-            yield return UnloadPlayScenes(target);
-         }
-
-         // 遮罩渐隐露出新场景
-         if (showLoading)
-         {
-            if (mLoadingCanvasGroup != null)
-            {
-               yield return FadeCanvasGroup(mLoadingCanvasGroup, mLoadingCanvasGroup.alpha, 0f, fadeOutDuration, easeOut: false);
+               EnsureLoadingGroupReady();
+               if (mLoadingCanvasGroup != null)
+               {
+                  yield return FadeCanvasGroup(mLoadingCanvasGroup, 0f, 1f, fadeInDuration, easeOut: true);
+               }
             }
 
-            HideLoadingGroup();
+            var sceneName = request.SceneName;
+            if (string.IsNullOrEmpty(sceneName))
+            {
+               Debug.LogError("[SceneFlow] 场景 key（名称）为空，无法切换。");
+               yield return FinishWithError(showLoading);
+               yield break;
+            }
+
+            // 原地重载模式：先卸载全部旧玩法场景（仅保留入口常驻），再加载目标，
+            // 避免目标与旧实例同场景并存导致状态/HUD 错乱（重开本关用）。
+            if (request.UnloadFirst)
+            {
+               yield return UnloadPlayScenes(default);
+            }
+
+            // 当前阶段按场景名经 Build Settings 加载；热更新接入后按同名 key 走资源系统
+            var operation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+            if (operation == null)
+            {
+               Debug.LogError($"[SceneFlow] 场景加载失败，请确认已加入 Build Settings：{sceneName}");
+               yield return FinishWithError(showLoading);
+               yield break;
+            }
+
+            // 预加载：进度到 0.9 前不激活场景，遮罩保持
+            operation.allowSceneActivation = false;
+            while (operation.progress < 0.9f)
+            {
+               UpdateProgressText(operation.progress);
+               yield return null;
+            }
+
+            UpdateProgressText(0.9f);
+
+            // 加载完成后再保持最少时长，避免过渡瞬间结束
+            var holdEndTime = Time.time + minHoldDuration;
+            while (Time.time < holdEndTime)
+            {
+               yield return null;
+            }
+
+            // 激活场景并设为 active
+            operation.allowSceneActivation = true;
+            while (!operation.isDone)
+            {
+               yield return null;
+            }
+
+            var target = SceneManager.GetSceneByName(sceneName);
+            if (!target.IsValid())
+            {
+               Debug.LogError($"[SceneFlow] 场景无效：{sceneName}");
+               yield return FinishWithError(showLoading);
+               yield break;
+            }
+
+            SceneManager.SetActiveScene(target);
+            mCurrentRequest = request;
+
+            // 卸载旧玩法场景（可按请求保留；入口场景始终保护）。
+            // 2026-09-08：必须等**新场景激活后**再卸载——Unity 在 LoadSceneAsync 未完成
+            // （allowSceneActivation=false）期间卸载其它场景会中断本次加载；
+            // 这里逐个 await 卸载完成，保证旧场景（含其 UIRoot 场景实例）彻底销毁后
+            // 再渐隐遮罩，UIKit 之后解析到的 UIRoot 必然是新场景的或常驻的。
+            if (!request.KeepPrevious)
+            {
+               yield return UnloadPlayScenes(target);
+            }
+
+            // 遮罩渐隐露出新场景
+            if (showLoading)
+            {
+               if (mLoadingCanvasGroup != null)
+               {
+                  yield return FadeCanvasGroup(mLoadingCanvasGroup, mLoadingCanvasGroup.alpha, 0f, fadeOutDuration, easeOut: false);
+               }
+
+               HideLoadingGroup();
+            }
+         }
+         finally
+         {
+            // 无论成功、失败还是异常，都必须复位切换标记——
+            // 否则后续 RequestLoad 会被"正在切换中"永久拦截（场景再也切不动）。
+            mSwitching = false;
          }
 
-         mSwitching = false;
-         Debug.Log($"[SceneFlow] 场景切换完成 -> {sceneName}");
+         Debug.Log($"[SceneFlow] 场景切换完成 -> {request.SceneName}");
       }
 
       /// <summary>
-      /// 卸载除入口场景（Build Settings[0]）与目标场景之外的全部已加载场景。
+      /// 卸载除「入口常驻场景」与「目标场景」之外的已加载玩法场景，并逐个等待卸载完成。
       /// </summary>
       private IEnumerator UnloadPlayScenes(Scene keepScene)
       {
@@ -300,7 +311,12 @@ namespace TeaGame.App
       /// </summary>
       private static IEnumerator FadeCanvasGroup(CanvasGroup canvasGroup, float from, float to, float duration, bool easeOut)
       {
-         if (canvasGroup == null || duration <= 0f)
+         if (canvasGroup == null)
+         {
+            yield break; // 遮罩可能随旧场景卸载被销毁，直接跳过（避免 NRE 中断切换协程）
+         }
+
+         if (duration <= 0f)
          {
             canvasGroup.alpha = to;
             yield break;
@@ -309,6 +325,8 @@ namespace TeaGame.App
          var elapsed = 0f;
          while (elapsed < duration)
          {
+            if (canvasGroup == null) yield break;
+
             elapsed += Time.deltaTime;
             var t = Mathf.Clamp01(elapsed / duration);
             t = easeOut ? 1f - Mathf.Pow(1f - t, 3f) : Mathf.Pow(t, 3f);
