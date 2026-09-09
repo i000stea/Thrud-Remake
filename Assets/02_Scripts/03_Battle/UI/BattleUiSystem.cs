@@ -80,7 +80,7 @@ namespace TeaGame
       private static void OpenResult(string title)
       {
          if (!TryEnsurePanelAvailable("结算", QAssetBundle.Battlelevelresultpanel_prefab.BundleName,
-                QAssetBundle.Battlelevelresultpanel_prefab.BattleLevelResultPanel))
+                QAssetBundle.Battlelevelresultpanel_prefab.Battle_LevelResultPanel))
          {
             return;
          }
@@ -89,7 +89,7 @@ namespace TeaGame
             UILevel.PopUI,
             new BattleLevelResultPanelData { Title = title },
             assetBundleName: QAssetBundle.Battlelevelresultpanel_prefab.BundleName,
-            prefabName: QAssetBundle.Battlelevelresultpanel_prefab.BattleLevelResultPanel);
+            prefabName: QAssetBundle.Battlelevelresultpanel_prefab.Battle_LevelResultPanel);
       }
 
       private static void CloseResultIfOpen()
@@ -133,7 +133,7 @@ namespace TeaGame
 
          // 先经 ResKit 校验 AB 资源，避免状态已改但面板加载失败
          if (!TryEnsurePanelAvailable("暂停", QAssetBundle.Battlepausemenupanel_prefab.BundleName,
-                QAssetBundle.Battlepausemenupanel_prefab.BattlePauseMenuPanel))
+                QAssetBundle.Battlepausemenupanel_prefab.Battle_PauseMenuPanel))
          {
             return;
          }
@@ -149,7 +149,7 @@ namespace TeaGame
          UIKit.OpenPanel<BattlePauseMenuPanel>(
             UILevel.PopUI,
             assetBundleName: QAssetBundle.Battlepausemenupanel_prefab.BundleName,
-            prefabName: QAssetBundle.Battlepausemenupanel_prefab.BattlePauseMenuPanel);
+            prefabName: QAssetBundle.Battlepausemenupanel_prefab.Battle_PauseMenuPanel);
          Debug.Log("[T3.1] 游戏暂停（timeScale=0，进程未暂停）——ESC 或点「继续」恢复。");
       }
 

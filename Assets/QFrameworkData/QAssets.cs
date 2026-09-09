@@ -14,28 +14,22 @@ namespace QAssetBundle
     public class Battlelevelresultpanel_prefab
     {
         public const string BundleName = "battlelevelresultpanel_prefab";
-        public const string BattleLevelResultPanel = "BattleLevelResultPanel";
+        public const string Battle_LevelResultPanel = "Battle_LevelResultPanel";
     }
     public class Battlemainhubpanel_prefab
     {
         public const string BundleName = "battlemainhubpanel_prefab";
-        public const string BattleMainHubPanel = "BattleMainHubPanel";
+        public const string Battle_MainHubPanel = "Battle_MainHubPanel";
     }
     public class Battlepausemenupanel_prefab
     {
         public const string BundleName = "battlepausemenupanel_prefab";
-        public const string BattlePauseMenuPanel = "BattlePauseMenuPanel";
-    }
-    public class Battleteamselectpanel_prefab
-    {
-        public const string BundleName = "battleteamselectpanel_prefab";
-        public const string Main_BattleTeamSelect = "Main_BattleTeamSelect";
-        public const string BattleTeamSelectPanel = "BattleTeamSelectPanel";
+        public const string Battle_PauseMenuPanel = "Battle_PauseMenuPanel";
     }
     public class Battletouchinputpanel_prefab
     {
         public const string BundleName = "battletouchinputpanel_prefab";
-        public const string BattleTouchInputPanel = "BattleTouchInputPanel";
+        public const string Battle_TouchInputPanel = "Battle_TouchInputPanel";
     }
     public class Levelselectpanel_prefab
     {

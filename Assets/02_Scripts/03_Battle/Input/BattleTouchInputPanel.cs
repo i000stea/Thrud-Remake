@@ -21,10 +21,10 @@ namespace TeaGame
    public partial class BattleTouchInputPanel : UIPanel
    {
       /// <summary>本面板 AB 名（与 prefab assetBundleName 一致；规则 = 资产名小写 + "_prefab"）。</summary>
-      public const string AssetBundleName = "battletouchinputpanel_prefab";
+      public const string AssetBundleName = QAssetBundle.Battletouchinputpanel_prefab.BundleName;
 
       /// <summary>prefab 资源名（UIKit ResKit 加载用，= prefab 文件名）。</summary>
-      public const string PrefabName = "BattleTouchInputPanel";
+      public const string PrefabName = QAssetBundle.Battletouchinputpanel_prefab.Battle_TouchInputPanel;
 
       private bool mEnabled;
 
