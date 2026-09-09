@@ -36,6 +36,7 @@ namespace TeaGame
          // 框架初始化：确保战斗架构创建（rig.Awake 同样会触发，幂等）
          _ = BattleArchitecture.Interface;
 
+         // T1（触屏）：延迟到 Start 打开触摸层（UIKit 面板，随本场景卸载在 OnDestroy 关闭）
          var level = ResolveLevel();
          if (level == null)
          {
@@ -65,6 +66,46 @@ namespace TeaGame
          var siteCount = level.Sites == null ? 0 : level.Sites.Length;
          Debug.Log($"[battle_runtime] 关卡 {level.LevelId}「{level.DisplayName}」装配完成：" +
                    $"出生 {level.PlayerSpawnPosition}（朝向 {level.PlayerSpawnEuler}），站点 {siteCount} 个，限时 {level.TimeLimitSeconds}s。");
+      }
+
+      private void Start()
+      {
+         // T1（触屏）：真机或 Editor 启用时经 UIKit 打开触摸操作层。
+         // 关键：跨场景进入时 UIKit 可能仍复用"即将卸载的旧场景"的 UIRoot
+         // （2MainScene 自带 UIRoot 场景实例，非 DDOL），若此刻打开面板，
+         // 面板会随旧场景一起被销毁 → 战斗中看不到 UI。
+         // 故先等 UIRoot 归属稳定（属于本场景 / DontDestroyOnLoad / 不存在）再打开。
+         StartCoroutine(OpenTouchUiWhenSceneReady());
+      }
+
+      private System.Collections.IEnumerator OpenTouchUiWhenSceneReady()
+      {
+         const int maxFrames = 1200; // 上限约 20s，避免异常情况下永久等待
+         for (var i = 0; i < maxFrames; i++)
+         {
+            if (BattleTouchInputPanel.IsUIRootReadyForScene(gameObject.scene))
+            {
+               break;
+            }
+
+            yield return null;
+         }
+
+         BattleTouchInputPanel.TryOpenForBattle();
+      }
+
+      private void OnDestroy()
+      {
+         // T1：离场关闭触摸层（幂等；场景卸载/重开/退出均触发）。
+         // 面板可能随场景一并销毁，故捕获异常避免卸载期报错刷屏。
+         try
+         {
+            BattleTouchInputPanel.CloseForBattle();
+         }
+         catch (System.Exception e)
+         {
+            Debug.LogWarning($"[T1] 离场关闭触摸层异常（可忽略）：{e.Message}");
+         }
       }
 
       /// <summary>

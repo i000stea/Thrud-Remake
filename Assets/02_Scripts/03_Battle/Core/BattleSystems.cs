@@ -119,11 +119,20 @@ namespace TeaGame
 
       /// <summary>
       /// 采集当前帧输入。
+      /// T1（触屏，2026-09-08 用户调整）：**二选一**——
+      /// 触屏层启用时仅采集虚拟输入（键鼠战斗输入不生效）；未启用时仅采集键鼠（原逻辑零回归）。
+      /// 战斗逻辑只读快照，零改动。
       /// </summary>
       public void Tick()
       {
          var controller = State.Controller;
          if (!controller) return;
+
+         // 暂停键脉冲在暂停中也要能消费（移动端通过暂停按钮恢复），故放在暂停早退之前。
+         if (BattleVirtualInput.Enabled && BattleVirtualInput.ConsumePauseToggle())
+         {
+            RequestPauseIfPlayable();
+         }
 
          if (State.Paused)
          {
@@ -131,6 +140,55 @@ namespace TeaGame
             return;
          }
 
+         if (BattleVirtualInput.Enabled)
+         {
+            SampleVirtual(controller);
+         }
+         else
+         {
+            SampleKeyboard(controller);
+         }
+      }
+
+      /// <summary>
+      /// 触屏独占采样（T1，2026-09-08 用户调整：编辑器下"仅触屏 UI"或"仅键鼠"二选一，不做合并）。
+      /// 虚拟摇杆/拖拽/按钮 → 输入快照；此路径不读取键鼠战斗输入。
+      /// </summary>
+      private void SampleVirtual(Battle_PlayerControl controller)
+      {
+         var input = State.Input;
+         input.MoveHorizontal = BattleVirtualInput.MoveX;
+         input.MoveVertical = BattleVirtualInput.MoveY;
+         input.MoveDepth = 0f; // 触屏首版无升降键（13 §3.1 布局未列）
+         input.HasMoveInput = Mathf.Abs(input.MoveHorizontal) > 0.01f
+                              || Mathf.Abs(input.MoveVertical) > 0.01f;
+
+         // 镜头：拖拽像素 → 等效鼠标轴（相机系统再乘 MouseSensitivity×dt）
+         input.MouseX = BattleVirtualInput.LookDeltaX * BattleVirtualInput.VirtualLookAxisScale;
+         input.MouseY = BattleVirtualInput.LookDeltaY * BattleVirtualInput.VirtualLookAxisScale;
+
+         input.SprintHeld = BattleVirtualInput.SprintHeld;
+         input.SprintPressed = BattleVirtualInput.ConsumeRollOrSprint();
+         input.FireHeld = BattleVirtualInput.FireHeld;
+         input.ReloadPressed = BattleVirtualInput.ConsumeReload();
+         input.SkillEPressed = BattleVirtualInput.ConsumeSkillE();
+         input.SkillQPressed = BattleVirtualInput.ConsumeSkillQ();
+
+         BattleVirtualInput.EndFrame();
+
+         if (State.ControlTakenOver) return;
+
+         // 触屏切人：←/→ 循环（跳过阵亡）
+         var direction = BattleVirtualInput.ConsumeCycleRole();
+         if (direction != 0)
+         {
+            CycleRole(direction);
+         }
+      }
+
+      /// <summary>键鼠独占采样（触屏层未启用时的原逻辑，零回归）。</summary>
+      private void SampleKeyboard(Battle_PlayerControl controller)
+      {
          var input = State.Input;
          input.MouseX = Input.GetAxis("Mouse X");
          input.MouseY = Input.GetAxis("Mouse Y");
@@ -145,12 +203,43 @@ namespace TeaGame
          input.SkillEPressed = Input.GetKeyDown(KeyCode.E);
          input.SkillQPressed = Input.GetKeyDown(KeyCode.Q);
 
-         if (State.ControlTakenOver) return;
-
          var roleIndex = GetRoleIndexFromKeyboard();
          if (roleIndex >= 0)
          {
             Architecture.GetSystem<BattleRoleSystem>().SelectRole(roleIndex);
+         }
+      }
+
+      /// <summary>非终局时发送暂停切换请求（与 PlayerControl 的 ESC 守卫语义一致）。</summary>
+      private void RequestPauseIfPlayable()
+      {
+         if (State.LevelState == BattleLevelState.Victory || State.LevelState == BattleLevelState.Defeat)
+         {
+            return;
+         }
+
+         Architecture.SendEvent(new BattlePauseToggleRequestedEvent());
+      }
+
+      /// <summary>
+      /// 触屏循环切人：从当前槽沿方向找下一个存活角色（跳过阵亡），无存活则保持。
+      /// T3.1B 语义：阵亡槽不可切（与 HandleRoleDowned/SelectRole 同规则）。
+      /// </summary>
+      private void CycleRole(int direction)
+      {
+         var datas = State.BattleDatas;
+         if (datas == null || datas.Length <= 1) return;
+
+         var count = datas.Length;
+         var start = State.SelectedRoleIndex;
+         for (var step = 1; step <= count; step++)
+         {
+            var index = ((start + direction * step) % count + count) % count;
+            var candidate = datas[index];
+            if (candidate == null || candidate.IsDowned) continue;
+
+            Architecture.GetSystem<BattleRoleSystem>().SelectRole(index);
+            return;
          }
       }
 
@@ -716,14 +805,17 @@ namespace TeaGame
             return;
          }
 
+         var touchMode = BattleVirtualInput.Enabled;
+
          // ESC 改由 Battle_PlayerControl 统一处理暂停菜单；此处仅保留"点击画面锁定视角"
-         if (Input.GetMouseButtonDown(0))
+         // T1（触屏）：移动端无鼠标锁定语义（拖拽转镜头），跳过锁定流程
+         if (!touchMode && Input.GetMouseButtonDown(0))
          {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
          }
 
-         if (State.ControlTakenOver || Cursor.lockState != CursorLockMode.Locked) return;
+         if (State.ControlTakenOver || (!touchMode && Cursor.lockState != CursorLockMode.Locked)) return;
 
          var horizontalAxis = controller.ControlXAxis;
          var pitchingAxis = controller.ControlYAxis;
@@ -779,8 +871,10 @@ namespace TeaGame
          }
 
          // T1.1：Tab 循环切换/取消锁定（半自动）
-         if (Input.GetKeyDown(controller.PlayerConfig.LockSwitchKey)
-             && Time.time >= mSwitchCooldownUntil)
+         // T1（触屏）：虚拟"切换锁敌"脉冲等价 Tab
+         var lockSwitchRequested = Input.GetKeyDown(controller.PlayerConfig.LockSwitchKey)
+                                   || (BattleVirtualInput.Enabled && BattleVirtualInput.ConsumeLockSwitch());
+         if (lockSwitchRequested && Time.time >= mSwitchCooldownUntil)
          {
             mSwitchCooldownUntil = Time.time + controller.PlayerConfig.LockSwitchCooldown;
             TrySwitchLockedTarget(1);
