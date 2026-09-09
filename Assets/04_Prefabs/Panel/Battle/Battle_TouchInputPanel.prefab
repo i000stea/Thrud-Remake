@@ -1073,7 +1073,7 @@ GameObject:
   - component: {fileID: 5975883018918427464}
   - component: {fileID: 5233906856928969212}
   m_Layer: 0
-  m_Name: BattleTouchInputPanel
+  m_Name: Battle_TouchInputPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

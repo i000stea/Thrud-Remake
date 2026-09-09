@@ -334,7 +334,7 @@ GameObject:
   - component: {fileID: 527507130111552767}
   - component: {fileID: 1168793633787688050}
   m_Layer: 0
-  m_Name: BattlePauseMenuPanel
+  m_Name: Battle_PauseMenuPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
