@@ -40,6 +40,8 @@ Android 单包:登录→主菜单(测试按钮)→ 选关 → 编队 → 进「�
 
 ### 3.1 T1 · 手机按钮映射(1\~2 天,与 T3 并行)
 
+> **状态（2026-09-08）：已完成并 Play 验证通过（用户反馈「基本正常」）**。实现记录见本节末尾「实现记录」。
+
 - 输入改造位置:`BattleInputSystem`(采集点单点插入虚拟源),战斗系统零改动
 
 - 布局(首版,实机微调):
@@ -55,6 +57,24 @@ Android 单包:登录→主菜单(测试按钮)→ 选关 → 编队 → 进「�
 - 真机小项待验证:中央拖拽区与移动/按钮热区重叠判定、多指互斥、安全区(刘海/全面屏)、按钮触感反馈
 
 - 回归:Editor 键鼠全程不回归
+
+**实现记录（2026-09-08）**
+
+- **架构**：触摸 UI = **UIKit 标准 UIPanel**（`BattleTouchInputPanel`，UILevel.Common），prefab 由编辑器生成器
+  `Thrud/Battle/T1/Create Touch Input Panel (prefab)` 产出到 `Assets/04_Prefabs/Panel/TouchInput/`，AB 名
+  `battletouchinputpanel_prefab`；**不在运行时用代码构建 UI**（对齐 LevelSelect/Formation/结算面板范式）。
+- **输入桥**：`BattleVirtualInput`（静态虚拟输入源）承载摇杆轴/镜头拖拽像素/按钮脉冲；
+  `BattleInputSystem` 在采集层**二选一**——触屏层启用时仅采虚拟输入，未启用时仅键鼠（原逻辑零回归）。
+- **布局（首版）**：左下摇杆；右下 开火（大键，按住）/ 冲刺（按住=冲刺、按下瞬间=翻滚，等价 Shift）/
+  E / Q / 切人 ◀ ▶ / 右上暂停；屏中约 40% 宽拖拽转镜头。
+- **生命周期**：`battle_runtime` 在战斗场景 Start 打开触摸层、OnDestroy 关闭；跨场景进入时**先等
+  UIRoot 归属稳定**（UIKit 实际使用的 `UIRoot.Instance` 属于本场景/DDontDestroyOnLoad/不存在）再打开。
+- **坑（重要）**：2MainScene 与 BattleGraybox **各自带 UIRoot 场景实例**（非 DDOL）；UIKit 找到已存在的
+  UIRoot 就不做 DontDestroyOnLoad。若在旧场景卸载前打开面板，面板会挂到旧场景根上、随卸载一起销毁 →
+  战斗中 UI 消失。故必须等旧场景卸载完成后再打开（SceneFlow 激活后卸载旧场景 + 本层等待逻辑双保险）。
+- **Editor 调试**：编辑器内**默认显示**触屏层（`BattleVirtualInput.EditorTouchEnabled`，菜单
+  `Thrud/Battle/Touch Input/Show Touch UI in Editor` 可关）；开启时键鼠战斗输入不生效（二选一）。
+- **不在首版**：升降（Q/E）触屏键、按钮触感反馈、安全区自适应（刘海/全面屏）——列入真机微调项。
 
 ### 3.2 T3 · 剿灭关卡/敌人/角色调整(1\~2 天,与 T1 并行)
 
