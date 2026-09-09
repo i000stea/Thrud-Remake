@@ -293,17 +293,16 @@ namespace TeaGame
       /// 解析战斗运行时角色数据（T3.1A 数据管道）。
       /// 优先级：
       /// 1. <see cref="BattleTeamSession"/> 有选队 → 实体化本次出战编队（角色 SO + 武器 SO，任意搭配）；
+      ///    若会话成员已全部失效（SO 引用丢失）→ 清空会话并回落（见下），避免开空队引发后续 NRE；
       /// 2. 编辑模式直连（无会话）→ 默认编队（仓库成对数组）/ 旧版仓库过渡兜底，与改造前行为一致；
       /// 3. 正式构建且无会话 → 视为流程错误：收集日志后退回主场景（不崩溃、不开空队）。
       /// </summary>
       public BattleRoleRuntimeData[] ResolveBattleDatas()
       {
-         if (BattleTeamSession.HasSelection)
+         var fromSession = BuildFromSessionIfValid();
+         if (fromSession != null)
          {
-            var members = BattleTeamSession.Members;
-            return dataRepository
-               ? dataRepository.BuildFromSession(members)
-               : BattleTeamRuntimeBuilder.Build(members);
+            return fromSession;
          }
 
          if (Application.isEditor)
@@ -331,6 +330,35 @@ namespace TeaGame
          QFramework.UIKit.CloseAllPanel(); // 清面板表防跨场景残留已销毁面板
          BattleSceneGate.TransitionTo(BattleTeamSession.ReturnSceneName);
          return Array.Empty<BattleRoleRuntimeData>();
+      }
+
+      /// <summary>
+      /// 会话有有效选队时实体化返回；无会话或成员全部失效返回 null（失效时清空会话）。
+      /// SO 引用丢失常见于编辑器开启 Disable Domain Reload：静态 BattleTeamSession 在反复
+      /// 重编译后残留旧资产引用（Unity 对象被重载视为 null）。
+      /// </summary>
+      private BattleRoleRuntimeData[] BuildFromSessionIfValid()
+      {
+         if (!BattleTeamSession.HasSelection)
+         {
+            return null;
+         }
+
+         var members = BattleTeamSession.Members;
+         var built = dataRepository
+            ? dataRepository.BuildFromSession(members)
+            : BattleTeamRuntimeBuilder.Build(members);
+
+         if (built != null && built.Length > 0)
+         {
+            return built;
+         }
+
+         Debug.LogWarning(
+            "[T3.1A] 出战编队会话成员已全部失效（角色/武器 SO 引用丢失，常见于编辑器 Disable Domain Reload）" +
+            $"，已清空会话并回落默认（Editor）或退回（正式）。请重新走选关 → 编队流程。");
+         BattleTeamSession.Clear();
+         return null;
       }
 
       /// <summary>获取武器实例的父节点。</summary>

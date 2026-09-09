@@ -395,6 +395,15 @@ namespace TeaGame
          var count = State?.BattleDatas?.Length ?? 0;
          if (count <= 0)
          {
+            // 无有效出战成员（如编队 SO 缺失被跳过）：分配 0 行数组防止 null 引用，
+            // 各读取点按 roleIndex 越界安全返回（战斗应在上层拦截空队，此处仅兜底不崩）。
+            if (mReadyAt == null)
+            {
+               mReadyAt = new float[0, SlotCount];
+               mLastRemainSeconds = new int[0, SlotCount];
+               mLastReady = new bool[0, SlotCount];
+            }
+
             return;
          }
 
