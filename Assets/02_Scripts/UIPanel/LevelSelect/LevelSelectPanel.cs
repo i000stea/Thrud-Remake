@@ -199,7 +199,11 @@ namespace TeaGame
          BattleLevelSession.Select(mSelectedLevel);
          UIKit.ClosePanel<LevelSelectPanel>();
 
-         UIKit.OpenPanel<Main_FormationPanel>(UILevel.PopUI, null, FormationAssetBundleName);
+         UIKit.OpenPanel<Main_FormationPanel>(
+            UILevel.PopUI,
+            null,
+            FormationAssetBundleName,
+            QAssetBundle.Main_battleteamselectpanel_prefab.Main_FormationPanel);
       }
 
       // ===================== 工具 =====================
