@@ -22,20 +22,22 @@ namespace TeaGame
       }
 
       /// <summary>
-      /// 初始化角色系统。
+      /// 初始化角色系统（2026-09-08 架构调整：由 battle_runtime 装配时注入角色数据，
+      /// Battle_PlayerControl 不再承担"数据解析"——它只作为 View 提供引用）。
       /// </summary>
-      public void Initialize(Battle_PlayerControl controller)
+      public void Initialize(Battle_PlayerControl controller, BattleRoleRuntimeData[] battleDatas)
       {
          State.Controller = controller;
-         State.ControlTakenOver = controller.ControlTakeOff;
-         State.BattleDatas = controller.ResolveBattleDatas();
-         State.SelectedRoleIndex = Mathf.Clamp(controller.InitialRoleIndex, 0, Mathf.Max(0, State.BattleDatas.Length - 1));
-         State.CurrentFov = controller.PlayerConfig.MainFov;
+         State.ControlTakenOver = controller != null && controller.ControlTakeOff;
+         State.BattleDatas = battleDatas ?? System.Array.Empty<BattleRoleRuntimeData>();
+         State.SelectedRoleIndex = Mathf.Clamp(controller != null ? controller.InitialRoleIndex : 0,
+            0, Mathf.Max(0, State.BattleDatas.Length - 1));
+         State.CurrentFov = controller != null ? controller.PlayerConfig.MainFov : 60f;
          State.CameraPitch = 0f;
          State.LockEnemy = null;
          State.ScreenTarget = Vector2.zero;
          State.LockSpeedMultiplier = 1f;
-         State.Movement.LastRollTime = -controller.PlayerConfig.GetRollCooldown();
+         State.Movement.LastRollTime = -Mathf.Max(0.01f, controller != null ? controller.PlayerConfig.GetRollCooldown() : 1f);
          State.Movement.ReadySprint = false;
          State.Movement.Sprinting = false;
       }

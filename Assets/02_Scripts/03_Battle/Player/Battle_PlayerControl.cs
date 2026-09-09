@@ -7,13 +7,14 @@ using UnityEngine;
 namespace TeaGame
 {
    /// <summary>
-   /// 战斗玩家控制器（原 PlayerControl，T3.1 改名）。
-   /// 该类只承担"场景装配器"与"生命周期入口"职责：
-   /// 1. 提供场景对象与配置引用（不含任何 UI 面板——结算/暂停面板由 BattleUiSystem 经 UIKit UIRoot 添加/移除）；
-   /// 2. 在 Unity 生命周期中驱动各个 QFramework System；
-   /// 3. 把当前战斗上下文同步到桥接层，兼容尚未完全迁移的旧表现脚本。
-   /// 暂停（ESC 菜单）仅在此处派发 <see cref="BattlePauseToggleRequestedEvent"/>，
-   /// timeScale / 菜单显隐 / 鼠标由 BattleUiSystem 统一处理（与控制器解耦）。
+   /// 战斗玩家控制器（rig，原 PlayerControl，T3.1 改名）。
+   ///
+   /// **架构定位（2026-09-08）：纯 View / 表现载体**——
+   /// - 只提供"战斗表现所需引用 + Designer 字段 + 纯数据访问/换算工具"，
+   ///   以及自身生命周期内的清理与 View 侧事件绑定；
+   /// - **不再承担**：进入战斗的数据解析、系统初始化、每帧驱动（这些已上移
+   ///   到 battle_runtime（<see cref="BattleSceneRuntimeHost"/>，场景初始化 + 驱动节点）。
+   ///   各 System 通过 State.Controller（=本对象）读取移动轴/相机/HUD 等表现引用。
    /// </summary>
    public partial class Battle_PlayerControl : ViewController, IController, IUnRegisterList
    {
@@ -93,11 +94,6 @@ namespace TeaGame
       }
 
       /// <summary>
-      /// QFramework 归属架构。
-      /// </summary>
-      IArchitecture IBelongToArchitecture.GetArchitecture() => BattleArchitecture.Interface;
-
-      /// <summary>
       /// 当前战斗架构实例。
       /// 这里不直接依赖 `GetSystem/GetModel` 扩展方法，
       /// 这样可以规避部分 IDE 对扩展方法识别不稳定导致的"方法丢失"提示。
@@ -105,75 +101,11 @@ namespace TeaGame
       private IArchitecture Architecture => BattleArchitecture.Interface;
 
       /// <summary>
-      /// 初始化控制器。
-      /// 这里会设置时间缩放并确保战斗架构被创建。
+      /// 初始化（View 只做最轻的时间缩放设置；战斗装配/驱动由 battle_runtime 负责）。
       /// </summary>
       private void Awake()
       {
          Time.timeScale = scale;
-         _ = BattleArchitecture.Interface;
-      }
-
-      /// <summary>
-      /// 初始化战斗系统。
-      /// 角色数据、视图装配和桥接层状态都会在这里完成第一次同步。
-      /// </summary>
-      private void Start()
-      {
-         Architecture.GetModel<BattleStateModel>().Paused = false; // 复位暂停态（架构常驻跨场景）
-
-         Architecture.GetSystem<BattleRoleSystem>().Initialize(this);
-         Architecture.GetSystem<BattleHealthSystem>().Initialize();
-         Architecture.GetSystem<BattleViewSystem>().InitializeView();
-         SyncRuntimeBridge();
-
-         // T2.3.1：注册元素子弹（开火按角色元素取弹）
-         BattleElementBulletLibrary.Register(bulletIcePrefab, bulletFirePrefab, bulletWindPrefab, bulletElectricPrefab);
-
-         // T2.4：技能系统按本场角色数量重建冷却表、清零能量并广播首帧状态
-         Architecture.GetSystem<BattleSkillSystem>().ResetForBattle();
-
-         // T3.1：关卡流程无条件复位进入 Prepare（打印首个状态日志；终局去向由结算弹窗按钮触发）
-         Architecture.GetSystem<BattleLevelFlow>().StartLevel();
-
-         // T2.4 里程碑1：技能 HUD 事件注册（反向 bind——状态写入方广播，UI 订阅刷新）
-         RegisterSkillHudEvents();
-      }
-
-      /// <summary>
-      /// 每帧驱动输入、移动前置状态、视角、表现和开火逻辑。
-      /// ESC 只派发暂停请求（状态/菜单由 BattleUiSystem 处理）；暂停期间战斗逻辑不推进。
-      /// </summary>
-      private void Update()
-      {
-         var state = Architecture.GetModel<BattleStateModel>();
-
-         Architecture.GetSystem<BattleRoleSystem>().SetControlTakenOver(controlTakeOff);
-         Architecture.GetSystem<BattleInputSystem>().Tick();
-
-         // T3.1：ESC = 暂停/恢复请求（终局由结算弹窗接管，不再响应）
-         if (Input.GetKeyDown(KeyCode.Escape)
-             && state.LevelState != BattleLevelState.Victory
-             && state.LevelState != BattleLevelState.Defeat)
-         {
-            Architecture.SendEvent(new BattlePauseToggleRequestedEvent());
-         }
-
-         if (state.Paused)
-         {
-            SyncRuntimeBridge();
-            return;
-         }
-
-         Architecture.GetSystem<BattleMovementSystem>().TickUpdate();
-         Architecture.GetSystem<BattleCameraSystem>().Tick();
-         Architecture.GetSystem<BattleViewSystem>().TickUpdate();
-         Architecture.GetSystem<BattleWeaponSystem>().Tick();
-
-         // T2.4：技能管道（输入快照已含 E/Q，冷却读秒 + 施放校验在本系统内收口）
-         Architecture.GetSystem<BattleSkillSystem>().Tick();
-
-         SyncRuntimeBridge();
       }
 
       /// <summary>角色切换事件反注册句柄（T2.4 技能 HUD）。</summary>
@@ -189,8 +121,9 @@ namespace TeaGame
       /// T2.4 技能 HUD：以"反向 bind（事件注册）"方式驱动，而非每帧轮询 StateModel——
       /// 状态写入方（角色切换 / 能量结算 / 冷却推进）在写模型后广播事件，
       /// UI 订阅事件、事件到达才刷新文本；注册后立即初始化一次首帧数据。
+      /// 由 battle_runtime 在装配阶段调用（View 侧事件绑定，属表现职责）。
       /// </summary>
-      private void RegisterSkillHudEvents()
+      public void BindSkillHudEvents()
       {
          mSkillHudSwitchUnregister = Architecture.RegisterEvent<BattleRoleSwitchedEvent>(_ => RefreshSkillHudUi());
          mSkillHudEnergyUnregister = Architecture.RegisterEvent<BattleSkillEnergyChangedEvent>(_ => RefreshSkillHudUi());
@@ -253,24 +186,13 @@ namespace TeaGame
          }
       }
 
-      /// <summary>固定帧驱动物理移动与锁敌目标搜索（暂停中不推进）。</summary>
-      private void FixedUpdate()
-      {
-         if (Architecture.GetModel<BattleStateModel>().Paused) return;
-
-         Architecture.GetSystem<BattleMovementSystem>().TickFixedUpdate();
-         Architecture.GetSystem<BattleAimSystem>().TickFixedUpdate();
-         SyncRuntimeBridge();
-      }
-
-      /// <summary>帧结束后刷新锁敌准星（暂停中不推进）。</summary>
-      private void LateUpdate()
-      {
-         if (Architecture.GetModel<BattleStateModel>().Paused) return;
-
-         Architecture.GetSystem<BattleAimSystem>().TickLateUpdate();
-         SyncRuntimeBridge();
-      }
+      /// <summary>
+      /// 暴露给 battle_runtime 的 View 表现引用：元素子弹 prefab（开火按当前角色元素取弹）。
+      /// </summary>
+      public GameObject BulletIcePrefab => bulletIcePrefab;
+      public GameObject BulletFirePrefab => bulletFirePrefab;
+      public GameObject BulletWindPrefab => bulletWindPrefab;
+      public GameObject BulletElectricPrefab => bulletElectricPrefab;
 
       /// <summary>控制器销毁时清理桥接层与事件注册。</summary>
       private void OnDestroy()
@@ -287,78 +209,6 @@ namespace TeaGame
          mSkillHudCooldownUnregister?.UnRegister();
          mSkillHudCooldownUnregister = null;
          this.UnRegisterAll();
-      }
-
-      /// <summary>
-      /// 解析战斗运行时角色数据（T3.1A 数据管道）。
-      /// 优先级：
-      /// 1. <see cref="BattleTeamSession"/> 有选队 → 实体化本次出战编队（角色 SO + 武器 SO，任意搭配）；
-      ///    若会话成员已全部失效（SO 引用丢失）→ 清空会话并回落（见下），避免开空队引发后续 NRE；
-      /// 2. 编辑模式直连（无会话）→ 默认编队（仓库成对数组）/ 旧版仓库过渡兜底，与改造前行为一致；
-      /// 3. 正式构建且无会话 → 视为流程错误：收集日志后退回主场景（不崩溃、不开空队）。
-      /// </summary>
-      public BattleRoleRuntimeData[] ResolveBattleDatas()
-      {
-         var fromSession = BuildFromSessionIfValid();
-         if (fromSession != null)
-         {
-            return fromSession;
-         }
-
-         if (Application.isEditor)
-         {
-            if (dataRepository)
-            {
-               return dataRepository.BuildRuntimeDatas();
-            }
-
-            if (legacyDataStore && legacyDataStore.battleDatas != null)
-            {
-               return ConvertLegacyDatas(legacyDataStore.battleDatas);
-            }
-
-            if (StoreBattleRoleData.I != null && StoreBattleRoleData.I.battleDatas != null)
-            {
-               return ConvertLegacyDatas(StoreBattleRoleData.I.battleDatas);
-            }
-
-            return Array.Empty<BattleRoleRuntimeData>();
-         }
-
-         Debug.LogError(
-            $"[T3.1A] 正式环境进入战斗但缺少出战编队会话——请从「{BattleTeamSession.TeamSelectSceneName}」进入。已退回 {BattleTeamSession.ReturnSceneName}。");
-         QFramework.UIKit.CloseAllPanel(); // 清面板表防跨场景残留已销毁面板
-         BattleSceneGate.TransitionTo(BattleTeamSession.ReturnSceneName);
-         return Array.Empty<BattleRoleRuntimeData>();
-      }
-
-      /// <summary>
-      /// 会话有有效选队时实体化返回；无会话或成员全部失效返回 null（失效时清空会话）。
-      /// SO 引用丢失常见于编辑器开启 Disable Domain Reload：静态 BattleTeamSession 在反复
-      /// 重编译后残留旧资产引用（Unity 对象被重载视为 null）。
-      /// </summary>
-      private BattleRoleRuntimeData[] BuildFromSessionIfValid()
-      {
-         if (!BattleTeamSession.HasSelection)
-         {
-            return null;
-         }
-
-         var members = BattleTeamSession.Members;
-         var built = dataRepository
-            ? dataRepository.BuildFromSession(members)
-            : BattleTeamRuntimeBuilder.Build(members);
-
-         if (built != null && built.Length > 0)
-         {
-            return built;
-         }
-
-         Debug.LogWarning(
-            "[T3.1A] 出战编队会话成员已全部失效（角色/武器 SO 引用丢失，常见于编辑器 Disable Domain Reload）" +
-            $"，已清空会话并回落默认（Editor）或退回（正式）。请重新走选关 → 编队流程。");
-         BattleTeamSession.Clear();
-         return null;
       }
 
       /// <summary>获取武器实例的父节点。</summary>
@@ -413,8 +263,8 @@ namespace TeaGame
          return PlayerConfig.LockEnemySpeed * Mathf.Max(1f, multiplier);
       }
 
-      /// <summary>把当前战斗上下文同步到桥接层（旧表现脚本兼容）。</summary>
-      private void SyncRuntimeBridge()
+      /// <summary>把当前战斗上下文同步到桥接层（旧表现脚本兼容；由 battle_runtime 每帧调用）。</summary>
+      public void SyncRuntimeBridge()
       {
          var state = Architecture.GetModel<BattleStateModel>();
          var lockPoint = state.LockEnemy.IsAlive() ? state.LockEnemy.LockPoint : null;
@@ -436,23 +286,6 @@ namespace TeaGame
             GetCurrentLockSpeed(state.LockSpeedMultiplier),
             environmentEffectController,
             activeElement);
-      }
-
-      /// <summary>把旧版运行时数据转换成新版运行时结构（过渡期兼容）。</summary>
-      private static BattleRoleRuntimeData[] ConvertLegacyDatas(EntityBattleData[] legacyDatas)
-      {
-         if (legacyDatas == null || legacyDatas.Length == 0)
-         {
-            return Array.Empty<BattleRoleRuntimeData>();
-         }
-
-         var results = new BattleRoleRuntimeData[legacyDatas.Length];
-         for (var i = 0; i < legacyDatas.Length; i++)
-         {
-            results[i] = BattleLegacyRuntimeDataAdapter.Convert(legacyDatas[i]);
-         }
-
-         return results;
       }
    }
 }
