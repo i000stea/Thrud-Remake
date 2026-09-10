@@ -20,5 +20,37 @@ namespace TeaGame
 
       public RoleItem_Data[] Roles => roles ?? System.Array.Empty<RoleItem_Data>();
       public WeaponItem_Data[] Weapons => weapons ?? System.Array.Empty<WeaponItem_Data>();
+
+      /// <summary>按 itemID 查找可出战角色（方案 B：会话草稿只存 id，装配前经本目录重解析 SO）。</summary>
+      public RoleItem_Data FindRoleById(int itemId)
+      {
+         var list = Roles;
+         for (var i = 0; i < list.Length; i++)
+         {
+            var role = list[i];
+            if (role != null && role.itemID == itemId)
+            {
+               return role;
+            }
+         }
+
+         return null;
+      }
+
+      /// <summary>按 itemID 查找可配武器（方案 B）。</summary>
+      public WeaponItem_Data FindWeaponById(int itemId)
+      {
+         var list = Weapons;
+         for (var i = 0; i < list.Length; i++)
+         {
+            var weapon = list[i];
+            if (weapon != null && weapon.itemID == itemId)
+            {
+               return weapon;
+            }
+         }
+
+         return null;
+      }
    }
 }

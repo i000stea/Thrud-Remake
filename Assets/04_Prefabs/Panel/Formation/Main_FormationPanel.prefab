@@ -142,6 +142,7 @@ MonoBehaviour:
   ItemTemplate_Base: {fileID: 1568587080809385274}
   DetailTitle_Text: {fileID: 2339625165869213307}
   DetailBody_Text: {fileID: 6329873322189642157}
+  PopupCancel: {fileID: 7821130003144468380}
 --- !u!1 &718178010119939920
 GameObject:
   m_ObjectHideFlags: 0

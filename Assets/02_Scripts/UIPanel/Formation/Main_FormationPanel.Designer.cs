@@ -5,7 +5,7 @@ using QFramework;
 
 namespace TeaGame
 {
-	// Generate Id:e239d4e1-9abf-416c-94ae-318373b23b66
+	// Generate Id:b5756eb7-7312-484d-8fc2-b229fbfa85c6
 	public partial class Main_FormationPanel
 	{
 		public const string Name = "Main_FormationPanel";
@@ -40,6 +40,8 @@ namespace TeaGame
 		public UnityEngine.UI.Text DetailTitle_Text;
 		[SerializeField]
 		public UnityEngine.UI.Text DetailBody_Text;
+		[SerializeField]
+		public UnityEngine.UI.Button PopupCancel;
 		
 		private Main_FormationPanelData mPrivateData = null;
 		
@@ -60,6 +62,7 @@ namespace TeaGame
 			ItemTemplate_Base = null;
 			DetailTitle_Text = null;
 			DetailBody_Text = null;
+			PopupCancel = null;
 			
 			mData = null;
 		}

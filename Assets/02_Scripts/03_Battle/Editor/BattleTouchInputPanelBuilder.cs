@@ -7,12 +7,12 @@ namespace TeaGame.Battle.Editor
    /// <summary>
    /// T1 Editor 生成器：创建 BattleTouchInputPanel 预置体（幂等，可重复执行）。
    /// 生成内容（对齐 13 Demo P3 首版布局）：
-   /// 根 RectTransform（全屏，挂 <see cref="BattleTouchInputPanel"/>，UIKit UIPanel）
+   /// 根 RectTransform（全屏，挂 <see cref="Battle_TouchInputPanel"/>，UIKit UIPanel）
    ///  ├─ LookZone（屏中约 40% 宽、中高区域；透明 Image + TouchDragLookZone → 拖拽转镜头）
    ///  ├─ JoystickBase（左下，Image + TouchJoystick）+ Knob（子 Image）
    ///  └─ 右侧按钮（每键 = Image + Text 标签 + TouchHoldButton/TouchTapButton）：
    ///      Fire（按住开火）、E、Q、切人 ◀/▶、暂停 II
-   /// 并设置 assetBundleName = battletouchinputpanel_prefab（与 <see cref="BattleTouchInputPanel.AssetBundleName"/> 一致）。
+   /// 并设置 assetBundleName = battletouchinputpanel_prefab（与 <see cref="Battle_TouchInputPanel.AssetBundleName"/> 一致）。
    /// </summary>
    public static class BattleTouchInputPanelBuilder
    {
@@ -42,7 +42,7 @@ namespace TeaGame.Battle.Editor
 
       private static void CreateNew()
       {
-         var root = new GameObject("BattleTouchInputPanel", typeof(RectTransform), typeof(BattleTouchInputPanel));
+         var root = new GameObject("BattleTouchInputPanel", typeof(RectTransform), typeof(Battle_TouchInputPanel));
          try
          {
             BuildUi(root);
@@ -292,9 +292,9 @@ namespace TeaGame.Battle.Editor
             return;
          }
 
-         importer.SetAssetBundleNameAndVariant(BattleTouchInputPanel.AssetBundleName, string.Empty);
+         importer.SetAssetBundleNameAndVariant(Battle_TouchInputPanel.AssetBundleName, string.Empty);
          AssetDatabase.SaveAssets();
-         Debug.Log($"[T1] 已设置 AB：{BattleTouchInputPanel.AssetBundleName}");
+         Debug.Log($"[T1] 已设置 AB：{Battle_TouchInputPanel.AssetBundleName}");
       }
    }
 }

@@ -121,4 +121,5 @@ Assets/Test/output battle scene Desertnew/GameObject/Scene.fbx.meta
 # ---- ResKit AssetBundle / 构建产物（本地生成，不入库）----
 /AssetBundles/
 /Thrud_Remark_BurstDebugInformation_DoNotShip/
-Assets/StreamingAssets/AssetBundles/Android/
+Assets/StreamingAssets/AssetBundles/
+Assets/StreamingAssets/AssetBundles.meta

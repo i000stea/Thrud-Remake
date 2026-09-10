@@ -7,7 +7,7 @@ namespace TeaGame
    /// <summary>
    /// T3.1 结算弹窗数据：标题文案由 BattleUiSystem 在打开时注入。
    /// </summary>
-   public class BattleLevelResultPanelData : UIPanelData
+   public class Battle_LevelResultPanelData : UIPanelData
    {
       public string Title = string.Empty;
    }
@@ -20,12 +20,8 @@ namespace TeaGame
    /// 「退出」→ 经 SceneFlow 加载遮罩回来源场景/0ConfigScene（v1.3，<see cref="BattleSceneGate"/>）。
    /// 面板根不挂 Canvas，交由 UIRoot 按 UILevel 归位。
    /// </summary>
-   public partial class BattleLevelResultPanel : UIPanel
+   public partial class Battle_LevelResultPanel : UIPanel
    {
-      [SerializeField] private Text titleText;
-      [SerializeField] private Button restartButton;
-      [SerializeField] private Button exitButton;
-
       private bool mWired;
 
       protected override void OnInit(IUIData uiData)
@@ -35,10 +31,9 @@ namespace TeaGame
 
       protected override void OnOpen(IUIData uiData)
       {
-         var data = uiData as BattleLevelResultPanelData;
-         if (titleText)
+         if (ResultTitle)
          {
-            titleText.text = data == null ? string.Empty : data.Title;
+            ResultTitle.text = uiData is not Battle_LevelResultPanelData data ? string.Empty : data.Title;
          }
       }
 
@@ -51,20 +46,20 @@ namespace TeaGame
          if (mWired) return;
          mWired = true;
 
-         if (restartButton)
+         if (RestartButton)
          {
-            restartButton.onClick.AddListener(RestartLevel);
+            RestartButton.onClick.AddListener(RestartLevel);
          }
 
-         if (exitButton)
+         if (ExitButton)
          {
-            exitButton.onClick.AddListener(ExitToMainScene);
+            ExitButton.onClick.AddListener(ExitToMainScene);
          }
       }
 
       private void RestartLevel()
       {
-         UIKit.ClosePanel<BattleLevelResultPanel>();
+         UIKit.ClosePanel<Battle_LevelResultPanel>();
          BattleArchitecture.Interface.GetSystem<BattleLevelFlow>().Restart();
       }
 

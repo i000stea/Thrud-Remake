@@ -24,12 +24,6 @@ namespace TeaGame
    /// </summary>
    public partial class LevelSelectPanel : UIPanel
    {
-      /// <summary>本面板 AB 名（与预置体 assetBundleName 一致；QAssetBundle 重生成后可改用生成类）。</summary>
-      public const string AssetBundleName = "levelselectpanel_prefab";
-
-      /// <summary>打开角色选择面板的 AB 名（沿用既有 main_battleteamselectpanel_prefab）。</summary>
-      public const string FormationAssetBundleName = "main_battleteamselectpanel_prefab";
-
       [Header("关卡目录（回退：注入 Data.Catalog 优先）")]
       [SerializeField] private BattleLevelCatalog catalog;
 
@@ -202,8 +196,8 @@ namespace TeaGame
          UIKit.OpenPanel<Main_FormationPanel>(
             UILevel.PopUI,
             null,
-            FormationAssetBundleName,
-            QAssetBundle.Main_battleteamselectpanel_prefab.Main_FormationPanel);
+            QAssetBundle.Main_formationpanel_prefab.BundleName,
+            QAssetBundle.Main_formationpanel_prefab.Main_FormationPanel);
       }
 
       // ===================== 工具 =====================

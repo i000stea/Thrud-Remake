@@ -11,24 +11,19 @@
 namespace QAssetBundle
 {
     
-    public class Battlelevelresultpanel_prefab
+    public class Battle_levelresultpanel_prefab
     {
-        public const string BundleName = "battlelevelresultpanel_prefab";
+        public const string BundleName = "battle_levelresultpanel_prefab";
         public const string Battle_LevelResultPanel = "Battle_LevelResultPanel";
     }
-    public class Battlemainhubpanel_prefab
+    public class Battle_pausemenupanel_prefab
     {
-        public const string BundleName = "battlemainhubpanel_prefab";
-        public const string Battle_MainHubPanel = "Battle_MainHubPanel";
-    }
-    public class Battlepausemenupanel_prefab
-    {
-        public const string BundleName = "battlepausemenupanel_prefab";
+        public const string BundleName = "battle_pausemenupanel_prefab";
         public const string Battle_PauseMenuPanel = "Battle_PauseMenuPanel";
     }
-    public class Battletouchinputpanel_prefab
+    public class Battle_touchinputpanel_prefab
     {
-        public const string BundleName = "battletouchinputpanel_prefab";
+        public const string BundleName = "battle_touchinputpanel_prefab";
         public const string Battle_TouchInputPanel = "Battle_TouchInputPanel";
     }
     public class Levelselectpanel_prefab
@@ -41,9 +36,9 @@ namespace QAssetBundle
         public const string BundleName = "loadinggroup_prefab";
         public const string LoadingGroup = "LoadingGroup";
     }
-    public class Main_battleteamselectpanel_prefab
+    public class Main_formationpanel_prefab
     {
-        public const string BundleName = "main_battleteamselectpanel_prefab";
+        public const string BundleName = "main_formationpanel_prefab";
         public const string Main_FormationPanel = "Main_FormationPanel";
     }
     public class Main_menupanel_prefab

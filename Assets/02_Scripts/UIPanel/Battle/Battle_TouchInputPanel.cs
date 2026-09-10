@@ -5,6 +5,9 @@ using UnityEngine.SceneManagement;
 
 namespace TeaGame
 {
+   public class Battle_TouchInputPanelData : UIPanelData
+   {
+   }
    /// <summary>
    /// T1 触屏操作层（13 Demo P3 布局：左下摇杆 / 右下普攻+E/Q+切人+暂停 / 屏中约 40% 宽拖拽转镜头）。
    ///
@@ -18,13 +21,13 @@ namespace TeaGame
    /// 调用 <see cref="TryOpenForBattle"/>（真机平台或 Editor 调试开关）；离场经 UIKit.ClosePanel
    /// 关闭（宿主 OnDestroy + 既有离场 CloseAllPanel 出口双保险）。
    /// </summary>
-   public partial class BattleTouchInputPanel : UIPanel
+   public partial class Battle_TouchInputPanel : UIPanel
    {
       /// <summary>本面板 AB 名（与 prefab assetBundleName 一致；规则 = 资产名小写 + "_prefab"）。</summary>
-      public const string AssetBundleName = QAssetBundle.Battletouchinputpanel_prefab.BundleName;
+      public const string AssetBundleName = QAssetBundle.Battle_touchinputpanel_prefab.BundleName;
 
       /// <summary>prefab 资源名（UIKit ResKit 加载用，= prefab 文件名）。</summary>
-      public const string PrefabName = QAssetBundle.Battletouchinputpanel_prefab.Battle_TouchInputPanel;
+      public const string PrefabName = QAssetBundle.Battle_touchinputpanel_prefab.Battle_TouchInputPanel;
 
       private bool mEnabled;
 
@@ -39,23 +42,23 @@ namespace TeaGame
          EnsureEventSystem();
          EnsureUIRootReady();
 
-         var exist = UIKit.GetPanel<BattleTouchInputPanel>();
-         if (exist != null) return; // MonoBehaviour 判空：已销毁面板在此返回 null，继续重建
+         //var exist = UIKit.GetPanel<Battle_TouchInputPanel>();
+         //if (exist != null) return; // MonoBehaviour 判空：已销毁面板在此返回 null，继续重建
 
-         // 跨场景卸载可能让 UIKit 面板表残留已销毁条目（接口判空不走 Unity 判空），先清理一次
-         try
-         {
-            UIKit.ClosePanel<BattleTouchInputPanel>();
-         }
-         catch (System.Exception e)
-         {
-            Debug.LogWarning($"[T1] 清理残留触摸面板表项失败（可忽略）：{e.Message}");
-         }
+         //// 跨场景卸载可能让 UIKit 面板表残留已销毁条目（接口判空不走 Unity 判空），先清理一次
+         //try
+         //{
+         //   UIKit.ClosePanel<Battle_TouchInputPanel>();
+         //}
+         //catch (System.Exception e)
+         //{
+         //   Debug.LogWarning($"[T1] 清理残留触摸面板表项失败（可忽略）：{e.Message}");
+         //}
 
          // 先经 ResKit 校验 AB，避免 UIKit 打开空面板（对齐 BattleUiSystem 纪律）
-         var loader = QFramework.ResLoader.Allocate();
+         var loader = ResLoader.Allocate();
          var prefab = loader.LoadSync<GameObject>(AssetBundleName, PrefabName);
-         loader.Recycle2Cache();
+         //loader.Recycle2Cache();
          if (prefab == null)
          {
             Debug.LogWarning("[T1] 未找到触屏操作层面板 prefab" +
@@ -64,7 +67,7 @@ namespace TeaGame
             return;
          }
 
-         UIKit.OpenPanel<BattleTouchInputPanel>(
+         UIKit.OpenPanel<Battle_TouchInputPanel>(
             UILevel.Common,
             null,
             AssetBundleName,
@@ -114,8 +117,8 @@ namespace TeaGame
       /// <summary>战斗离场入口：关闭触摸层（幂等）。</summary>
       public static void CloseForBattle()
       {
-         if (UIKit.GetPanel<BattleTouchInputPanel>() == null) return;
-         UIKit.ClosePanel<BattleTouchInputPanel>();
+         if (UIKit.GetPanel<Battle_TouchInputPanel>() == null) return;
+         UIKit.ClosePanel<Battle_TouchInputPanel>();
       }
 
       protected override void OnOpen(IUIData uiData = null)

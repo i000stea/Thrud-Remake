@@ -8,6 +8,8 @@ namespace TeaGame
    {
       private IEnumerator Start()
       {
+         ResKit.Init();
+         ResLoader.Allocate();
          // 延迟一帧，等 UIKit 可用后再开面板
          yield return null;
 

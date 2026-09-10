@@ -79,24 +79,24 @@ namespace TeaGame
 
       private static void OpenResult(string title)
       {
-         if (!TryEnsurePanelAvailable("结算", QAssetBundle.Battlelevelresultpanel_prefab.BundleName,
-                QAssetBundle.Battlelevelresultpanel_prefab.Battle_LevelResultPanel))
+         if (!TryEnsurePanelAvailable("结算", QAssetBundle.Battle_levelresultpanel_prefab.BundleName,
+                QAssetBundle.Battle_levelresultpanel_prefab.Battle_LevelResultPanel))
          {
             return;
          }
 
-         UIKit.OpenPanel<BattleLevelResultPanel>(
+         UIKit.OpenPanel<Battle_LevelResultPanel>(
             UILevel.PopUI,
-            new BattleLevelResultPanelData { Title = title },
-            assetBundleName: QAssetBundle.Battlelevelresultpanel_prefab.BundleName,
-            prefabName: QAssetBundle.Battlelevelresultpanel_prefab.Battle_LevelResultPanel);
+            new Battle_LevelResultPanelData { Title = title },
+            assetBundleName: QAssetBundle.Battle_levelresultpanel_prefab.BundleName,
+            prefabName: QAssetBundle.Battle_levelresultpanel_prefab.Battle_LevelResultPanel);
       }
 
       private static void CloseResultIfOpen()
       {
-         if (UIKit.GetPanel<BattleLevelResultPanel>() != null)
+         if (UIKit.GetPanel<Battle_LevelResultPanel>() != null)
          {
-            UIKit.ClosePanel<BattleLevelResultPanel>();
+            UIKit.ClosePanel<Battle_LevelResultPanel>();
          }
       }
 
@@ -130,10 +130,10 @@ namespace TeaGame
          // 获取状态，避免重复调用
          var state = State;
          if (state.Paused) return;
-
+          
          // 先经 ResKit 校验 AB 资源，避免状态已改但面板加载失败
-         if (!TryEnsurePanelAvailable("暂停", QAssetBundle.Battlepausemenupanel_prefab.BundleName,
-                QAssetBundle.Battlepausemenupanel_prefab.Battle_PauseMenuPanel))
+         if (!TryEnsurePanelAvailable("暂停", QAssetBundle.Battle_pausemenupanel_prefab.BundleName,
+                QAssetBundle.Battle_pausemenupanel_prefab.Battle_PauseMenuPanel))
          {
             return;
          }
@@ -146,10 +146,10 @@ namespace TeaGame
 
          // UIKit 的 PanelLoader 由 SupportOldQF（ResKitPanelLoaderPool）提供，
          // 传 assetBundleName + prefab 资源名即走 AssetBundle 加载（不再走 Resources.Load）。
-         UIKit.OpenPanel<BattlePauseMenuPanel>(
+         UIKit.OpenPanel<Battle_PauseMenuPanel>(
             UILevel.PopUI,
-            assetBundleName: QAssetBundle.Battlepausemenupanel_prefab.BundleName,
-            prefabName: QAssetBundle.Battlepausemenupanel_prefab.Battle_PauseMenuPanel);
+            assetBundleName: QAssetBundle.Battle_pausemenupanel_prefab.BundleName,
+            prefabName: QAssetBundle.Battle_pausemenupanel_prefab.Battle_PauseMenuPanel);
          Debug.Log("[T3.1] 游戏暂停（timeScale=0，进程未暂停）——ESC 或点「继续」恢复。");
       }
 
@@ -165,9 +165,9 @@ namespace TeaGame
          Time.timeScale = 1f;
          Architecture.GetSystem<BattleInputSystem>().Clear();
 
-         if (UIKit.GetPanel<BattlePauseMenuPanel>() != null)
+         if (UIKit.GetPanel<Battle_PauseMenuPanel>() != null)
          {
-            UIKit.ClosePanel<BattlePauseMenuPanel>(); // 从 UIRoot 移除暂停菜单
+            UIKit.ClosePanel<Battle_PauseMenuPanel>(); // 从 UIRoot 移除暂停菜单
          }
       }
    }

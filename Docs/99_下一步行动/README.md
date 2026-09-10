@@ -1,6 +1,6 @@
 # 下一步行动清单（Docs 整理日汇总）
 
-> 汇总日期：**2026-09-08（晚，T3.1C 收尾后刷新）**。目的：在文档按类型重组后，**保留并集中可追溯的「下一步要做」内容**。
+> 汇总日期：**2026-09-09（编队数据管道方案 B + T1 触摸层 AB 回收修复 + 战斗面板目录迁移后刷新，详见 09 会话快照/关键坑 25/26）**。目的：在文档按类型重组后，**保留并集中可追溯的「下一步要做」内容**。
 > 本文只做**摘编**，不改写事实；每项标注来源，**原文/细节一律以来源文档为准**。新会话仍按老规矩：先读 `../05_开发日志/09_开发日志_会话交接.md`，再按 `../01_里程碑与执行/07_M1战斗灰盒_开发追踪指南.md` 逐卡执行。
 
 ---
@@ -41,6 +41,10 @@
 - [x] 实现方式：**UIKit UIPanel + Editor 生成 prefab + ResKit AB**（`BattleTouchInputPanel` / `battletouchinputpanel_prefab`），非运行时代码构建
 - [x] 跨场景修复：`battle_runtime` 等 UIRoot 归属稳定后再打开触摸层（2MainScene/BattleGraybox 各自带 UIRoot 场景实例，非 DDOL）
 - [ ] 真机微调项：拖拽区与按钮热区重叠判定、多指互斥、安全区（刘海/全面屏）、触感反馈、升降键（Q/E）是否需要
+- [ ] **T1 触摸层真机回归（2026-09-09 已修 AB 预检过早回收）**：随 T0 真机链路一起验触摸层可开/可操作（来源：09 关键坑 25）
+- [ ] `BattleUiSystem.TryEnsurePanelAvailable`（结算/暂停面板 AB 预检）**同源「过早 Recycle2Cache」隐患待修**（来源：09 关键坑 25）
+- [ ] `battle_runtime` 挂 `teamCatalog`（= `Assets/Data/BattleTeamCatalog.asset`）：**方案 B 真机前置**，编辑器直连可回落 Assets/Data 不挂（来源：09 关键坑 26）
+- [ ] 可选清理：`BattleLegacyRuntimeDataAdapter`（旧版 EntityBattleData 适配器，无调用者）
 
 **T3 · 剿灭关卡/敌人/角色调整（1~2 天，与 T1 并行）**
 - [ ] 复用 level_01（ArtSceneName=BattleGraybox），站点数 = 3（教学→压力→收尾，约 90s）

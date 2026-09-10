@@ -24,6 +24,10 @@ namespace TeaGame
       [Tooltip("关卡目录：提供 EnemyCatalog 与 D12 直连默认关解析。")]
       [SerializeField] private BattleLevelCatalog catalog;
 
+      [Tooltip("出战编目（方案 B：会话草稿按 itemID 重解析角色/武器 SO 用）。" +
+               "场景未挂时编辑器回落 Assets/Data 路径；真机必须挂引用并保证其所在资源不被卸载。")]
+      [SerializeField] private BattleTeamCatalog teamCatalog;
+
       [Tooltip("场景固定 rig（Battle_PlayerControl.prefab 实例，角色控制 + 战斗 HUD，仅作 View）。")]
       [SerializeField] private Battle_PlayerControl playerControl;
 
@@ -40,6 +44,7 @@ namespace TeaGame
 
       private void Awake()
       {
+         ResKit.Init();
          // 框架初始化：确保战斗架构创建（幂等）
          _ = BattleArchitecture.Interface;
 
@@ -70,7 +75,7 @@ namespace TeaGame
          // T1：离场关闭触摸层（幂等；场景卸载/重开/退出均触发）
          try
          {
-            BattleTouchInputPanel.CloseForBattle();
+            Battle_TouchInputPanel.CloseForBattle();
          }
          catch (System.Exception e)
          {
@@ -176,31 +181,41 @@ namespace TeaGame
 
       /// <summary>
       /// 解析出战角色数据（T3.1A 数据管道；2026-09-08 由 rig 上移至 battle_runtime）：
-      /// 1. <see cref="BattleTeamSession"/> 有选队 → 实体化本次出战编队（角色 SO + 武器 SO）；
-      ///    若会话成员已全部失效（SO 引用丢失，常见于编辑器 Disable Domain Reload）→ 清空并回落；
-      /// 2. 编辑器直连（无会话）→ 用 <see cref="BattleTeamCatalog"/>（BattleTeamCatalog.asset）默认编队兜底
-      ///    ——修复历史"直连无角色可加载"问题（原 rig 的 repository/legacy 引用早已清空）；
-      /// 3. 正式构建且无会话 → 流程错误：报错退回主场景（不开空队）。
+      /// 1. <see cref="BattleTeamSession"/> 有选队 → 经出战编目把草稿的 itemID 重解析为 SO 后实体化；
+      ///    编目缺失或成员 id 未命中（编目为空/数据更换/目录缺项）→ 清空会话回落；
+      /// 2. 编辑器直连（无会话）→ 用 <see cref="BattleTeamCatalog"/>（BattleTeamCatalog.asset）默认编队兜底；
+      /// 3. 正式构建且无会话/编目 → 流程错误：报错退回主场景（不开空队）。
       /// </summary>
       private BattleRoleRuntimeData[] ResolveBattleDatas()
       {
+         var resolvedCatalog = ResolveTeamCatalog();
+
          if (BattleTeamSession.HasSelection)
          {
-            var built = BattleTeamRuntimeBuilder.Build(BattleTeamSession.Members);
-            if (built != null && built.Length > 0)
+            if (resolvedCatalog == null)
             {
-               return built;
+               Debug.LogWarning(
+                  "[battle_runtime] 出战编队会话存在但未解析到出战编目（battle_runtime 未挂 teamCatalog，" +
+                  "编辑器会自动回落 Assets/Data 路径，真机必须挂）——已清空会话。");
+               BattleTeamSession.Clear();
             }
+            else
+            {
+               var built = BattleTeamRuntimeBuilder.Build(BattleTeamSession.Members, resolvedCatalog);
+               if (built.Length > 0)
+               {
+                  return built;
+               }
 
-            Debug.LogWarning(
-               "[battle_runtime] 出战编队会话成员已全部失效（角色/武器 SO 引用丢失，常见于编辑器 Disable Domain Reload）" +
-               "，已清空会话并回落默认。请重新走选关 → 编队流程。");
-            BattleTeamSession.Clear();
+               Debug.LogWarning(
+                  "[battle_runtime] 出战编队会话成员未从编目解析到完整 SO（编目为空/数据更换/目录缺项）" +
+                  "——已清空会话回落默认。请重新走选关 → 编队流程。");
+               BattleTeamSession.Clear();
+            }
          }
 
 #if UNITY_EDITOR
-         var teamCatalog = UnityEditor.AssetDatabase.LoadAssetAtPath<BattleTeamCatalog>(EditorTeamCatalogPath);
-         var fallback = BuildDefaultFromCatalog(teamCatalog);
+         var fallback = BuildDefaultFromCatalog(resolvedCatalog);
          if (fallback != null && fallback.Length > 0)
          {
             return fallback;
@@ -210,11 +225,27 @@ namespace TeaGame
          return System.Array.Empty<BattleRoleRuntimeData>();
 #else
          Debug.LogError(
-            "[battle_runtime] 正式环境进入战斗但缺少出战编队会话——" +
-            $"请从「{BattleTeamSession.TeamSelectSceneName}」进入。已退回 {BattleTeamSession.ReturnSceneName}。");
+            "[battle_runtime] 正式环境进入战斗但缺少出战编队会话或出战编目——" +
+            $"请从「{BattleTeamSession.TeamSelectSceneName}」进入，并确认 battle_runtime 已挂出战编目。" +
+            $"已退回 {BattleTeamSession.ReturnSceneName}。");
          QFramework.UIKit.CloseAllPanel(); // 清面板表防跨场景残留已销毁面板
          BattleSceneGate.TransitionTo(BattleTeamSession.ReturnSceneName);
          return System.Array.Empty<BattleRoleRuntimeData>();
+#endif
+      }
+
+      /// <summary>出战编目解析：场景挂引用优先；编辑器未挂时回落 Assets/Data 目录资产（直连联调用）。</summary>
+      private BattleTeamCatalog ResolveTeamCatalog()
+      {
+         if (teamCatalog != null)
+         {
+            return teamCatalog;
+         }
+
+#if UNITY_EDITOR
+         return UnityEditor.AssetDatabase.LoadAssetAtPath<BattleTeamCatalog>(EditorTeamCatalogPath);
+#else
+         return null;
 #endif
       }
 
@@ -301,7 +332,7 @@ namespace TeaGame
          const int maxFrames = 1200; // 上限约 20s，避免异常情况下永久等待
          for (var i = 0; i < maxFrames; i++)
          {
-            if (BattleTouchInputPanel.IsUIRootReadyForScene(gameObject.scene))
+            if (Battle_TouchInputPanel.IsUIRootReadyForScene(gameObject.scene))
             {
                break;
             }
@@ -309,7 +340,7 @@ namespace TeaGame
             yield return null;
          }
 
-         BattleTouchInputPanel.TryOpenForBattle();
+         Battle_TouchInputPanel.TryOpenForBattle();
       }
    }
 }

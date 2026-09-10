@@ -1,90 +1,9 @@
 using System;
-using System.Collections.Generic;
 using TeaGame;
 using UnityEngine;
 
 namespace TeaGame
 {
-   /// <summary>
-   /// 战斗角色数据仓库。
-   /// 该组件取代旧版的 `StoreBattleRoleData` 单例，
-   /// 负责根据角色与武器的 ScriptableObject 数据构建运行时实体。
-   /// </summary>
-   public class BattleRoleRepository : MonoBehaviour
-   {
-      [Header("角色与武器配置")]
-      [SerializeField] private RoleItem_Data[] loadRoles;
-      [SerializeField] private WeaponItem_Data[] loadWeapons;
-      [SerializeField] private bool dontDestroyOnLoad = true;
-
-      /// <summary>
-      /// 已构建的运行时角色数据缓存。
-      /// 缓存存在的目的是避免重复实例化角色与武器预制体。
-      /// </summary>
-      private BattleRoleRuntimeData[] mCachedRuntimeDatas;
-
-      /// <summary>
-      /// 可供外部读取的运行时缓存。
-      /// 在尚未构建时，该属性会返回空数组而不是 null。
-      /// </summary>
-      public BattleRoleRuntimeData[] RuntimeDatas => mCachedRuntimeDatas ?? Array.Empty<BattleRoleRuntimeData>();
-
-      /// <summary>
-      /// 初始化数据仓库。
-      /// 若开启常驻，则在场景切换时保留该对象。
-      /// </summary>
-      private void Awake()
-      {
-         if (dontDestroyOnLoad)
-         {
-            DontDestroyOnLoad(gameObject);
-         }
-      }
-
-      /// <summary>
-      /// 构建战斗运行时数据。
-      /// 第一次调用时会实例化角色与武器对象，后续直接返回缓存结果。
-      /// </summary>
-      public BattleRoleRuntimeData[] BuildRuntimeDatas()
-      {
-         if (mCachedRuntimeDatas != null && mCachedRuntimeDatas.Length > 0)
-         {
-            return mCachedRuntimeDatas;
-         }
-
-         var runtimeDatas = new List<BattleRoleRuntimeData>();
-         var pairCount = Mathf.Min(loadRoles?.Length ?? 0, loadWeapons?.Length ?? 0);
-
-         for (var i = 0; i < pairCount; i++)
-         {
-            var roleData = loadRoles[i];
-            var weaponData = loadWeapons[i];
-
-            if (roleData == null || weaponData == null)
-            {
-               Debug.LogWarning($"第 {i} 组战斗数据不完整，已跳过构建。");
-               continue;
-            }
-
-            runtimeDatas.Add(new BattleRoleRuntimeData(roleData, weaponData));
-         }
-
-         mCachedRuntimeDatas = runtimeDatas.ToArray();
-         return mCachedRuntimeDatas;
-      }
-
-      /// <summary>
-      /// 依据"出战编队会话"构建运行时数据（T3.1A）。
-      /// 每名出战成员 = 一个 <see cref="BattleTeamMemberDraft"/>（角色 SO + 武器 SO），
-      /// 实体化逻辑统一走 <see cref="BattleTeamRuntimeBuilder"/>；
-      /// 本方法不清空默认编队缓存（选队路径与默认路径互不影响）。
-      /// </summary>
-      public BattleRoleRuntimeData[] BuildFromSession(IReadOnlyList<BattleTeamMemberDraft> members)
-      {
-         return BattleTeamRuntimeBuilder.Build(members);
-      }
-   }
-
    /// <summary>
    /// 单个角色在战斗中的运行时数据。
    /// 该类用于承载角色实例、动画、武器视图、武器模式以及生命值等动态信息。

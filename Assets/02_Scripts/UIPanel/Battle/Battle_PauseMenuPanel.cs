@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace TeaGame
 {
-   public class BattlePauseMenuPanelData : UIPanelData
+   public class Battle_PauseMenuPanelData : UIPanelData
    {
       public string Title = string.Empty;
    }
@@ -16,12 +16,8 @@ namespace TeaGame
    /// 「重新开始」→ ClosePanel（移除）+ BattleLevelFlow.Restart（内部先复位 timeScale/Paused）；
    /// 「退出」→ 复位暂停态并经 SceneFlow 加载遮罩回来源场景/0ConfigScene（v1.3，<see cref="BattleSceneGate"/>）。
    /// </summary>
-   public partial class BattlePauseMenuPanel : UIPanel
-   {
-      [SerializeField] private Button resumeButton;
-      [SerializeField] private Button restartButton;
-      [SerializeField] private Button exitButton;
-
+   public partial class Battle_PauseMenuPanel : UIPanel
+   {  
       private bool mWired;
 
       protected override void OnInit(IUIData uiData)
@@ -38,19 +34,19 @@ namespace TeaGame
          if (mWired) return;
          mWired = true;
 
-         if (resumeButton)
+         if (ResumeButton)
          {
-            resumeButton.onClick.AddListener(RequestResume);
+            ResumeButton.onClick.AddListener(RequestResume);
          }
 
-         if (restartButton)
+         if (RestartButton)
          {
-            restartButton.onClick.AddListener(RestartLevel);
+            RestartButton.onClick.AddListener(RestartLevel);
          }
 
-         if (exitButton)
+         if (ExitButton)
          {
-            exitButton.onClick.AddListener(ExitToMainScene);
+            ExitButton.onClick.AddListener(ExitToMainScene);
          }
       }
 
@@ -61,7 +57,7 @@ namespace TeaGame
 
       private void RestartLevel()
       {
-         UIKit.ClosePanel<BattlePauseMenuPanel>();
+         UIKit.ClosePanel<Battle_PauseMenuPanel>();
          BattleArchitecture.Interface.GetSystem<BattleLevelFlow>().Restart();
       }
 

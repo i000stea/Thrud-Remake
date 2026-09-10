@@ -5,7 +5,7 @@ namespace TeaGame
    /// <summary>
    /// T1 触屏虚拟输入源（13 Demo P3/P4：手机端在"采集层插入虚拟输入源"）。
    ///
-   /// 职责：承载由触摸 UI（<see cref="BattleTouchInputPanel"/>）写入的虚拟输入值，
+   /// 职责：承载由触摸 UI（<see cref="Battle_TouchInputPanel"/>）写入的虚拟输入值，
    /// 供 <c>BattleInputSystem</c> 在采集时读取——战斗逻辑（移动/镜头/武器/技能/切人）
    /// 只消费 <c>BattleInputSnapshot</c>，因此**零改动**；Editor 键鼠路径在虚拟源未启用时不受影响。
    ///
