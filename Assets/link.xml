@@ -1,0 +1,29 @@
+<linker>
+	<!--
+	  引擎类型保留表（项目级）。
+	  背景（Docs/03_专项设计与重构/14 文档 D1）：IL2CPP 的 Strip Engine Code 只看得见
+	  "构建数据里的引用"，而以下两类依赖它都看不见 →
+	   ① 运行时动态 AddComponent / GameObject.CreatePrimitive 用到的类型；
+	   ② 只存在于 AssetBundle 内、构建数据里没有引用的资源所用到的类型。
+	  真机首次实测已在 ① 上中招：BattleStageDirector.BuildSiteMarkers() 里
+	  CreatePrimitive(PrimitiveType.Plane) 内部 AddComponent<MeshCollider>() 报
+	  "Can't add component because class 'MeshCollider' doesn't exist!"（工程内 MeshCollider
+	  只出现在三个 enabled:0 的场景里，因此被剥离；BoxCollider/CapsuleCollider/SphereCollider
+	  目前在启用场景/prefab 中有引用，一并保留作为角色/武器走 AB 后的保险）。
+	  现有 Assets/QFramework/Framework/Scripts/link.xml 只保留 QFramework 程序集，属第三方目录不动。
+
+	  新增规则：以后再出现"运行时/AB 内容使用的引擎类型在真机上 add 不上/拿不到"，
+	  就在这里补一条 preserve（不要关掉 Strip Engine Code——那会让包体大幅膨胀）。
+	-->
+	<assembly fullname="UnityEngine.PhysicsModule">
+		<type fullname="UnityEngine.MeshCollider" preserve="all" />
+		<type fullname="UnityEngine.BoxCollider" preserve="all" />
+		<type fullname="UnityEngine.SphereCollider" preserve="all" />
+		<type fullname="UnityEngine.CapsuleCollider" preserve="all" />
+		<type fullname="UnityEngine.Rigidbody" preserve="all" />
+	</assembly>
+	<assembly fullname="UnityEngine.CoreModule">
+		<type fullname="UnityEngine.MeshFilter" preserve="all" />
+		<type fullname="UnityEngine.MeshRenderer" preserve="all" />
+	</assembly>
+</linker>

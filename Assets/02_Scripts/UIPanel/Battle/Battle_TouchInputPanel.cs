@@ -18,8 +18,8 @@ namespace TeaGame
    /// 面板资源走 ResKit AssetBundle（AB = battletouchinputpanel_prefab），不依赖 Resources。
    ///
    /// 挂载与生命周期：由 battle_runtime（<see cref="BattleSceneRuntimeHost"/>）在战斗场景装配时
-   /// 调用 <see cref="TryOpenForBattle"/>（真机平台或 Editor 调试开关）；离场经 UIKit.ClosePanel
-   /// 关闭（宿主 OnDestroy + 既有离场 CloseAllPanel 出口双保险）。
+   /// 调用 <see cref="TryOpenForBattle"/>（真机平台或 Editor 调试开关）；离场由宿主的 OnDestroy 关闭，
+   /// 随场景销毁而残留在 UIKit 面板表里的条目由 <see cref="UiPanelFlow"/> 摘下（P1，2026-09-10）。
    /// </summary>
    public partial class Battle_TouchInputPanel : UIPanel
    {
@@ -32,7 +32,7 @@ namespace TeaGame
       private bool mEnabled;
 
       /// <summary>
-      /// 战斗进场装配入口：真机平台或 Editor 启用时经 UIKit 打开触摸层（幂等：已开则跳过）。
+      /// 战斗进场装配入口：真机平台或 Editor 启用时经 UIKit 打开触摸层（幂等：已开则复用）。
       /// 面板 prefab 缺失（AB 未打/未含）时只警告不中断战斗。
       /// </summary>
       public static void TryOpenForBattle()
@@ -42,36 +42,25 @@ namespace TeaGame
          EnsureEventSystem();
          EnsureUIRootReady();
 
-         //var exist = UIKit.GetPanel<Battle_TouchInputPanel>();
-         //if (exist != null) return; // MonoBehaviour 判空：已销毁面板在此返回 null，继续重建
-
-         //// 跨场景卸载可能让 UIKit 面板表残留已销毁条目（接口判空不走 Unity 判空），先清理一次
-         //try
-         //{
-         //   UIKit.ClosePanel<Battle_TouchInputPanel>();
-         //}
-         //catch (System.Exception e)
-         //{
-         //   Debug.LogWarning($"[T1] 清理残留触摸面板表项失败（可忽略）：{e.Message}");
-         //}
-
-         // 先经 ResKit 校验 AB，避免 UIKit 打开空面板（对齐 BattleUiSystem 纪律）
-         var loader = ResLoader.Allocate();
-         var prefab = loader.LoadSync<GameObject>(AssetBundleName, PrefabName);
-         //loader.Recycle2Cache();
-         if (prefab == null)
-         {
-            Debug.LogWarning("[T1] 未找到触屏操作层面板 prefab" +
-                             $"(bundle={AssetBundleName}, asset={PrefabName})。" +
-                             "请先运行 Thrud/Battle/T1/Create Touch Input Panel (prefab) 生成预置体并重新 Build AssetBundles。");
-            return;
-         }
-
-         UIKit.OpenPanel<Battle_TouchInputPanel>(
+         // P1（2026-09-10）：改用统一入口。原实现在这里额外 Allocate 一个 ResLoader 做 AB 预检，
+         // 且为避免"预检 loader 回收过早导致刚加载的 prefab 被卸载"而**永久不回收**——
+         // 结果是每次进战斗泄漏一个常驻 loader（该 bundle 再也不卸载）。
+         // UiPanelFlow.TryOpen 内部先清理 UIKit 表里的已销毁残留（跨场景/重开本关的必踩点），
+         // 再用 OpenPanel 的返回值判定成败，失败时会打出可排查的错误。
+         var panel = UiPanelFlow.TryOpen<Battle_TouchInputPanel>(
             UILevel.Common,
             null,
             AssetBundleName,
             PrefabName);
+
+         if (panel == null)
+         {
+            Debug.LogWarning("[T1] 触屏操作层打开失败（详见上一条 [UI] 错误）。" +
+                             "面板 prefab：Assets/04_Prefabs/Panel/Battle/Battle_TouchInputPanel.prefab" +
+                             $"（bundle={AssetBundleName}, asset={PrefabName}）。");
+            return;
+         }
+
          Debug.Log("[T1] 触屏操作层已打开（移动平台或 Editor 启用）。");
       }
 
@@ -114,11 +103,14 @@ namespace TeaGame
          _ = QFramework.UIRoot.Instance;
       }
 
-      /// <summary>战斗离场入口：关闭触摸层（幂等）。</summary>
+      /// <summary>
+      /// 战斗离场入口：关闭触摸层（幂等）。
+      /// 注意：面板已随场景销毁时 <c>UIKit.GetPanel</c> 返回 Unity 判空的 null，此处会直接跳过——
+      /// 遗留的面板表条目由 <see cref="UiPanelFlow.SanitizeRegistry"/> 在下次打开/场景离场时摘除。
+      /// </summary>
       public static void CloseForBattle()
       {
-         if (UIKit.GetPanel<Battle_TouchInputPanel>() == null) return;
-         UIKit.ClosePanel<Battle_TouchInputPanel>();
+         UiPanelFlow.CloseAlive<Battle_TouchInputPanel>();
       }
 
       protected override void OnOpen(IUIData uiData = null)

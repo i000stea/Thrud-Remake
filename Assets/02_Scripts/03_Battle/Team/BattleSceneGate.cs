@@ -26,6 +26,13 @@ namespace TeaGame
             return;
          }
 
+         // P1（2026-09-10）：场景即将切换 → 先安全收敛面板表。
+         // 若只关场景不关面板，面板 GameObject 会随场景销毁、但 UIKit 表残留"已销毁条目"
+         //（IPanel 接口判空不触发 Unity 判空），下次进战斗 OpenPanel 复用该实例即抛
+         // MissingReferenceException —— 表现为"战斗面板完全不出现"。此处是"离场必清面板"的
+         // 唯一强制点，覆盖此前漏掉的「重开本关」（BattleLevelFlow.Restart → ReloadCurrent）。
+         UiPanelFlow.CloseAllSafely();
+
          var flow = SceneFlow.Instance;
          if (flow == null)
          {
@@ -50,6 +57,9 @@ namespace TeaGame
             Debug.LogError("[BattleSceneGate] 目标场景名为空，无法重载。");
             return;
          }
+
+         // P1：重开本关同样先收敛面板表（触摸层/暂停面板随旧场景销毁后不得残留在 UIKit 表里）
+         UiPanelFlow.CloseAllSafely();
 
          var flow = SceneFlow.Instance;
          if (flow == null)

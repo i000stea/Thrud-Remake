@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using QFramework;
@@ -68,6 +68,15 @@ namespace TeaGame
             return data.Catalog;
          }
 
+         // P0：与战斗侧同源——先由常驻服务从 AB（battle_characters）解析并常驻；
+         // prefab 上序列化的 catalog 只作兜底（过去面板 prefab 的这条序列化引用是角色资源进包的唯一途径，
+         // 属意外耦合，见 Docs/03_专项设计与重构/14 文档 D3）。
+         var fromAb = BattleAssetService.ResolveCatalog();
+         if (fromAb != null)
+         {
+            return fromAb;
+         }
+
          return catalog;
       }
 
@@ -90,8 +99,9 @@ namespace TeaGame
          }
 
          // 离开前清空 UIKit 面板表，避免场景级 UIRoot 卸载后 Table 残留已销毁面板
-         // （IPanel == null 不触发 Unity 判空 → 下次 OpenPanel 复用已销毁实例抛 MissingReference）
-         UIKit.CloseAllPanel();
+         // （IPanel == null 不触发 Unity 判空 → 下次 OpenPanel 复用已销毁实例抛 MissingReference）。
+         // P1：改用 UiPanelFlow.CloseAllSafely（UIKit.CloseAllPanel 遇到已销毁条目会抛异常而中断清表）。
+         UiPanelFlow.CloseAllSafely();
 
          BattleSceneGate.TransitionTo(sceneName);
       }

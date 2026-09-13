@@ -45,9 +45,16 @@ namespace TeaGame.App
       private IEnumerator Start()
       {
          // ResKit 初始化：真机读 StreamingAssets/AssetBundles/<platform>/asset_bundle_config.bin
-         //（Android 需异步加载，故用 InitAsync）；编辑器 SimulationMode 已自动 Init，这里立即完成
+         //（Android 需异步加载，故用 InitAsync）；编辑器 SimulationMode 已自动 Init，这里立即完成。
          yield return QFramework.ResKit.InitAsync();
-         Debug.Log("[AppBootstrapper] ResKit 初始化完成。");
+
+         // P0：InitAsync 只保证"跑过"，不保证"读到清单"（mResMgrInited 在读到清单前置位）。
+         // 这里显式校验一次，失败时只报一条可执行的错误，避免下游出现"Failed to Create Res. Not Find By
+         // ResSearchKeys"这类容易被误判为"资源没进包"的日志。
+         var resKitReady = ResKitBootstrap.Validate();
+         Debug.Log(resKitReady
+            ? "[AppBootstrapper] ResKit 初始化完成（AB 清单校验通过）。"
+            : "[AppBootstrapper] ResKit 初始化完成，但 AB 清单校验失败——见上一条 [ResKit] 错误。");
 
          var entrySceneName = SceneAnchor.GetEntrySceneName();
          if (entrySceneName == null || SceneManager.GetActiveScene().name != entrySceneName)

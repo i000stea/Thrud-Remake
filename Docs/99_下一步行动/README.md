@@ -1,6 +1,6 @@
 # 下一步行动清单（Docs 整理日汇总）
 
-> 汇总日期：**2026-09-09（编队数据管道方案 B + T1 触摸层 AB 回收修复 + 战斗面板目录迁移后刷新，详见 09 会话快照/关键坑 25/26）**。目的：在文档按类型重组后，**保留并集中可追溯的「下一步要做」内容**。
+> 汇总日期：**2026-09-10（增补 §3.4 真机资源与战斗装配阶段清单，来源 `../03_专项设计与重构/14…`）**；上一轮汇总 2026-09-09（编队数据管道方案 B + T1 触摸层 AB 回收修复 + 战斗面板目录迁移后刷新，详见 09 会话快照/关键坑 25/26）。目的：在文档按类型重组后，**保留并集中可追溯的「下一步要做」内容**。
 > 本文只做**摘编**，不改写事实；每项标注来源，**原文/细节一律以来源文档为准**。新会话仍按老规矩：先读 `../05_开发日志/09_开发日志_会话交接.md`，再按 `../01_里程碑与执行/07_M1战斗灰盒_开发追踪指南.md` 逐卡执行。
 
 ---
@@ -93,11 +93,45 @@
 - [ ] C7：架构文档同步（更新 08 与 01 架构文档到实际实现）
 - [ ] M0 其余（`../02_系统与玩法设计/02_热更新方案.md` + `../01_里程碑与执行/06_里程碑规划与任务依赖.md`）：HybridCLR + YooAsset 集成、热更链路联调、PC+Android 构建矩阵——长期项，M1 主线推进中暂缓
 
-### 3.4 横切提醒（涉及数值/伤害/元素/血条改动前必读）
+### 3.4 真机资源与战斗装配（2026-09-10 新增；来源：`../03_专项设计与重构/14_真机资源与战斗装配_分阶段修复指南.md`）
+
+> 纪律：**一次只做一个阶段**，每阶段退出条件不满足就停下回报，不进入下一阶段（详见 14 §0）。
+
+**P0 · 角色资源走显式 AB + 清错误噪音（当天，约 0.5h）**
+- [ ] **T0-1（用户/编辑器，1 分钟）**：执行菜单 **`Thrud/Demo/Characters/1. 标记编目为 AB (battle_characters)`**（幂等 + 自动校验；等价替代：Inspector 最底部 AssetBundle 下拉 → New… → `battle_characters`）。只标 `Assets/Data/BattleTeamCatalog.asset` 一个根资产，角色/武器 SO、模型 prefab、贴图作为依赖闭包自动入包（**不要逐个标**；**不要**给 `Assets/Data/BattleLevels/**` 打标；**不要**用 QFramework 自带的 `Assets/@ResKit - AssetBundle Mark`——它按目录名当 bundle 名，会把关卡数据卷进去）
+- [ ] **T0-2（用户）**：菜单 `Thrud/Demo/Characters/2. 构建 AB（当前平台）并校验`（或 `Thrud/Demo/Android/2. Build AssetBundles (Android)`）→ 出包
+- [x] **T0-3（C#，已落盘未编译）**：新增 `03_Battle/Team/BattleAssetService.cs`（常驻 loader + AB 解析 + 明确日志）；`BattleSceneRuntimeHost.ResolveTeamCatalog()` 与 `Main_FormationPanel.ResolveCatalog()` 改 AB 优先
+- [x] **T0-4（已落盘）**：新增项目级 `Assets/link.xml` 保留 `MeshCollider`/`BoxCollider`/`SphereCollider`/`CapsuleCollider`/`Rigidbody`/`MeshFilter`/`MeshRenderer`（见 14 D1；**不关** Strip Engine Code）
+- [x] **T0-5（C#，已落盘未编译）**：`M1_TeamSelect` 文案收口（`FormationEntrySceneName = "2MainScene"` + 错误信息指向入口与 AB 打标要求）
+- [x] **T0-6（C#，已落盘；首轮实测修复）**：`BattleAssetService` 加载前先做只读清单判定（命中才 `LoadSync`）并给 `LoadSync` 包 try/catch；`UiPanelFlow.TryOpen` 异常时收掉半开面板（QFramework 在清单缺失时会对 null 取 `.Asset` 抛 NRE → 打断面板打开，见 09 关键坑 29）
+- [x] **T0-7（Editor 工具，已落盘）**：新增 `02_Scripts/Tools/Editor/BattleCharacterAbSetup.cs`——走 ResKit API 的「标记 / 构建并校验 / 只读校验 / 取消标记」菜单（把 T0-1/T0-2 变成幂等的一条命令，且只标编目一个根资产）
+- [x] **T0-8（C#，已落盘；第二轮实测修复）**：`BattleAssetService` 兼容两种 bundle 名（规范名 `battle_characters` + Inspector 默认名 `battleteamcatalog_asset`，避免重打 40MB+ AB）；`ResKitBootstrap.Validate()` 增加角色/武器编目 AB 启动校验；装配失败原因拆成「会话为空 / 编目未解析到 / 编目命中但 id 未命中」三条独立日志（见 09 关键坑 30）
+- [ ] ⚠️ **已实测坑**：Inspector 里 AssetBundle 下拉的「New…」默认名是 `<资产名小写>_<扩展名>`；用默认名会与代码常量脱钩，且**只有真机会暴露**（编辑器有 AssetDatabase 回落）。建议统一走 `Thrud/Demo/Characters/1`
+- [ ] 提示：**编辑器验证不需要重打 AB**——模拟模式清单来自 AssetDatabase 快照，T0-1 标记后重新进 Play 即可看到 `[BattleAssets] …已从 AB 加载并常驻`；只有真机必须重打 AB（T0-2）
+- [ ] 退出条件：Console 有 `[BattleAssets] 角色/武器资源已从 AB 加载并常驻`；无 `未能从 AB 解析出战编目`/`无法装配出战编队`/`MeshCollider`；角色出现且材质不发粉；可移动/开火/切人；退出能回 2MainScene
+
+**P1 · 面板加载健壮性真机回归（0.5 天，不新增功能改动）**
+- [ ] 前置：编辑器刷新 0 编译错误（上一轮 `UiPanelFlow`/`ResKitBootstrap` 改动尚未编译验证）；并补跑一次「关掉 SimulationMode」
+- [ ] 真机：触摸层/暂停/结算均能出现；**重开本关后再进关触摸层仍出现**（核心用例）；无 `MissingReferenceException`；启动日志有 `[ResKit] 初始化校验通过`
+
+**P2 · AB 加载异步化（1 天）**
+- [ ] `UiPanelFlow.TryOpenAsync<T>`（先清理面板表死条目 → `UIKit.OpenPanelAsync` → 判空 + **超时兜底**）
+- [ ] 调用点改造：触摸层 → 主菜单/选关/编队 → 战斗内结算/暂停（需 `BattleSceneRuntimeHost` 提供协程入口，`BattleUiSystem` 非 MonoBehaviour）
+- [ ] 边界：只覆盖 `LoadFromFileAsync`/`LoadAssetAsync`；`Instantiate` 与字体图集上传仍在主线程（不会归零卡顿）
+- [ ] 退出条件：各面板首开/复开打点计时对比 P1 基线明显下降，无白屏/无交互失效
+
+**P3 · AB 划分与体积（1~2 天，与 P2 解耦）**
+- [ ] T3-1 清掉 `Main_FormationPanel` prefab 上序列化的 `catalog` 引用（改完全注入）——消除"角色资源靠 UI prefab 意外引用"的最后一条（P0 已把编目搬出面板包）
+- [ ] T3-2 抽出 `ui_shared` 共享依赖 bundle（中文字体等；当前 formation 43.8MB / main_menu 20.3MB / loadinggroup 14.0MB / levelselect 7.7MB / touch 5.2MB）
+- [ ] T3-3 取消 `LoadingGroup.prefab`、`Main_MenuPanel.prefab` 的 AB 标记（两者都被场景实例引用）；统一 LoadingGroup 取用口径（`SceneFlow` 的 Resources 回落路径真机必然 null）
+
+**P4 · 角色/武器资源的完整热更化**：**不属于 M1**。P0 已把角色/武器资源搬进独立 AB（`battle_characters`）并由 `BattleAssetService` 常驻持有；清单/版本/增量更新/主动卸载等留待 `../02_系统与玩法设计/02_热更新方案.md`（HybridCLR + YooAsset）阶段立项，届时 `BattleAssetService.Release()` 即现成卸载入口
+
+### 3.5 横切提醒（涉及数值/伤害/元素/血条改动前必读）
 
 - [ ] **必读** `../06_问题存档/12_伤害构成_怀疑存档.md`：2026-09-06 用户观察到「伤害构成疑似存在问题」（未给复现细节）。调试前先向用户索要：复现步骤 + 期望 vs 实际 + 飘字/血条/日志三处是否一致。重点怀疑点：新旧两套子弹双重结算、克制倍率/风易伤叠乘、元素状态伤害重复计入、成员切人时 DoT 归属。
 
-### 3.5 工作区与提交（来源：`../01_里程碑与执行/13` §P9、`../05_开发日志/10_开发日志_2026-09-05_收工总结.md` §4）
+### 3.6 工作区与提交（来源：`../01_里程碑与执行/13` §P9、`../05_开发日志/10_开发日志_2026-09-05_收工总结.md` §4）
 
 - [x] `13_手游试玩Demo_规划.md` 已入库（随 2026-09-08 Docs 重组提交 `2be69fc1`）
 - [ ] 工作区 3 处保留修改：`Assets/08_Fonts/Before/Default.asset`（字体 churn，勿与业务混提）；`Assets/Data/RoleItemDatas/2001001-Faria.asset`、`2004001-Willa.asset`（HP 60/40 压测残留 → 数值定稿后改回 MaxHp≈400 基准再提交）

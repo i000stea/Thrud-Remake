@@ -1,4 +1,5 @@
 using QFramework;
+using TeaGame.App;
 using UnityEngine;
 
 namespace TeaGame
@@ -24,8 +25,8 @@ namespace TeaGame
       [Tooltip("关卡目录：提供 EnemyCatalog 与 D12 直连默认关解析。")]
       [SerializeField] private BattleLevelCatalog catalog;
 
-      [Tooltip("出战编目（方案 B：会话草稿按 itemID 重解析角色/武器 SO 用）。" +
-               "场景未挂时编辑器回落 Assets/Data 路径；真机必须挂引用并保证其所在资源不被卸载。")]
+      [Tooltip("出战编目（可选兜底）。P0 起角色/武器资源走显式 AB：BattleAssetService 从 bundle=" +
+               "battle_characters 解析并常驻；本字段仅在 AB 不可解析时兜底（编辑器直连联调可留空）。")]
       [SerializeField] private BattleTeamCatalog teamCatalog;
 
       [Tooltip("场景固定 rig（Battle_PlayerControl.prefab 实例，角色控制 + 战斗 HUD，仅作 View）。")]
@@ -44,7 +45,8 @@ namespace TeaGame
 
       private void Awake()
       {
-         ResKit.Init();
+         // P0：ResKit 初始化收口（已初始化则只校验 AB 清单；正常路径由 AppBootstrapper 异步初始化）
+         ResKitBootstrap.EnsureInitialized();
          // 框架初始化：确保战斗架构创建（幂等）
          _ = BattleArchitecture.Interface;
 
@@ -81,6 +83,10 @@ namespace TeaGame
          {
             Debug.LogWarning($"[battle_runtime] 离场关闭触摸层异常（可忽略）：{e.Message}");
          }
+
+         // P1：面板 GameObject 随本场景销毁时 IPanel.Close 不会被调用 → UIKit 表会残留已销毁条目，
+         // 若不摘除，下次进战斗 OpenPanel 会复用已销毁实例并抛 MissingReferenceException（面板打不开）。
+         UiPanelFlow.SanitizeRegistry();
       }
 
       // ==================== Awake：关卡数据 → 场景固件 ====================
@@ -189,14 +195,17 @@ namespace TeaGame
       private BattleRoleRuntimeData[] ResolveBattleDatas()
       {
          var resolvedCatalog = ResolveTeamCatalog();
+         var hadSession = BattleTeamSession.HasSelection;
 
-         if (BattleTeamSession.HasSelection)
+         // 失败原因逐层记录（此前三种原因共用一条日志，真机排查靠猜；2026-09-10 教训）
+         string failure = null;
+
+         if (hadSession)
          {
             if (resolvedCatalog == null)
             {
-               Debug.LogWarning(
-                  "[battle_runtime] 出战编队会话存在但未解析到出战编目（battle_runtime 未挂 teamCatalog，" +
-                  "编辑器会自动回落 Assets/Data 路径，真机必须挂）——已清空会话。");
+               failure = "出战会话存在，但编目未解析到";
+               Debug.LogWarning($"[battle_runtime] {failure}——{DescribeCatalogState(null)}；已清空会话。");
                BattleTeamSession.Clear();
             }
             else
@@ -207,11 +216,16 @@ namespace TeaGame
                   return built;
                }
 
+               failure = "编目已解析，但会话成员未在其中命中完整 SO";
                Debug.LogWarning(
-                  "[battle_runtime] 出战编队会话成员未从编目解析到完整 SO（编目为空/数据更换/目录缺项）" +
-                  "——已清空会话回落默认。请重新走选关 → 编队流程。");
+                  $"[battle_runtime] {failure}——编目：{DescribeCatalogState(resolvedCatalog)}；" +
+                  $"会话 id（角色+武器）：{DescribeSessionIds()}。已清空会话，请重新走选关 → 编队。");
                BattleTeamSession.Clear();
             }
+         }
+         else
+         {
+            failure = "出战会话为空（未走「选关 → 编队 → 开始出战」提交）";
          }
 
 #if UNITY_EDITOR
@@ -221,22 +235,80 @@ namespace TeaGame
             return fallback;
          }
 
-         Debug.LogWarning($"[battle_runtime] 编辑器直连未找到默认编队目录（{EditorTeamCatalogPath}），空队保底运行。");
+         Debug.LogWarning($"[battle_runtime] 编辑器直连未找到默认编队目录（{EditorTeamCatalogPath}），空队保底运行。" +
+                          $"原因：{failure}");
          return System.Array.Empty<BattleRoleRuntimeData>();
 #else
          Debug.LogError(
-            "[battle_runtime] 正式环境进入战斗但缺少出战编队会话或出战编目——" +
-            $"请从「{BattleTeamSession.TeamSelectSceneName}」进入，并确认 battle_runtime 已挂出战编目。" +
-            $"已退回 {BattleTeamSession.ReturnSceneName}。");
-         QFramework.UIKit.CloseAllPanel(); // 清面板表防跨场景残留已销毁面板
+            $"[battle_runtime] 正式环境无法装配出战编队：{failure}。\n" +
+            $"  编目：{DescribeCatalogState(resolvedCatalog)}\n" +
+            $"  入口：{BattleTeamSession.FormationEntrySceneName} 的「选关 → 编队 → 开始出战」\n" +
+            $"  资源：Assets/Data/BattleTeamCatalog.asset 需标记到 AB「{BattleAssetService.RoleDataBundleName}」" +
+            "并已构建（真机不会走编辑器的 Assets/Data 直读回落）。\n" +
+            $"  已退回 {BattleTeamSession.ReturnSceneName}。");
+         UiPanelFlow.CloseAllSafely(); // 清面板表防跨场景残留已销毁面板（CloseAllPanel 对已销毁条目会抛异常）
          BattleSceneGate.TransitionTo(BattleTeamSession.ReturnSceneName);
          return System.Array.Empty<BattleRoleRuntimeData>();
 #endif
       }
 
-      /// <summary>出战编目解析：场景挂引用优先；编辑器未挂时回落 Assets/Data 目录资产（直连联调用）。</summary>
+      /// <summary>编目状态描述（诊断用：区分"清单里没有""清单里有但加载失败""已解析但内容不对"）。</summary>
+      private static string DescribeCatalogState(BattleTeamCatalog resolved)
+      {
+         if (resolved != null)
+         {
+            var source = string.IsNullOrEmpty(BattleAssetService.ResolvedBundleName)
+               ? "场景引用/编辑器直读"
+               : $"AB bundle={BattleAssetService.ResolvedBundleName}";
+            return $"已解析（来源 {source}，角色 {resolved.Roles.Length} / 武器 {resolved.Weapons.Length}）";
+         }
+
+         var available = BattleAssetService.ResolveAvailableBundle();
+         if (available != null)
+         {
+            return $"未解析到：清单里有 bundle「{available}」但加载失败（见上方 [BattleAssets] 日志）";
+         }
+
+         return $"未解析到：候选 AB（{string.Join("、", BattleAssetService.RoleDataBundleCandidates)}）" +
+                $"都不含资产 {BattleAssetService.CatalogAssetName}";
+      }
+
+      /// <summary>会话成员 id 摘要（诊断用）。</summary>
+      private static string DescribeSessionIds()
+      {
+         var members = BattleTeamSession.Members;
+         if (members == null || members.Count == 0)
+         {
+            return "（空）";
+         }
+
+         var text = string.Empty;
+         for (var i = 0; i < members.Count; i++)
+         {
+            if (i > 0)
+            {
+               text += "、";
+            }
+
+            text += $"{members[i].RoleItemId}+{members[i].WeaponItemId}";
+         }
+
+         return $"{members.Count} 人[{text}]";
+      }
+
+      /// <summary>
+      /// 出战编目解析（P0 起顺序）：① 常驻服务从 AB（<see cref="BattleAssetService.RoleDataBundleName"/>）解析；
+      /// ② 场景挂引用兜底；③ 编辑器直读 Assets/Data 路径（仅编辑器直连联调）。
+      /// 真机不再依赖"场景/prefab 里恰好有引用"——过去正是靠编队面板 prefab 的意外引用把角色资源带进构建的。
+      /// </summary>
       private BattleTeamCatalog ResolveTeamCatalog()
       {
+         var fromAb = BattleAssetService.ResolveCatalog();
+         if (fromAb != null)
+         {
+            return fromAb;
+         }
+
          if (teamCatalog != null)
          {
             return teamCatalog;

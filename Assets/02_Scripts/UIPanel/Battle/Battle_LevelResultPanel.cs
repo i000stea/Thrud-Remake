@@ -66,8 +66,8 @@ namespace TeaGame
       /// <summary>退出：复位 timeScale 后经 SceneFlow 加载遮罩回来源场景/0ConfigScene（v1.3）。</summary>
       private void ExitToMainScene()
       {
-         // 清空面板表再离场，避免 UIRoot 随场景卸载后 Table 残留已销毁面板
-         UIKit.CloseAllPanel();
+         // 清空面板表再离场（用 UiPanelFlow.CloseAllSafely：UIKit.CloseAllPanel 碰到已销毁条目会抛异常而中断清表）
+         UiPanelFlow.CloseAllSafely();
 
          Time.timeScale = 1f;
          BattleSceneGate.TransitionTo(BattleTeamSession.ReturnSceneName);

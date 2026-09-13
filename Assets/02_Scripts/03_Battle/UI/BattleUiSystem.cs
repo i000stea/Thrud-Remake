@@ -38,26 +38,14 @@ namespace TeaGame
          mPauseResumeUnregister = null;
       }
 
-      // ---------------- AB 面板 prefab 校验 ----------------
+      // ---------------- AB 面板加载 ----------------
 
-      /// <summary>
-      /// 校验战斗 UI 面板 prefab 能否经 ResKit（AssetBundle）加载。
-      /// 面板 prefab 已打 AB（meta 的 assetBundleName 与 QAssetBundle 常量对应），
-      /// 不再用 Resources.Load（路径加载，与 AB 资源定位不一致）。
-      /// 加载成功返回 true；失败打警告并返回 false（此时调用方应中止后续打开面板）。
-      /// </summary>
-      private static bool TryEnsurePanelAvailable(string panelDisplayName, string bundleName, string assetName)
-      {
-         var loader = ResLoader.Allocate();
-         var prefab = loader.LoadSync<GameObject>(bundleName, assetName);
-         loader.Recycle2Cache();
-
-         if (prefab != null) return true;
-
-         Debug.LogWarning($"[T3.1] 未找到 {panelDisplayName} 面板 prefab（bundle={bundleName}, asset={assetName}）。" +
-                          "请运行 TeaGame → Battle → Rebuild Battle UI Prefabs 并确认 prefab 已按 QAssetBundle 标记 AB。");
-         return false;
-      }
+      // P1（2026-09-10）：原先这里有个 TryEnsurePanelAvailable——额外 Allocate 一个 ResLoader，
+      // LoadSync 校验面板 prefab 后再 Recycle2Cache。该写法的两个问题：
+      //   1) 会把同一个 bundle 同步加载两遍（formation 面板 bundle 实测 43.8MB）；
+      //   2) 正确性依赖 ResKit「延迟卸载」的时机（回收后引用计数归零 → ResMgr.Update 里的
+      //      RemoveUnusedRes 卸载 AB → 可能销毁刚加载的 prefab），真机与编辑器 SimulationMode 表现不一致。
+      // 现统一走 UiPanelFlow.TryOpen：内部先清理 UIKit 表里的已销毁残留，再用 OpenPanel 的返回值判定成败。
 
       // ---------------- 结算面板 ----------------
 
@@ -79,25 +67,21 @@ namespace TeaGame
 
       private static void OpenResult(string title)
       {
-         if (!TryEnsurePanelAvailable("结算", QAssetBundle.Battle_levelresultpanel_prefab.BundleName,
-                QAssetBundle.Battle_levelresultpanel_prefab.Battle_LevelResultPanel))
-         {
-            return;
-         }
-
-         UIKit.OpenPanel<Battle_LevelResultPanel>(
+         var panel = UiPanelFlow.TryOpen<Battle_LevelResultPanel>(
             UILevel.PopUI,
             new Battle_LevelResultPanelData { Title = title },
-            assetBundleName: QAssetBundle.Battle_levelresultpanel_prefab.BundleName,
-            prefabName: QAssetBundle.Battle_levelresultpanel_prefab.Battle_LevelResultPanel);
+            QAssetBundle.Battle_levelresultpanel_prefab.BundleName,
+            QAssetBundle.Battle_levelresultpanel_prefab.Battle_LevelResultPanel);
+
+         if (panel == null)
+         {
+            Debug.LogWarning("[T3.1] 结算面板未能打开（战斗流程不因此中断，详见上一条 [UI] 错误）。");
+         }
       }
 
       private static void CloseResultIfOpen()
       {
-         if (UIKit.GetPanel<Battle_LevelResultPanel>() != null)
-         {
-            UIKit.ClosePanel<Battle_LevelResultPanel>();
-         }
+         UiPanelFlow.CloseAlive<Battle_LevelResultPanel>();
       }
 
       // ---------------- 暂停 ----------------
@@ -130,11 +114,18 @@ namespace TeaGame
          // 获取状态，避免重复调用
          var state = State;
          if (state.Paused) return;
-          
-         // 先经 ResKit 校验 AB 资源，避免状态已改但面板加载失败
-         if (!TryEnsurePanelAvailable("暂停", QAssetBundle.Battle_pausemenupanel_prefab.BundleName,
-                QAssetBundle.Battle_pausemenupanel_prefab.Battle_PauseMenuPanel))
+
+         // 先打开面板（失败则不改状态，保持与旧实现一致的"面板打不开就不暂停"语义），
+         // 面板自身经 UIKit 的 ResKitPanelLoader 从 AB 加载并持有该 bundle 的引用。
+         var panel = UiPanelFlow.TryOpen<Battle_PauseMenuPanel>(
+            UILevel.PopUI,
+            null,
+            QAssetBundle.Battle_pausemenupanel_prefab.BundleName,
+            QAssetBundle.Battle_pausemenupanel_prefab.Battle_PauseMenuPanel);
+
+         if (panel == null)
          {
+            Debug.LogWarning("[T3.1] 暂停面板未能打开，本次暂停请求已忽略（详见上一条 [UI] 错误）。");
             return;
          }
 
@@ -144,12 +135,6 @@ namespace TeaGame
          Cursor.lockState = CursorLockMode.None;
          Cursor.visible = true;
 
-         // UIKit 的 PanelLoader 由 SupportOldQF（ResKitPanelLoaderPool）提供，
-         // 传 assetBundleName + prefab 资源名即走 AssetBundle 加载（不再走 Resources.Load）。
-         UIKit.OpenPanel<Battle_PauseMenuPanel>(
-            UILevel.PopUI,
-            assetBundleName: QAssetBundle.Battle_pausemenupanel_prefab.BundleName,
-            prefabName: QAssetBundle.Battle_pausemenupanel_prefab.Battle_PauseMenuPanel);
          Debug.Log("[T3.1] 游戏暂停（timeScale=0，进程未暂停）——ESC 或点「继续」恢复。");
       }
 
@@ -165,10 +150,7 @@ namespace TeaGame
          Time.timeScale = 1f;
          Architecture.GetSystem<BattleInputSystem>().Clear();
 
-         if (UIKit.GetPanel<Battle_PauseMenuPanel>() != null)
-         {
-            UIKit.ClosePanel<Battle_PauseMenuPanel>(); // 从 UIRoot 移除暂停菜单
-         }
+         UiPanelFlow.CloseAlive<Battle_PauseMenuPanel>(); // 从 UIRoot 移除暂停菜单（已销毁则跳过）
       }
    }
 }
