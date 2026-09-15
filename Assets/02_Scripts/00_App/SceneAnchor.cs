@@ -16,11 +16,9 @@ namespace TeaGame.App
       /// </summary>
       public static string GetEntryScenePath()
       {
-         if (SceneManager.sceneCountInBuildSettings <= 0)
-         {
-            return null;
-         }
-
+         // 若加载列表为空 则返回空
+         if (SceneManager.sceneCountInBuildSettings <= 0) { return null; }
+         // 返回第0个场景
          return SceneUtility.GetScenePathByBuildIndex(0);
       }
 

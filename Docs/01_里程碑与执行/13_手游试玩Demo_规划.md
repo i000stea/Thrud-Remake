@@ -30,13 +30,17 @@ Android 单包:登录→主菜单(测试按钮)→ 选关 → 编队 → 进「�
 
 目的:**最先打穿"出包 + UI 能加载"**,因为 UIKit 面板走 **ResKit AssetBundle**,手机端最大翻车点 = AB 未进包 → 面板空屏。
 
-- [ ] 检查/搭建 Android 环境(SDK/NDK、Debug keystore、包名、IL2CPP + ARM64、目标 API、横屏)
+- [x] 检查/搭建 Android 环境(SDK/NDK、Debug keystore、包名、IL2CPP + ARM64、目标 API、横屏)（2026-09-08）
 
-- [ ] ResKit AB 全量构建流程跑通并入库验证
+- [x] ResKit AB 全量构建流程跑通并入库验证（2026-09-08；2026-09-12 随 P0 重建，产物合计 131.1MB）
 
 - [ ] 最小链路真机:登录 → 主菜单 → 选关 → 编队 → 进关出 rig(面板不空屏)
 
-- 产出:一键构建脚本雏形 + 真机验收清单 v0
+  > 状态（2026-09-15）：**P0 的角色 AB（`battle_characters`）从未进过包**——最近 APK 是 09-10 的 `alpha.0.47`，
+  > 而 `battle_characters` 是 09-12 才构建的。本项须**重新一键出包后**再验，验收项见 `15` 文档 §6 A/B/D。
+
+- [x] 产出:一键构建脚本雏形 + 真机验收清单 v0（2026-09-15）——构建脚本 `Assets/02_Scripts/Tools/Editor/AndroidDemoBuilder.cs`（`Thrud/Demo/Android/` 含前置门禁/AB 产物校验/体积与构建报告/版本号）；
+  **说明书与清单落 `15_Demo打包与外放_构建说明与真机验收清单.md`**（门禁 G1–G8 + 真机清单 A–H + 失败速查）
 
 ### 3.1 T1 · 手机按钮映射(1\~2 天,与 T3 并行)
 
@@ -96,7 +100,7 @@ Android 单包:登录→主菜单(测试按钮)→ 选关 → 编队 → 进「�
 
 ### 3.3 T2 · 打包收口与外放(0.5\~1 天)
 
-> **状态（2026-09-08）：一键构建脚本已落盘（待编辑器执行验证出包）**。实现记录见本节末尾。
+> **状态（2026-09-15）：一键构建脚本已补齐为"带门禁的一键出包"（详版说明书与真机验收清单见 `15_Demo打包与外放_构建说明与真机验收清单.md`）；编辑器执行出包待用户跑一次。**
 
 - Android 一键构建(Editor 菜单:命名/版本/keystore/AB 打包→出包) + 文档
 
@@ -104,17 +108,27 @@ Android 单包:登录→主菜单(测试按钮)→ 选关 → 编队 → 进「�
 
 - 分发:debug 签名 apk 直接外放(内测),正式签名后补
 
-**实现记录（2026-09-08）**
+**实现记录（2026-09-08 首版 / 2026-09-15 补齐）**
 
 - 工具：`Assets/02_Scripts/Tools/Editor/AndroidDemoBuilder.cs`（`TeaGame.Tools.Editor`，已引用 ResKit.Editor）。
-  菜单 **`Thrud/Demo/Android/`**：① Switch Platform to Android ② Build AssetBundles (Android)
-  ③ Build APK (Release · debug keystore) ④ Build APK (Development · 联调) ⑤ Build All (One-Click = AB + Release APK)。
-- 每次构建幂等应用 Android 设置：包名 `com.i000stea.thrudremark`、IL2CPP + ARM64、横屏、MinSdk 28；
-  场景取 Build Settings enabled（0Config/1Login/2Main/BattleGraybox）；AB 走 `ResKitEditorAPI.BuildAssetBundles()`（按当前活动目标）。
-- 产物 `Build/Android/ThrudDemo_&lt;版本&gt;_&lt;verCode&gt;_&lt;dev/release&gt;.apk`（`Build/` 已 .gitignore，不入库）；
-  成功后 `RevealInFinder`；失败打印 BuildReport 错误步骤。
-- **真机验收清单 v0（随出包执行）**：全链路（登录→主菜单→选关→编队→进关出 rig）可玩、
-  触摸按键无死角、面板不空屏、帧率/发热粗测、防误触退出、包体 &lt;200MB。
+  菜单 **`Thrud/Demo/Android/`**：**0. 构建前置检查（只读门禁）** ① Switch Platform to Android ② Build AssetBundles (Android)
+  ③ Build APK (Release · debug keystore) ④ Build APK (Development · 联调) ⑤ Build All (One-Click = 门禁 + AB + Release APK)
+  ⑥ 版本号 +1（bundleVersion / versionCode 同步）⑦ 清理 AB 产物目录中的孤儿文件。
+- 每次构建幂等应用 Android 设置：包名 `com.i000stea.thrudremark`、IL2CPP + ARM64、横屏、MinSdk 28、
+  **关闭自定义 keystore（= debug 签名外放）**；场景取 Build Settings enabled（0Config/1Login/2Main/BattleGraybox）；
+  AB 走 `ResKitEditorAPI.BuildAssetBundles()`（按当前活动目标）+ **回读产物校验**。
+- 2026-09-15 补齐项（都是踩坑换来的）：① 目标非 Android 时菜单 2–5 **直接中止**（AB 按活动目标打包，切错平台 = 真机空屏；
+  且 `SwitchActiveBuildTarget` 触发域重载，不能"切完接着出包"）；② AB 打完断言每个已标记 bundle 都在盘上 + `asset_bundle_config.bin` 存在；
+  ③ 门禁含编译状态 / `Assets/link.xml`（MeshCollider 保留，09 关键坑 27）/ 编目 AB 标记（关键坑 28/30）/ AB 过期提示；
+  ④ APK 体积对照 200MB 目标出报告并写 `Build/Android/build_report_*.txt`；⑤ 菜单 6 让外放的每个包版本可区分；
+  ⑥ 菜单 7 + 门禁 G8 清理「孤儿 AB 产物」——实测盘上残留 09-12 改名前的 `battleteamcatalog_asset`（**44.7MB，已不在 AB 清单里**），
+  而 StreamingAssets 是整体进 APK 的 → 清掉即可把包体余量从不足 11MB 拉回约 55MB。
+- 产物 `Build/Android/ThrudDemo_<版本>_<verCode>_<dev|release>.apk`（`Build/` 与 `*.apk` 均已 .gitignore，不入库）；
+  成功后 `RevealInFinder`；失败打印 BuildReport 的错误步骤。
+- **真机验收清单 v0**：已展开成可执行清单（A 安装启动 / B 最小链路 / C 触屏 / D 面板不空屏 / E 战斗数值 / F 性能发热 /
+  S 中断恢复 / H 包体分发），含每项通过标准、日志关键字与失败排查指向 → **见 `15` 文档 §6、§7**。
+- ⚠️ 当前基线：最近包 `alpha.0.47`（2026-09-10，189.2MB）**早于** P0 的 `battle_characters` AB（09-12），
+  即 P0 修复尚未进包；AB 合计 131.1MB、包体余量不足 11MB（逼近 200MB 目标）。
 
 ## 4. 风险与对策
 

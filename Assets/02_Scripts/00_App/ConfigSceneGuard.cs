@@ -27,9 +27,13 @@ namespace TeaGame.App
       [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
       private static void AutoLoadEntrySceneInEditor()
       {
+         // 非播放模式不运行
          if (!Application.isPlaying) return;
-
+         
+         // 获取保底场景名称
          var entrySceneName = SceneAnchor.GetEntrySceneName();
+         
+         // 名称为空
          if (string.IsNullOrEmpty(entrySceneName))
          {
             Debug.LogWarning("[ConfigSceneGuard] Build Settings 为空或入口场景无效，跳过自动加载。请在编辑器执行 Thrud/Setup ConfigScene。");

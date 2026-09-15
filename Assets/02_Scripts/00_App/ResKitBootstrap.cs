@@ -22,19 +22,19 @@ namespace TeaGame.App
       /// <summary>参与启动校验的 UI 面板资源（bundle / asset，与 QAssetBundle 生成常量一致）。</summary>
       private static readonly PanelRes[] ExpectedPanels =
       {
-         new PanelRes(QAssetBundle.Main_menupanel_prefab.BundleName,
+         new(QAssetBundle.Main_menupanel_prefab.BundleName,
             QAssetBundle.Main_menupanel_prefab.Main_MenuPanel),
-         new PanelRes(QAssetBundle.Levelselectpanel_prefab.BundleName,
+         new(QAssetBundle.Levelselectpanel_prefab.BundleName,
             QAssetBundle.Levelselectpanel_prefab.LevelSelectPanel),
-         new PanelRes(QAssetBundle.Main_formationpanel_prefab.BundleName,
+         new(QAssetBundle.Main_formationpanel_prefab.BundleName,
             QAssetBundle.Main_formationpanel_prefab.Main_FormationPanel),
-         new PanelRes(QAssetBundle.Battle_levelresultpanel_prefab.BundleName,
+         new(QAssetBundle.Battle_levelresultpanel_prefab.BundleName,
             QAssetBundle.Battle_levelresultpanel_prefab.Battle_LevelResultPanel),
-         new PanelRes(QAssetBundle.Battle_pausemenupanel_prefab.BundleName,
+         new(QAssetBundle.Battle_pausemenupanel_prefab.BundleName,
             QAssetBundle.Battle_pausemenupanel_prefab.Battle_PauseMenuPanel),
-         new PanelRes(QAssetBundle.Battle_touchinputpanel_prefab.BundleName,
+         new(QAssetBundle.Battle_touchinputpanel_prefab.BundleName,
             QAssetBundle.Battle_touchinputpanel_prefab.Battle_TouchInputPanel),
-         new PanelRes(QAssetBundle.Loadinggroup_prefab.BundleName,
+         new(QAssetBundle.Loadinggroup_prefab.BundleName,
             QAssetBundle.Loadinggroup_prefab.LoadingGroup),
       };
 
@@ -97,10 +97,7 @@ namespace TeaGame.App
                continue;
             }
 
-            if (missing == null)
-            {
-               missing = new List<string>();
-            }
+            missing ??= new List<string>();
 
             missing.Add($"{expected.Bundle}/{expected.Asset}");
          }
