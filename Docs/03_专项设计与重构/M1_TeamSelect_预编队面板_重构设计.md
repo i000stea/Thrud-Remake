@@ -1,7 +1,7 @@
 # M1\_TeamSelect 预编队面板（Main\_BattleTeamSelectPanel）重构设计
 
-> 版本：**v1.0（已冻结，2026-09-05 用户评审定稿）**
-> 状态：设计定稿 → 进入实现（A8：Editor 方式搭建 prefab，先移除过时 Editor 方法）。
+> 版本：**v1.3（2026-09-06 用户 Play 验收通过；2026-09-15 清理旧验收记录）**
+> 状态：**已验收并归档**。当前主路径 = `2MainScene` → `LevelSelectPanel` → `Main_FormationPanel` 覆盖层 → `BattleSceneGate` 进战斗；本文 §1–§8 保留 v1.0–v1.2 设计背景，§9/§10 已按 v1.3 实际落地回填。
 > 对应：07 指南 T3.1A · 面板 UI 重构；承接 `10_开发日志_2026-09-05_收工总结.md`。
 
 ***
@@ -128,11 +128,11 @@ Assets/02_Scripts/UIPanel/
 
 ## 7. A3 流程（定稿）
 
-- M1\_Menu 废弃；灰盒：Play `M1_TeamSelect` 直达。
+- v1.0–v1.2 灰盒阶段曾以 `M1_TeamSelect` 直连 Play 作为临时入口；**v1.3 起该链路已被 `2MainScene` 覆盖层主路径取代**：`MainMenu_Runtime` → `LevelSelectPanel` → `Main_FormationPanel` → `BattleSceneGate` → `BattleGraybox`。
 
-- `BattleTeamSession` 增 `SourceSceneName`（来源场景）；入口/启动类写入；「返回」与暂停/结算「退出」统一回 `SourceSceneName`，为空时回 **0ConfigScene**。
+- `BattleTeamSession` 保留 `SourceSceneName` / `ReturnSceneName` 语义；当前由覆盖层主路径写入来源场景，预编队「返回」与暂停/结算「退出」统一回来源场景；无来源时仍兜底回 **0ConfigScene**。
 
-- 未来：ConfigScene battle 启动类填 `SourceSceneName + 关卡数据` 直接进流程；面板与退出逻辑不写死菜单场景名。
+- 未来：ConfigScene battle 启动类继续沿用 `SourceSceneName + 关卡数据` 机制直接进流程；面板与退出逻辑不写死菜单场景名。
 
 ## 8. A8 实施说明（定稿）
 
@@ -140,11 +140,11 @@ Assets/02_Scripts/UIPanel/
 
 - **创建新生成器前，先移除过时 Editor 方法**：
 
-  - `Assets/02_Scripts/03_Battle/Editor/BattleTeamFlowSetup.cs`（旧 Setup All：M1\_MainHub 主场景 + Resources/Panels 旧格式面板 + 场景重建）→ 移除；
+  - `Assets/02_Scripts/03_Battle/Editor/BattleTeamFlowSetup.cs`（旧 Setup All：M1\_MainHub 主场景 + Resources/Panels 旧格式面板 + 场景重建）→ 已移除；
 
-  - 其关联的运行时旧引导/旧警告文本随主路径切换不再使用（`BattleUiFlowPanelOpener` 的“运行 Setup All”提示更新或移除）；
+  - 其关联的运行时旧引导/旧警告文本随主路径切换不再使用（`BattleUiFlowPanelOpener` 的“运行 Setup All”提示更新或移除）→ 已收口为覆盖层/AB 清单提示；
 
-  - 旧 `Resources/Panels/BattleTeamSelectPanel` 备胎在验收后删除（D8）。
+  - 旧 `Resources/Panels/BattleTeamSelectPanel` 备胎在验收后删除（D8）→ **已核实工程内不存在**（2026-09-15）。
 
 ## 9. 实施步骤（顺序）
 
@@ -152,20 +152,22 @@ Assets/02_Scripts/UIPanel/
 2. 编写新 Editor 生成器 `Main_BattleTeamSelectPrefabBuilder`（依 §3/§6）→ 用户编辑器内运行 → 产出 prefab + AB 标记；
 3. 用户对 prefab 执行 CodeGen（生成 Designer 字段）后回传；
 4. 代理实现 Model/Service/面板逻辑（§5）→ 离线两级编译自检；
-5. `M1_TeamSelect` 场景接线（catalog + 打开新面板；返回 0ConfigScene）→ 用户打 AB → Play 验收（§10）；
-6. 验收后清理旧 Resources 面板（D8）。
+5. **v1.3 实际验收路径**：`2MainScene` 测试按钮 → `LevelSelectPanel` → `Main_FormationPanel`（catalog 注入、弹窗初始隐藏、取消按钮接线）→ `BattleSceneGate` 进 `BattleGraybox`；预编队「返回」= 仅 `UIKit.ClosePanel`，暂停/结算「退出」= 回 `SourceSceneName`；
+6. 验收后清理旧 `M1_MainHub/M1_TeamSelect` 场景链与旧 Resources 面板（D8）→ **已核实工程内不存在**（2026-09-15）。
+
+> 注：第 1–4 步保留的是 v1.0–v1.2 实施顺序；第 5–6 步为 v1.3 收口后的实际主路径与清理结果。
 
 ## 10. 验收清单（T3.1A-5 范围）
 
-- [ ] Play `M1_TeamSelect` 直达；4 槽全空；
+- [x] Play `2MainScene` → `LevelSelectPanel` → `Main_FormationPanel` 进入预编队；面板初始隐藏后可正常打开，4 槽初始全空；
 
-- [ ] 半区点击弹列表：`[空]` 第 1 项；未占用按编目序；占用项置灰末尾并标注槽 N；
+- [x] 半区点击弹列表：`[空]` 第 1 项；未占用按编目序；占用项置灰末尾并标注槽 N；
 
-- [ ] 单击→简介区显示不生效；双击→应用并关闭；取消/遮罩正确；
+- [x] 单击→简介区显示不生效；双击→应用并关闭；取消按钮接线正确；弹窗初始隐藏与显隐正确；
 
-- [ ] 1–4 人自由搭配（唯一约束）；半满/空校验；写 Session 进战斗，切人序=槽序；
+- [x] 1–4 人自由搭配（唯一约束）；半满/空校验；写 `BattleTeamSession` 进战斗，切人序=槽序；
 
-- [ ] 结算/暂停「退出」回 0ConfigScene（或 SourceScene）；直连 BattleGraybox 默认编队兜底回归。
+- [x] 预编队「返回」= 仅关闭覆盖层；结算/暂停「退出」回 `SourceSceneName`；直连 `BattleGraybox` 默认编队兜底回归。
 
 ## 11. 架构修正与 MVC 细则拆分（v1.2 · 已确认）
 
@@ -230,5 +232,5 @@ Assets/02_Scripts/UIPanel/                  # 沿用 CodeGenKit UI 目录（Pref
 - **v1.0 2026-09-05：定稿**。A2=方案A、A3=返回 0ConfigScene（含来源机制）、A8=Editor 方式且先移除过时 Editor 方法、简介区弹窗右侧 + 双击 300ms。
 - **v1.1 2026-09-05：架构修正（待实施）**——编队模块迁出 Battle；按 Shell / Controller / View / Model 拆分。
 - **v1.2 2026-09-05：定稿**——`02_PlayerMeta` 局外养成工作台（覆盖持有/养成/编成/展示，M2 补齐 Grow/Profile/Bag）；Formation 子域名沿用；模型表现层采用方案①（轻契约+容器+适配器，灰盒只留缝）；Formation 代码归 `02_PlayerMeta/Formation/`。
-- **v1.3 2026-09-06：验收收口（用户 Play 验收通过）**——主路径=2MainScene 主菜单覆盖层 `Main_FormationPanel`（Shell+View 合并单文件 + CodeGen Designer 绑定），弹窗初始隐藏 + 取消按钮接线（契约增 `PopupCancelClicked`）；「退出」仅 `UIKit.ClosePanel` 不切场景；进出 Battle 经 `BattleSceneGate` → SceneFlow（0ConfigScene 加载遮罩）过渡，出战记录来源场景供返回；对应 07 卡 T3.1A 勾选。本设计 §9/§10 中基于「M1_Menu/M1_TeamSelect 场景链」的旧步骤已被覆盖层主路径取代（M1_TeamSelect 相关场景保留为历史灰盒入口）。
-
+- **v1.3 2026-09-06：验收收口（用户 Play 验收通过）**——主路径=2MainScene 主菜单覆盖层 `Main_FormationPanel`（Shell+View 合并单文件 + CodeGen Designer 绑定），弹窗初始隐藏 + 取消按钮接线（契约增 `PopupCancelClicked`）；「退出」仅 `UIKit.ClosePanel` 不切场景；进出 Battle 经 `BattleSceneGate` → SceneFlow（0ConfigScene 加载遮罩）过渡，出战记录来源场景供返回；对应 07 卡 T3.1A 勾选。
+- **v1.3a 2026-09-15：文档清账**——回填 §10 验收 checkbox；将 §9/§10 中旧 `M1_MainHub/M1_TeamSelect` 场景链标注为 v1.0–v1.2 历史背景；核实旧 `M1_MainHub.unity`、`M1_TeamSelect.unity` 与 `Resources/Panels/BattleTeamSelectPanel` 已不在工程内，当前只保留 `2MainScene` 覆盖层主路径。

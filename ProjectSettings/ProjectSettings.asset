@@ -13,7 +13,7 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: i000sTea
-  productName: Thrud_Remark
+  productName: "\u65AF\u9732\u5FB7\xB7\u91CD\u6784"
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0, g: 0.050980393, b: 0.03529412, a: 1}
@@ -144,7 +144,7 @@ PlayerSettings:
   loadStoreDebugModeEnabled: 0
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
-  bundleVersion: alpha.0.46
+  bundleVersion: alpha.0.47
   preloadedAssets: []
   metroInputSource: 0
   wsaTransparentSwapchain: 0

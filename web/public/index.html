@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>进度监控表</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero section-line">
+        <div>
+          <p class="eyebrow">本地 JSON 驱动</p>
+          <h1>进度监控表格</h1>
+          <p class="subtitle">
+            页面会直接读取本地服务里的 `progress.json`，编辑后立即写回文件。
+          </p>
+        </div>
+        <div class="hero-actions">
+          <div class="hero-actions__row">
+            <button id="themeToggleButton" class="secondary">切换亮色</button>
+            <button id="reloadButton" class="secondary">重新读取</button>
+            <button id="openCreateButton">新增任务</button>
+          </div>
+          <span id="saveState" class="save-state">准备就绪</span>
+        </div>
+      </header>
+
+      <section class="stats section-line" id="stats"></section>
+
+      <section class="section-line">
+        <div class="panel-head panel-head--toolbar">
+          <div>
+            <h2>任务列表</h2>
+            <p>支持搜索、表头排序、多选筛选、隐藏已完成，并通过弹窗编辑任务。</p>
+          </div>
+          <div class="toolbar">
+            <label class="search-box">
+              <span>搜索</span>
+              <input id="searchInput" placeholder="按标题、描述、负责人筛选" />
+            </label>
+            <button id="toggleCompletedButton" class="secondary">隐藏已完成</button>
+          </div>
+        </div>
+
+        <div class="filters">
+          <div class="filter-group">
+            <span class="filter-group__label">状态筛选</span>
+            <div id="statusFilterGroup" class="filter-group__options"></div>
+          </div>
+          <div class="filter-group">
+            <span class="filter-group__label">类型筛选</span>
+            <div id="typeFilterGroup" class="filter-group__options"></div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><button type="button" class="sort-button" data-sort-key="title">任务</button></th>
+                <th><button type="button" class="sort-button" data-sort-key="type">类型</button></th>
+                <th>描述</th>
+                <th><button type="button" class="sort-button" data-sort-key="status">状态</button></th>
+                <th><button type="button" class="sort-button" data-sort-key="priority">优先级</button></th>
+                <th>负责人</th>
+                <th><button type="button" class="sort-button" data-sort-key="updatedAt">更新时间</button></th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="taskTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div id="taskModal" class="modal hidden" aria-hidden="true">
+      <div class="modal__backdrop" data-action="close-modal"></div>
+      <div class="modal__dialog">
+        <div class="modal__head">
+          <div>
+            <h2 id="modalTitle">新增任务</h2>
+            <p id="modalSubtitle">保存后会立即写回本地 `json` 文件。</p>
+          </div>
+          <button id="closeModalButton" class="secondary">关闭</button>
+        </div>
+
+        <form id="taskForm" class="task-form">
+          <input type="hidden" name="id" />
+          <label class="task-form__full">
+            <span>任务标题</span>
+            <input name="title" placeholder="例如：补全 Battle HUD 方案" required />
+          </label>
+          <label>
+            <span>任务类型</span>
+            <select name="taskType">
+              <option>模块开发</option>
+              <option>Bug修复</option>
+              <option>用户体验</option>
+              <option>文档整理</option>
+              <option>数据配置</option>
+              <option>测试验证</option>
+              <option>其他</option>
+            </select>
+          </label>
+          <label>
+            <span>状态</span>
+            <select name="status">
+              <option>未开始</option>
+              <option selected>进行中</option>
+              <option>已完成</option>
+            </select>
+          </label>
+          <label>
+            <span>优先级</span>
+            <select name="priority">
+              <option>低</option>
+              <option selected>中</option>
+              <option>高</option>
+              <option>紧急</option>
+            </select>
+          </label>
+          <label>
+            <span>负责人</span>
+            <input name="owner" placeholder="例如：Tea" />
+          </label>
+          <label class="task-form__full">
+            <span>描述</span>
+            <textarea
+              name="description"
+              rows="5"
+              placeholder="补充说明、验收点、依赖项"
+            ></textarea>
+          </label>
+          <div class="task-form__actions">
+            <button type="button" id="cancelModalButton" class="secondary">取消</button>
+            <button type="submit" id="submitTaskButton">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <template id="taskRowTemplate">
+      <tr>
+        <td class="task-title-cell">
+          <div class="task-title" data-field="title"></div>
+        </td>
+        <td>
+          <span class="badge badge--type" data-field="taskType"></span>
+        </td>
+        <td>
+          <div class="task-desc" data-field="description"></div>
+        </td>
+        <td>
+          <select class="inline-select inline-select--status" data-field="status">
+            <option>未开始</option>
+            <option>进行中</option>
+            <option>已完成</option>
+          </select>
+        </td>
+        <td>
+          <select class="inline-select inline-select--priority" data-field="priority">
+            <option>低</option>
+            <option>中</option>
+            <option>高</option>
+            <option>紧急</option>
+          </select>
+        </td>
+        <td data-field="owner"></td>
+        <td class="updated-at" data-field="updatedAt"></td>
+        <td>
+          <div class="table-actions">
+            <button class="secondary" data-action="edit">编辑</button>
+            <button class="danger" data-action="delete">删除</button>
+          </div>
+        </td>
+      </tr>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

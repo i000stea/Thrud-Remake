@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "title": "Thrud Remake 进度监控表",
+    "updatedAt": "2026-09-15T12:11:18.237Z"
+  },
+  "tasks": [
+    {
+      "id": "af04a08b-d46e-49fa-8690-118743e38aa3",
+      "title": "??????",
+      "description": "?????? JSON ??",
+      "status": "???",
+      "priority": "?",
+      "owner": "Trae",
+      "dueDate": "",
+      "updatedAt": "2026-09-15T12:11:18.237Z"
+    },
+    {
+      "id": "task-demo-1",
+      "title": "整理战斗 HUD 字段",
+      "description": "确认需要展示的生命、技能、切人、关卡信息",
+      "status": "进行中",
+      "priority": "高",
+      "owner": "Tea",
+      "dueDate": "",
+      "updatedAt": "2026-09-15T12:11:14.265Z"
+    },
+    {
+      "id": "task-demo-2",
+      "title": "补全真机回归记录",
+      "description": "把关键问题与验证结论同步到文档",
+      "status": "未开始",
+      "priority": "中",
+      "owner": "Tea",
+      "dueDate": "",
+      "updatedAt": "2026-09-15T00:00:00.000Z"
+    }
+  ]
+}

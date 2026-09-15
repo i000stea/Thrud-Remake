@@ -11,6 +11,11 @@
 namespace QAssetBundle
 {
     
+    public class Battle_characters
+    {
+        public const string BundleName = "battle_characters";
+        public const string BattleTeamCatalog = "BattleTeamCatalog";
+    }
     public class Battle_levelresultpanel_prefab
     {
         public const string BundleName = "battle_levelresultpanel_prefab";
