@@ -28,7 +28,7 @@
 | 最近 APK | `ThrudDemo_alpha.0.47_1_release.apk`，**189.2 MB**，2026-09-10 20:29 | `Build/Android/` |
 | 最近 AB 构建 | 2026-09-12 15:54（含 `battle_characters` **44.7 MB**） | `Assets/StreamingAssets/AssetBundles/Android/` |
 | AB 产物合计 | **131.1 MB**（9 个 bundle 文件 + 9 个 `.manifest` + `asset_bundle_config.bin`） | 同上 |
-| **孤儿产物（浪费包体）** | `battleteamcatalog_asset`（09-12 旧默认名，**44.7 MB**）已不在 AB 清单里，但**仍会随 StreamingAssets 整体进 APK** | 同上 + `asset_bundle_config.bin` 字符串核对 |
+| **孤儿产物（浪费包体）** | `battleteamcatalog_asset`（09-12 旧默认名，**42.7 MiB / 44,740,328 B**）已不在 AB 清单里，但**仍会随 StreamingAssets 整体进 APK** | 同上 + `asset_bundle_config.bin` 字符串核对 |
 | 包体目标 | < 200 MB（13 §3.3）→ **余量已不足 11 MB**；清掉上面那个孤儿可立刻省回约 45 MB | 13 §3.3 |
 | Build Settings 启用场景 | `0ConfigScene` → `1LoginScene` → `2MainScene` → `BattleGraybox` | `ProjectSettings/EditorBuildSettings.asset` |
 
@@ -36,10 +36,13 @@
 > **P0 修复（角色资源走显式 AB）从来没有进过包**。所以「真机进关没角色」这个问题在现有 APK 上必然复现，
 > 必须**重新走一遍 §4 的一键构建**才算验证过 P0。出包后先看 §6-A3 的两条启动日志。
 >
-> 💡 **顺手能省 45 MB**：AB 产物目录里的 `battleteamcatalog_asset` 是 09-12 改名前的旧产物，**已不在 AB 清单里**
+> 💡 **顺手能省 42.7 MiB**：AB 产物目录里的 `battleteamcatalog_asset` 是 09-12 改名前的旧产物，**已不在 AB 清单里**
 > （核对方式：`asset_bundle_config.bin` 里只有 `battle_characters`），但 StreamingAssets 是**整体进 APK** 的，
-> 所以它是实打实的死重。出包前跑一次 **`7. 清理 AB 产物目录中的孤儿文件`**，包体余量立刻从 <11 MB 变成 ~55 MB。
+> 所以它是实打实的死重。出包前跑一次 **`7. 清理 AB 产物目录中的孤儿文件`**，包体余量立刻从 <11 MiB 变成 ~53 MiB。
 > `0. 前置检查` 会自动列出这类文件并给出体积。
+>
+> 📏 **单位口径**：本文体积一律按 **1 MB = 1024 KB（MiB）** 计。换算成十进制时 189.2 MiB = 198.4 MB ——
+> 也就是说 **13 文档的「包体 < 200MB」按十进制算，当前包已经基本顶格**，清孤儿不是可选项而是必做项。
 
 ---
 

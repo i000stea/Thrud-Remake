@@ -121,8 +121,8 @@ Android 单包:登录→主菜单(测试按钮)→ 选关 → 编队 → 进「�
   且 `SwitchActiveBuildTarget` 触发域重载，不能"切完接着出包"）；② AB 打完断言每个已标记 bundle 都在盘上 + `asset_bundle_config.bin` 存在；
   ③ 门禁含编译状态 / `Assets/link.xml`（MeshCollider 保留，09 关键坑 27）/ 编目 AB 标记（关键坑 28/30）/ AB 过期提示；
   ④ APK 体积对照 200MB 目标出报告并写 `Build/Android/build_report_*.txt`；⑤ 菜单 6 让外放的每个包版本可区分；
-  ⑥ 菜单 7 + 门禁 G8 清理「孤儿 AB 产物」——实测盘上残留 09-12 改名前的 `battleteamcatalog_asset`（**44.7MB，已不在 AB 清单里**），
-  而 StreamingAssets 是整体进 APK 的 → 清掉即可把包体余量从不足 11MB 拉回约 55MB。
+  ⑥ 菜单 7 + 门禁 G8 清理「孤儿 AB 产物」——实测盘上残留 09-12 改名前的 `battleteamcatalog_asset`（**42.7 MiB，已不在 AB 清单里**），
+  而 StreamingAssets 是整体进 APK 的 → 清掉即可把包体余量从不足 11 MiB 拉回约 53 MiB（体积按 1MB=1024KB 计）。
 - 产物 `Build/Android/ThrudDemo_<版本>_<verCode>_<dev|release>.apk`（`Build/` 与 `*.apk` 均已 .gitignore，不入库）；
   成功后 `RevealInFinder`；失败打印 BuildReport 的错误步骤。
 - **真机验收清单 v0**：已展开成可执行清单（A 安装启动 / B 最小链路 / C 触屏 / D 面板不空屏 / E 战斗数值 / F 性能发热 /

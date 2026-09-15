@@ -37,24 +37,16 @@ namespace TeaGame.App
       [Tooltip("加载完成后遮罩最少保持时长（秒）。")]
       [SerializeField] private float minHoldDuration = 1f;
 
-      /// <summary>
-      /// 当前切换请求，目标场景通过 <see cref="GetPayload{T}"/> 读取参数。
-      /// </summary>
+      /// <summary> 当前切换请求，目标场景通过 <see cref="GetPayload{T}"/> 读取参数。 </summary>
       private SceneRequest mCurrentRequest;
 
-      /// <summary>
-      /// 是否正在切换中，防止并发切换请求导致场景状态错乱。
-      /// </summary>
+      /// <summary> 是否正在切换中，防止并发切换请求导致场景状态错乱。 </summary>
       private bool mSwitching;
 
-      /// <summary>
-      /// Loading Canvas 的 CanvasGroup（渐显渐隐目标，取 LoadingGroup 根的第一个子对象）。
-      /// </summary>
+      /// <summary> Loading Canvas 的 CanvasGroup（渐显渐隐目标，取 LoadingGroup 根的第一个子对象）。 </summary>
       private CanvasGroup mLoadingCanvasGroup;
 
-      /// <summary>
-      /// Loading 进度文本（Loading Canvas 下 TMP 文本，用于显示加载百分比）。
-      /// </summary>
+      /// <summary> Loading 进度文本（Loading Canvas 下 TMP 文本，用于显示加载百分比）。 </summary>
       private TMP_Text mProgressText;
 
       /// <summary>

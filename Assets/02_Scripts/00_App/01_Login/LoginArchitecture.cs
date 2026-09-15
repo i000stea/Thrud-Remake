@@ -1,6 +1,6 @@
 using QFramework;
 
-namespace TeaGame.Login
+namespace TeaGame
 {
    /// <summary>
    /// 登录模块架构入口。
@@ -10,8 +10,8 @@ namespace TeaGame.Login
    {
       protected override void Init()
       {
-         this.RegisterModel(new LoginModel());
-         this.RegisterSystem(new LoginSystem());
+         this.RegisterModel(new Login.LoginModel());
+         this.RegisterSystem(new Login.LoginSystem());
       }
    }
 }

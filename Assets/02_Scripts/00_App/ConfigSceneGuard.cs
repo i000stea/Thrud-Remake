@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 namespace TeaGame.App
 {
    /// <summary>
+   /// 编辑器模式下的
    /// 入口常驻场景懒加载守卫。
    /// 需求语义（决策 D16）：检查"管理场景是否已加载"，未加载则 additive 加载。
    /// 入口场景经 <see cref="SceneAnchor"/> 从 Build Settings[0] 动态锚定，名称/路径不写死。

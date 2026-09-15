@@ -60,7 +60,7 @@
 - [ ] **编辑器执行一键构建出包**（菜单 0 → 1 → 5；需切 Android + IL2CPP 首次编译，约 3–18 分钟）；出包后填 `15` §8 交付记录
 - [ ] 真机按 `15` §6 逐项验收（重点 A3 两条启动日志 + B5 角色出现 + D2 重开后再进关触摸层仍在）
 - [ ] 分发：debug 签名 apk 直接外放（正式签名后补）
-- [ ] 包体余量不足 11MB（当前 189.2MB / 目标 200MB；AB 合计 131.1MB）：**先跑菜单 7 清掉孤儿产物 `battleteamcatalog_asset`（44.7MB，已不在 AB 清单里）**，可省回约 45MB；仍逼近上限再按 `../03_专项设计与重构/14…` P3 做 AB 划分
+- [ ] 包体余量不足 11MB（当前 189.2MB / 目标 200MB；AB 合计 131.1MB）：**先跑菜单 7 清掉孤儿产物 `battleteamcatalog_asset`（42.7MiB，已不在 AB 清单里）**，可省回约 43MiB；仍逼近上限再按 `../03_专项设计与重构/14…` P3 做 AB 划分
 
 **开放待验证小项（不阻塞启动，`../01_里程碑与执行/13` §5）**
 - [ ] 切人键用「←/→ 循环」即可，还是四槽直接选？
@@ -95,7 +95,15 @@
 - [ ] C4：迁移全局对象（StoreBattleRoleData / BattleRoleRepository / LoadingGroup / UIRoot）入 ConfigScene，去 DontDestroyOnLoad
 - [ ] C6：Login/Main/Gacha/Battle 场景切换改造为 additive 请求模式
 - [ ] C7：架构文档同步（更新 08 与 01 架构文档到实际实现）
-- [ ] M0 其余（`../02_系统与玩法设计/02_热更新方案.md` + `../01_里程碑与执行/06_里程碑规划与任务依赖.md`）：HybridCLR + YooAsset 集成、热更链路联调、PC+Android 构建矩阵——长期项，M1 主线推进中暂缓
+- [ ] M0 其余（`../02_系统与玩法设计/02_热更新方案.md` + `../01_里程碑与执行/06_里程碑规划与任务依赖.md`）：HybridCLR + YooAsset 集成、热更链路联调、PC+Android 构建矩阵——**2026-09-15 已立项并拆解为 P0–P5，见 `../03_专项设计与重构/16_热更新方案选型与落地计划.md`**；开工前需用户确认 §8 待确认项，且 P1 程序集拆分前工作区须干净（该文档同时给出实测差距与版本核实结论）
+
+**热更新立项（2026-09-15；来源：`../03_专项设计与重构/16_热更新方案选型与落地计划.md`）**
+- [ ] **P0 · 前置与环境验证（阻断风险最高，先做）**：装 `com.code-philosophy.hybridclr#v8.14.1`、确认 git/VS2019 C++ 组件/Windows IL2CPP 模块、跑 `HybridCLR/Installer`、`manifest.json` 加 `com.unity.scriptablebuildpipeline`；**核心是中国版 Unity `2022.3.60f1c1` + IL2CPP 打包实测**（官方只声明覆盖 2022.3.x LTS，未覆盖中国版）
+- [ ] P1 · 程序集与目录拆分（`Tea.Framework` AOT / `Tea.Game`+`Tea.Data` 热更，`Assets/Game`|`Engine`）——**当前工程只有一个 `TeaGame.asmdef`，文档要求的三层均不存在**；注意先提交现有未完成的 `Assets/02_Scripts` 目录重构
+- [ ] P2 · HybridCLR 打通（Api Level 改 `.NET Framework`、Standalone 切 IL2CPP、`HotfixAssemblyLoader` + 补充元数据、Generate/All → CompileDll 管线）
+- [ ] P3 · YooAsset 接入与资源迁移（**当前 ResKit AB 已在用**，需写 YooAsset 版 `IPanelLoaderPool` 替换 `ResKitPanelLoaderPool`、`BattleAssetService` 改 AssetHandle）
+- [ ] P4 · 更新流程 + 本地模拟服务器（`VersionService`/`PatchDownloadService`/`PatchRecoveryService`，接 `ConfigScene` 启动流程）
+- [ ] P5 · Android 真机链路 + 打包一键化（并入 `../01_里程碑与执行/15…` 验收清单；注意 APK 体积已 189.2MB/200MB）
 
 ### 3.4 真机资源与战斗装配（2026-09-10 新增；来源：`../03_专项设计与重构/14_真机资源与战斗装配_分阶段修复指南.md`）
 
