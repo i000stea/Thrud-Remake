@@ -23,9 +23,9 @@ namespace TeaGame
 
       protected override void OnInit()
       {
-         mLevelStateUnregister = Architecture.RegisterEvent<BattleLevelStateChangedEvent>(OnLevelStateChanged);
-         mPauseToggleUnregister = Architecture.RegisterEvent<BattlePauseToggleRequestedEvent>(_ => TogglePause());
-         mPauseResumeUnregister = Architecture.RegisterEvent<BattlePauseResumeRequestedEvent>(_ => ResumeGame());
+         mLevelStateUnregister = Architecture.RegisterEvent<BattleEvent_LevelStateChanged>(OnLevelStateChanged);
+         mPauseToggleUnregister = Architecture.RegisterEvent<BattleEvent_PauseToggleRequested>(_ => TogglePause());
+         mPauseResumeUnregister = Architecture.RegisterEvent<BattleEvent_PauseResumeRequested>(_ => ResumeGame());
       }
 
       protected override void OnDeinit()
@@ -49,7 +49,7 @@ namespace TeaGame
 
       // ---------------- 结算面板 ----------------
 
-      private void OnLevelStateChanged(BattleLevelStateChangedEvent e)
+      private void OnLevelStateChanged(BattleEvent_LevelStateChanged e)
       {
          switch (e.To)
          {

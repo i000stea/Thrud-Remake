@@ -1,6 +1,6 @@
 # 下一步行动清单（Docs 整理日汇总）
 
-> 汇总日期：**2026-09-15（回填 `M1_TeamSelect` 文档清账，来源 `../03_专项设计与重构/M1_TeamSelect_预编队面板_重构设计.md` + `../05_开发日志/09_开发日志_会话交接.md`）**；上一轮汇总 2026-09-10（增补 §3.4 真机资源与战斗装配阶段清单，来源 `../03_专项设计与重构/14…`）。目的：在文档按类型重组后，**保留并集中可追溯的「下一步要做」内容**。
+> 汇总日期：**2026-09-18（P1A S2/S3 落地：代码域拆分完成、产出 17 代码现状地图，来源 `../03_专项设计与重构/17_代码现状地图.md` + `../03_专项设计与重构/16…` §5A + `../05_开发日志/09_开发日志_会话交接.md`）**；上一轮汇总 2026-09-15（回填 `M1_TeamSelect` 文档清账）。目的：在文档按类型重组后，**保留并集中可追溯的「下一步要做」内容**。
 > 本文只做**摘编**，不改写事实；每项标注来源，**原文/细节一律以来源文档为准**。新会话仍按老规矩：先读 `../05_开发日志/09_开发日志_会话交接.md`，再按 `../01_里程碑与执行/07_M1战斗灰盒_开发追踪指南.md` 逐卡执行。
 
 ---
@@ -101,11 +101,18 @@
 
 > 定位：Demo 已外发测试，热更线顺延。在下一个大阶段开发前，插入缓慢调整阶段，目标是"开发者本人能读懂并掌控代码结构"。**纪律：只做结构，不加功能/不改数值/不修 bug（发现的 bug 记入本清单）/不动第三方目录**。
 
-- [ ] **S1 · 先建立验证回路（必须最先做，未达成不进 S2）**：当前 `unity` CLI 不在 PATH、工程无 `com.unity.pipeline`，**我无法编译也无法读 Console**。① 方案 B（10 分钟）：装官方 CLI + `unity pipeline install`，大概率失败但顺带确认国区网络是否装成缺 `pipeline`/`command` 的老版 `0.1.x`；② 方案 A（保底）：你当编译器，小批次改动 → 你在 Editor 编译 → 贴回 Console 原文；③ 方案 C（约 1 小时，B 失败后可选）：社区手工适配 `com.unity.pipeline`（`rocwood/unity-cli-2022-mod`，作者不提供兼容性保证）——需 fork 官方包 + 手工转 DLL `.meta`，代价大且不可复现，**若做必须单独提交、可整块删除**；④ 方案 D（未验证）：CLI 能跑 ≠ DSH 的 `unity_status`/`unity_command` 接受 2022.3 Editor，不得当已确认
-- [ ] **S2 · 现状地图（核心交付物）**：结构化阅读后产出 `Docs/03_专项设计与重构/17_代码现状地图.md`——模块清单与依赖、`03_Battle` 72 文件骨架、生命周期与数据流、**24 个未挂载旧脚本的死代码判定表**
-- [ ] **S3 · 定边界（唯一架构决策点）**：① 每个模块归 AOT(`Tea.Framework`) 还是热更(`Tea.Game`/`Tea.Data`) ② `Before/` 的最终归属 ③ 现有目录 ↔ `Assets/Game`|`Engine` 映射表 ④ `03_Module` 名实对齐
-- [ ] **S4 · 机械搬迁与去纠缠（一次一个模块、一次一个提交）**：叶子优先（`Data`/`Tools` → `UIPanel` → `03_Battle`）；必须清掉 3 处新旧纠缠（`Weapon_ObjectComponent` 的 `PlayerControl.I.config`、`BattleCombatTypes` 的 `EnemyControl.enemys`、`BattleWeaponRuntime`/`SkillEffect` 的 `Bullet_Base` 运行时禁用）；顺手修 3 条失效硬编码路径
+- [ ] **S1 · 先建立验证回路**（**2026-09-18 半达成**）：`unity` CLI 仍不在 PATH、工程无 `com.unity.pipeline`（`unity_status` 失败一次即止）。**但已找到更省事的路子**：用户开着 Editor 时，**编译结果可直接读 `%LOCALAPPDATA%\Unity\Editor\Editor.log`**（取新段、按行号排旧段；模板见 17 文档 §5）→ 建议把"**用户开着 Editor + 我读 Editor.log**"固化为默认验证回路，`unity pipeline install`（原方案 B）降为可选；**仍未解决的是**：无法主动触发编译、无法读 Console 面板、无法操作场景
+- [ ] **S2 · 现状地图（核心交付物）**（**2026-09-18 大部分完成**）：**已产出两份**——`Docs/03_专项设计与重构/17_代码现状地图.md`（域边界 / 实测跨程序集依赖边 / 契约层口径 / 搬迁回退映射表 / 遗留问题）+ `Docs/03_专项设计与重构/18_Battle调用链与阅读目录.md`（**`03_Battle` 规模已实测补齐**：63 文件 / 9366 行；含入口生命周期、**每帧驱动顺序表**、启动装配链、1 Model + 11 System 职责表、状态模型字段归属、**21 个事件发出/订阅全表**、9 条功能域调用链、**63 文件清单（可当目录）**、12 条阅读顺序、12 条"会困惑的地方"）
+  - [ ] 仍缺（**其余三项已由 18 文档覆盖，只剩这一项**）：**24 个未挂载旧脚本的死代码判定表**——需逐个标注"确认删除 / 保留待迁移 / 失效路径（`PlayerControl.I`、`Bullet_Base`、`EnemyControl.enemys`）"。注意 `Before/` 目录已整体删除，**旧脚本文件本身已不存在**，该表退化为"确认已删干净 + 复核 `2MainScene` 的 Missing Script"
+- [x] **S3 · 定边界（唯一架构决策点）——完成（2026-09-18）**：`02_Scripts` 按**业务域**拆为 9 个程序集（`TeaGame.App`/`Menu`/`Gacha`/`Battle` + 共享层 `Data`/`Tools` + 契约层 `Battle.Contracts`），**已编译通过**；`menu ↔ battle` 收口为 0 处互相引用
+  - [x] **AOT / 热更归属已定稿（用户 2026-09-18，两轮）**：**AOT 只有 `TeaGame.App`，其余全部热更**（`Data`/`Tools`/`Battle.Contracts`/`Battle`/`Menu`/`Gacha`）。第一版决策曾使 `TeaGame.Tools` 因 `App → Tools` 依赖被迫进 AOT；用户把 `TeaBaseButton`（含 `.meta`、GUID 不变、6 处资产引用未断）搬进 `00_App/Tools/` 后依赖消失 → **Tools 回到热更**。复核：App asmdef 无任何项目内引用、App 源码 0 处热更类型 → 满足「AOT 不得引用热更」。见 17 文档 §7 / §7.1
+  - [x] **热更层「禁止 `UnityEditor`」已实测核验通过**：全热更层仅 1 处命中（`BattleSceneRuntimeHost.cs:318`），且有 `#if UNITY_EDITOR` 保护 → 满足 HybridCLR 前提，**P1C 无需为此改动**；副作用（编辑器专属回落）要在迁 YooAsset 时一起看。见 17 文档 §7.2
+  - [ ] 仍待办：① 现有 9 程序集 ↔ `Tea.Framework`/`Tea.Game`/`Tea.Data` 三层命名的**改名/归并**（P1C 开工时执行，**不需要重新划边界**）；② `Assets/Game`、`Assets/Engine` 顶层目录是否落地（本阶段刻意未动）
+  - [ ] `03_Module` 名实对齐：实测 **0 个 `.cs`**（纯资源目录）；`AGENTS.md` 已修正描述，01 文档待同步
+- [ ] **S4 · 机械搬迁与去纠缠（一次一个模块、一次一个提交）**：叶子优先（`Data`/`Tools` → UI 面板 → `03_Battle`）；必须清掉 3 处新旧纠缠（`Weapon_ObjectComponent` 的 `PlayerControl.I.config`、`BattleCombatTypes` 的 `EnemyControl.enemys`、`BattleWeaponRuntime`/`SkillEffect` 的 `Bullet_Base` 运行时禁用）；顺手修 3 条失效硬编码路径。**注意**：`03_Battle` 内部结构本次**一个文件都没挪**，是 S4 的主体
 - [ ] **S5 · 删死代码与文档对齐**：删前必跑 GUID 挂载复核（§5A.5 命令模板）；同步 01/02/04 与 `AGENTS.md` 项目事实段
+  - [ ] **`2MainScene.unity` 的 `MainCityControl` Missing Script（2026-09-18 实测，需 Editor 操作）**：脚本已随 `Before/` 删除，guid `7976042f492d57b4fba4d6772c9baaf6` 仍被**活场景** `Assets/01_Scenes/2MainScene.unity` 引用 → 需在 Editor 里手动摘掉该组件（其余被删旧脚本只剩已禁用场景引用，无活引用）。来源：17 文档 §6.1
+  - [ ] **死代码（已定位未删）**：`03_Battle/Team/BattleUiFlowPanelOpener.cs`（自述无调用者，实测全工程无调用点）、`03_Battle/Team/BattleUiFlowNames.cs`（常量指向已删除的 `BattleMainHubPanel`/`BattleTeamSelectPanel`）。来源：17 文档 §6.5
 - [ ] **场景与组件清理（2026-09-15 用户决策，详见 §5A.1b）**：**保留** `4BattleScene`/`5BattleScene-Test0/1`（及 `3GachaScene`）作为美术资产，**场景内旧脚本组件全部摘除，只留美术侧内容**。**铁律：先摘组件、后删脚本**，否则留下 `Missing (Mono Script)`。
   - A 类（只活在禁用资产里，摘组件后删脚本即可）：`EnemyControl`/`EnvEffectControl`/`StoreBattleRoleData`（三个禁用战斗场景）、`EnemyUIData`（`Battle EnemyUIData.asset`，**数据资产随脚本一起删**，需先解除三个场景引用）；`EnemyEntity_Main` 的**唯一挂载点随 `Enemy_0Base.prefab` 一起消失**
   - **`Enemy_0Base.prefab` 已由用户删除（2026-09-15）**，实测安全：`EnemyCatalog` 引用的 21 个 guid = 20 个 typed 敌人 prefab + `EnemyCatalog.cs` 自身，**不含它** → 活敌人生成链路未受影响
@@ -148,6 +155,19 @@
 - [ ] `PlayerControl.I` 与 `Bullet_Base` 未被任何场景/预制体挂载，但新代码仍在引用/`TryGetComponent` → **疑似失效代码路径**，需 S2 人工判定（涉及武器/子弹结算，勿贸然删）
 - [ ] `Assets/03_Module` 下 0 个 `.cs`（只有资源目录），与 `AGENTS.md`「03_Module = gameplay modules」描述不符 → 归入 S3 名实对齐
 - [ ] HEAD `5bc3890c` 单次提交混合了目录重构 + 新功能 + 文档 + `web/data/progress.json`，违反 AGENTS.md 提交纪律 → P1A 期间恢复"一次一个范围"
+
+**P1A · 2026-09-18（域拆分会话）新增待办与待确认项（来源：`../03_专项设计与重构/17_代码现状地图.md`）**
+
+- [ ] **待用户执行（Play 回归，S3 落地后的必须项）**：主链路 `0ConfigScene → Login → 2MainScene → 选关 → 编队 → BattleGraybox → 结算 → 返回` 走一遍；并抽查 prefab/场景引用未断（`Assets/04_Prefabs/Panel/Formation/Main_FormationPanel.prefab`、`LevelSelectPanel.prefab`、`BattleGraybox.unity` 上 `battle_runtime` 的 `teamCatalog`）与 Editor 菜单可用性（`Thrud/Battle/T3.1C/…`、`Thrud/Demo/Android/0. 构建前置检查`）。**编译已通过但运行未验**，见 17 文档 §5
+- [x] **gacha 还原后的编译 —— 已核验通过（2026-09-18 20:38）**：`Library/ScriptAssemblies/TeaGame.Gacha.dll` 产出（23,040 bytes），该轮 `error CS` = 0、非 RealToon 警告 = 0，`will not be compiled` 提示消失。
+  - [ ] 备注（非缺陷）：`Legacy/` 三脚本**会被编译进 `TeaGame.Gacha`**（随热更 DLL 进包约 +23KB），但无调用入口、无资产挂载。若 P1C 要其彻底不进包：直接删除 or 给 `Legacy/` 加嵌套 asmdef + 未定义 `defineConstraints`。17 文档 §6.6
+- [x] **`TeaGame.Gacha` 空程序集提示 —— 已决策并落地（2026-09-18）**：保留域 + 新增 `02_Gacha/GachaModule.cs` 占位框架（消除 `will not be compiled, because it has no scripts` 提示）。17 文档 §6.2
+- [x] **gacha 参考代码处置 —— 已决策并落地（2026-09-18）**：从 git `5bc3890c` 原样还原 3 个脚本到 `02_Gacha/Legacy/`（GUID 保留）+ 新增 `02_Gacha/README.md` 标注「M2 参考实现，不参与运行时」。唯一必要改动是切断对已删除 `LoadingControl` 的调用（不迁移行为）。17 文档 §6.6
+- [ ] **⚠️ 待修（`02_Gacha/GachaArchitecture.cs`，用户 WIP，本次只报告未动手）**：文件名叫 `GachaArchitecture.cs`，但里面声明的类是 **`AppArchitecture`** → 与 `TeaGame.App.AppArchitecture` 跨程序集同名，**每轮编译刷 `warning CS0436`**（编译器优先用本程序集那个）。除警告外还有两个实质风险：① 违反 09 关键坑 10/17「类名与文件名一致」；② `Architecture<T>` 以**类型**为单例身份，两个程序集里的同名类型 = **两个独立架构**，`LoginModel`/`LoginSystem` 会被注册两份。建议：类名改 `GachaArchitecture`（`Architecture<GachaArchitecture>`），并明确它该注册什么——当前 body 注册的是 App 架构的内容。见 17 文档 §7.3
+- [ ] **App 层硬编码面板 AB 名单（字符串级耦合，非类型依赖）**：`00_App/ResKitBootstrap.cs` 的 `ExpectedPanels` 列了 6 个 battle/menu 面板的 `QAssetBundle` 常量名——不违反程序集边界，但是**新增面板时最容易漏改的一处**（热更后尤甚）。当前只被已注释掉的 `Validate()` 使用（休眠代码），本次不动。17 文档 §6.3
+- [ ] **契约层纪律（后续新增类型时照此判定，避免滚成新的 God assembly）**：只有一句判据——**Menu 是否需要看见它**；需要就下沉，不需要就留在 `TeaGame.Battle`。下沉时**必须连带它的公开面**（字段类型、`[Attribute]` 类型），否则契约层反向依赖 Battle 成环。17 文档 §3.2
+- [ ] **场景移位（2026-09-15 已批准，未执行）**：四个禁用场景（`3GachaScene`/`4BattleScene`/`5BattleScene-Test0/1`）可移入 `Assets/01_Scenes/Legacy/`，**只移位不改名**（D25 场景名即 key）
+- [ ] **两个 Variant 孤儿（2026-09-15 已识别，未处理）**：`Enemy_Test-Ele.prefab` / `Enemy_Test-Fire.prefab` 是已删基座 `Enemy_0Base` 的 Prefab Variant，建议一并删除（仅被禁用场景 `5BattleScene-Test1` 引用）
 
 ### 3.4 真机资源与战斗装配（2026-09-10 新增；来源：`../03_专项设计与重构/14_真机资源与战斗装配_分阶段修复指南.md`）
 

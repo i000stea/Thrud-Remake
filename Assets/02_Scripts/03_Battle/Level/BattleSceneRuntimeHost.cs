@@ -29,6 +29,7 @@ namespace TeaGame
                "battle_characters 解析并常驻；本字段仅在 AB 不可解析时兜底（编辑器直连联调可留空）。")]
       [SerializeField] private BattleTeamCatalog teamCatalog;
 
+      // 这个地方有点问题，他为什么是手动拖拽的？我希望应该是通过某种方式查找当前场景中存在的该脚本，没有的话去呼叫热更新模块把相应的预制件创建然后进行获取
       [Tooltip("场景固定 rig（Battle_PlayerControl.prefab 实例，角色控制 + 战斗 HUD，仅作 View）。")]
       [SerializeField] private Battle_PlayerControl playerControl;
 
@@ -38,10 +39,22 @@ namespace TeaGame
       [Tooltip("启动后按关卡数据应用玩家出生点/朝向（D9：数据定义出生点，场景不硬编）。")]
       [SerializeField] private bool applyPlayerSpawn = true;
 
+      BattleStateModel StateModel
+      {
+         get
+         {
+            _sModel ??= Architecture.GetModel<BattleStateModel>();
+            return _sModel;
+         }
+      }
+      BattleStateModel _sModel;
+
       /// <summary>编辑器直连默认编队目录路径（无出战会话时的兜底数据源）。</summary>
       private const string EditorTeamCatalogPath = "Assets/Data/BattleTeamCatalog.asset";
 
       private IArchitecture Architecture => BattleArchitecture.Interface;
+
+      #region unity生命周期
 
       private void Awake()
       {
@@ -50,17 +63,9 @@ namespace TeaGame
          // 框架初始化：确保战斗架构创建（幂等）
          _ = BattleArchitecture.Interface;
 
-         var level = ResolveLevel();
-         if (level == null)
-         {
-            Debug.LogWarning(
-               $"[battle_runtime] 场景「{gameObject.scene.name}」未解析到关卡数据" +
-               "（关卡目录未登记本场景或目录缺失），battle 场景仅保底运行（无波次数据）。");
-         }
-         else
-         {
-            ApplyLevelToScene(level);
-         }
+         if (!TryResolveLevel(out var level)) { return; }
+
+         ApplyLevelToScene(level);
       }
 
       private void Start()
@@ -69,19 +74,20 @@ namespace TeaGame
          SetupBattleSystems();
 
          // 2. 触摸层（跨场景进入须等 UIRoot 归属稳定，见 OpenTouchUiWhenSceneReady）
-         StartCoroutine(OpenTouchUiWhenSceneReady()); 
+         StartCoroutine(OpenBattleUiWhenSceneReady());
       }
 
       private void OnDestroy()
       {
-         // T1：离场关闭触摸层（幂等；场景卸载/重开/退出均触发）
+         // [2026-09-18] 离场关闭战斗 UI 面板（主 HUD + 触屏层；均幂等）
          try
          {
+            Battle_MainPanel.CloseForBattle();
             Battle_TouchInputPanel.CloseForBattle();
          }
          catch (System.Exception e)
          {
-            Debug.LogWarning($"[battle_runtime] 离场关闭触摸层异常（可忽略）：{e.Message}");
+            Debug.LogWarning($"[battle_runtime] 离场关闭战斗 UI 面板异常（可忽略）：{e.Message}");
          }
 
          // P1：面板 GameObject 随本场景销毁时 IPanel.Close 不会被调用 → UIKit 表会残留已销毁条目，
@@ -89,10 +95,53 @@ namespace TeaGame
          UiPanelFlow.SanitizeRegistry();
       }
 
+      #endregion
+
+      #region Awake：关卡数据 → 场景固件
       // ==================== Awake：关卡数据 → 场景固件 ====================
 
+      /// <summary>
+      /// 解析本场关卡：BattleLevelSession 选关缓存（须指向本场景）优先；否则 D12 直连默认。
+      /// </summary>
+      private bool TryResolveLevel(out BattleLevelData selected)
+      {
+         selected = BattleLevelSession.Selected;
+
+         if (selected != null)
+         {
+            if (selected.ArtSceneName == gameObject.scene.name)
+            {
+               return true;
+            }
+
+            // 这个地方的美术判断不应该放在这里？还是说这里只是做一个保底检测
+            Debug.LogWarning($"[battle_runtime] 会话缓存关卡 {selected.LevelId} 属于场景 {selected.ArtSceneName}，" +
+                             $"与本场景 {gameObject.scene.name} 不符，回落直连默认（D12）。");
+         }
+
+         // 关卡为主，美术场景错误不应该回滚到相同美术场景的首个关卡？还是说这个仅限于编辑器配置
+         if (catalog != null)
+         {
+            selected = catalog.FindFirstByArtScene(gameObject.scene.name);
+            if (selected != null)
+            {
+               return true;
+            }
+         }
+
+         Debug.LogError(
+            $"[battle_runtime] 场景「{gameObject.scene.name}」未解析到关卡数据" +
+            "（关卡目录未登记本场景或目录缺失），battle 场景仅保底运行（无波次数据）。");
+         return false;
+      }
+
+      /// <summary>
+      /// 应用场景
+      /// </summary>
+      /// <param name="level"></param>
       private void ApplyLevelToScene(BattleLevelData level)
       {
+         // 应该是在 玩家系统 内部 有一个事件进行位置更新，通过事件输入值后，再使用 BindableProperty 让view层进行更新 而不是直接驱动位置
          if (applyPlayerSpawn && playerControl != null)
          {
             playerControl.transform.SetPositionAndRotation(
@@ -100,6 +149,7 @@ namespace TeaGame
                Quaternion.Euler(level.PlayerSpawnEuler));
          }
 
+         // 敌人系统等到真正更新时再阅读
          if (stageDirector != null)
          {
             stageDirector.Setup(level, catalog != null ? catalog.EnemyCatalog : null);
@@ -115,39 +165,15 @@ namespace TeaGame
                    $"出生 {level.PlayerSpawnPosition}（朝向 {level.PlayerSpawnEuler}），站点 {siteCount} 个，限时 {level.TimeLimitSeconds}s。");
       }
 
-      /// <summary>
-      /// 解析本场关卡：BattleLevelSession 选关缓存（须指向本场景）优先；否则 D12 直连默认。
-      /// </summary>
-      private BattleLevelData ResolveLevel()
-      {
-         var selected = BattleLevelSession.Selected;
-         if (selected != null)
-         {
-            if (selected.ArtSceneName == gameObject.scene.name)
-            {
-               return selected;
-            }
+      #endregion
 
-            Debug.LogWarning($"[battle_runtime] 会话缓存关卡 {selected.LevelId} 属于场景 {selected.ArtSceneName}，" +
-                             $"与本场景 {gameObject.scene.name} 不符，回落直连默认（D12）。");
-         }
-
-         if (catalog != null)
-         {
-            var fallback = catalog.FindFirstByArtScene(gameObject.scene.name);
-            if (fallback != null)
-            {
-               return fallback;
-            }
-         }
-
-         return null;
-      }
+      #region Start：整场战斗装配
 
       // ==================== Start：整场战斗装配 ====================
 
       private void SetupBattleSystems()
       {
+         // 玩家控制器存续状态检测
          if (playerControl == null)
          {
             Debug.LogError("[battle_runtime] 未配置 rig（Battle_PlayerControl），无法装配战斗。" +
@@ -155,15 +181,20 @@ namespace TeaGame
             return;
          }
 
-         var model = Architecture.GetModel<BattleStateModel>();
-         model.Paused = false; // 复位暂停态（架构常驻跨场景）
+         // 获取数据（能否改为参数获取，后续不再重复获取？）
+         //var model = Architecture.GetModel<BattleStateModel>();
+         StateModel.Paused = false; // 复位暂停态（架构常驻跨场景）
 
          // 角色数据解析（会话优先 / Editor 目录默认 / 正式无会话退回）→ 注入角色系统
          var datas = ResolveBattleDatas();
 
+         // 各系统初始化
          Architecture.GetSystem<BattleRoleSystem>().Initialize(playerControl, datas);
          Architecture.GetSystem<BattleHealthSystem>().Initialize();
+         
+         // view系统应该“不存在”？ 各自的view由各自的viewcontroller处理？
          Architecture.GetSystem<BattleViewSystem>().InitializeView();
+
          playerControl.SyncRuntimeBridge();
 
          // T2.3.1：注册元素子弹（开火按角色元素取弹）
@@ -179,8 +210,8 @@ namespace TeaGame
          // T3.1：关卡流程复位进入 Prepare（终局去向由结算弹窗按钮触发）
          Architecture.GetSystem<BattleLevelFlow>().StartLevel();
 
-         // T2.4：技能 HUD 事件绑定（View 侧反向 bind）
-         playerControl.BindSkillHudEvents();
+         // [2026-09-18] 技能 HUD 的 View 侧绑定已迁至 Battle_MainPanel（BindableProperty 反向绑定），
+         // 面板在等 UIRoot 归属稳定后由 OpenBattleUiWhenSceneReady 打开——见本类底部。
 
          Debug.Log($"[battle_runtime] 战斗系统装配完成：出战 {datas.Length} 人。");
       }
@@ -343,11 +374,15 @@ namespace TeaGame
          return results.ToArray();
       }
 
+      #endregion
+
+      #region 每帧驱动（自 Battle_PlayerControl 上移）
+
       // ==================== 每帧驱动（自 Battle_PlayerControl 上移） ====================
 
       private void Update()
       {
-         var state = Architecture.GetModel<BattleStateModel>();
+         var state = StateModel;
          if (playerControl == null) return;
 
          Architecture.GetSystem<BattleRoleSystem>().SetControlTakenOver(playerControl.ControlTakeOff);
@@ -358,7 +393,7 @@ namespace TeaGame
              && state.LevelState != BattleLevelState.Victory
              && state.LevelState != BattleLevelState.Defeat)
          {
-            Architecture.SendEvent(new BattlePauseToggleRequestedEvent());
+            Architecture.SendEvent(new BattleEvent_PauseToggleRequested());
          }
 
          if (state.Paused)
@@ -381,7 +416,7 @@ namespace TeaGame
       private void FixedUpdate()
       {
          if (playerControl == null) return;
-         if (Architecture.GetModel<BattleStateModel>().Paused) return;
+         if (StateModel.Paused) return;
 
          Architecture.GetSystem<BattleMovementSystem>().TickFixedUpdate();
          Architecture.GetSystem<BattleAimSystem>().TickFixedUpdate();
@@ -391,15 +426,23 @@ namespace TeaGame
       private void LateUpdate()
       {
          if (playerControl == null) return;
-         if (Architecture.GetModel<BattleStateModel>().Paused) return;
+         if (StateModel.Paused) return;
 
          Architecture.GetSystem<BattleAimSystem>().TickLateUpdate();
          playerControl.SyncRuntimeBridge();
       }
 
-      // ==================== 触摸层（T1） ====================
+      #endregion
 
-      private System.Collections.IEnumerator OpenTouchUiWhenSceneReady()
+      #region 战斗 UI 面板 
+      // ==================== 战斗 UI 面板（主 HUD / 触屏层，T1 + 2026-09-18） ====================
+
+      /// <summary>
+      /// 等 UIRoot 归属稳定后打开战斗 UI 面板：主 HUD（Battle_MainPanel）+ 触屏层（Battle_TouchInputPanel）。
+      /// 两者共用同一个等待循环——跨场景进入时若 UIRoot 仍属于即将卸载的旧场景，
+      /// 挂上去的面板会随旧场景销毁（见 Battle_TouchInputPanel.IsUIRootReadyForScene 的注释）。
+      /// </summary>
+      private System.Collections.IEnumerator OpenBattleUiWhenSceneReady()
       {
          const int maxFrames = 1200; // 上限约 20s，避免异常情况下永久等待
          for (var i = 0; i < maxFrames; i++)
@@ -412,7 +455,10 @@ namespace TeaGame
             yield return null;
          }
 
+         // 主 HUD 常开；触屏层按平台/调试开关自判是否启用
+         Battle_MainPanel.TryOpenForBattle();
          Battle_TouchInputPanel.TryOpenForBattle();
       }
+      #endregion
    }
 }

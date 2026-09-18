@@ -1770,7 +1770,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MarkType: 0
-  CustomComponentName: 
+  CustomComponentName: AwakeTimeline
   CustomComment: 
   mComponentName: Transform
 --- !u!1 &2014677753932130258
@@ -2047,16 +2047,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Namespace: TeaGame
   ScriptName: Battle_PlayerControl
-  ScriptsFolder: Assets\02_Scripts\03_Battle
+  ScriptsFolder: Assets\02_Scripts\03_Battle\Player
   GeneratePrefab: 0
   PrefabFolder: Assets/Art/Prefab
-  ArchitectureFullTypeName: 
+  ArchitectureFullTypeName: TeaGame.BattleArchitecture
   ViewControllerFullTypeName: 
   scale: 1
   controlTakeOff: 0
   initialRoleIndex: 0
-  dataRepository: {fileID: 0}
-  legacyDataStore: {fileID: 0}
   environmentEffectController: {fileID: 0}
   playerConfig: {fileID: 11400000, guid: 56bc4c872b1395c4db54cbafb2e92888, type: 2}
   weaponAmmoText: {fileID: 990000000000003}
@@ -2071,16 +2069,16 @@ MonoBehaviour:
   Cross_LockEnemy: {fileID: 1715050979}
   Health_Main: {fileID: 5026538790168160919}
   Health_Value: {fileID: 7849757925618691299}
+  SkillHudRoleLine: {fileID: 910000000000000024}
+  SkillHudELine: {fileID: 910000000000000034}
+  SkillHudQLine: {fileID: 910000000000000044}
+  SkillHudSwitchLine: {fileID: 910000000000000054}
   ViewRotateAxis: {fileID: 2318320704242562891}
   Roles: {fileID: 3512349366370038483}
   WeaponAxis: {fileID: 9220361602020810085}
   WepLookatTarget: {fileID: 8769880738983302467}
   AwakeTimeline: {fileID: 5286325140802087800}
   SelfRigidbody: {fileID: 2318320704533282575}
-  SkillHudRoleLine: {fileID: 910000000000000024}
-  SkillHudELine: {fileID: 910000000000000034}
-  SkillHudQLine: {fileID: 910000000000000044}
-  SkillHudSwitchLine: {fileID: 910000000000000054}
 --- !u!114 &6240305357958277411
 MonoBehaviour:
   m_ObjectHideFlags: 0

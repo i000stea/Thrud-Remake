@@ -9,13 +9,7 @@ namespace TeaGame
    [CreateAssetMenu(fileName = "BattlePlayerConfig", menuName = "Thrud/Battle/PlayerConfig")]
    public class BattlePlayerConfig : ScriptableObject
    {
-      [Header("移动参数")]
-      /// <summary>
-      /// 玩家最大生命值。
-      /// 战斗灰盒阶段的生命数值来源，后续接入角色配置表后由角色数据覆盖。
-      /// </summary>
-      public float PlayerMaxHealth = 100f;
-
+      [Header("移动参数")] 
       /// <summary>
       /// 是否让上下移动始终基于世界坐标。
       /// 若关闭，则会上下方向也跟随朝向参考轴进行转换。

@@ -69,6 +69,8 @@ namespace TeaGame
          if (target == null || target.IsDowned) return;
 
          State.SelectedRoleIndex = index;
+         // 主 HUD 视图状态（反向绑定数据源，见 BattleHudState）
+         State.Hud.SelectedRoleIndex.Value = index;
          Architecture.SendEvent(new BattleRoleSwitchedEvent { Index = index });
       }
 
@@ -88,6 +90,8 @@ namespace TeaGame
             if (candidate == null || candidate.IsDowned) continue;
 
             State.SelectedRoleIndex = index;
+            // 主 HUD 视图状态（反向绑定数据源，见 BattleHudState）
+            State.Hud.SelectedRoleIndex.Value = index;
             Debug.Log($"[T3.1B] 自动切至存活成员：{candidate.RoleName}（槽 {index + 1}）。");
             Architecture.SendEvent(new BattleRoleSwitchedEvent { Index = index });
             return true;
@@ -220,7 +224,7 @@ namespace TeaGame
             return;
          }
 
-         Architecture.SendEvent(new BattlePauseToggleRequestedEvent());
+         Architecture.SendEvent(new BattleEvent_PauseToggleRequested());
       }
 
       /// <summary>

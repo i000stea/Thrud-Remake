@@ -130,7 +130,7 @@ namespace TeaGame
             if (!mWaveStarted)
             {
                mWaveStarted = true;
-               BattleArchitecture.Interface.SendEvent(new BattleStageWaveStartedEvent());
+               BattleArchitecture.Interface.SendEvent(new BattleEvent_Stage_WaveStarted());
             }
 
             return;
@@ -269,7 +269,7 @@ namespace TeaGame
             Debug.Log("[T2.2] 全部站点清剿完成（演示通关）。");
 
             // T3.1：整场清剿完成 → 关卡状态机 Wave → Victory
-            BattleArchitecture.Interface.SendEvent(new BattleStageClearedEvent());
+            BattleArchitecture.Interface.SendEvent(new BattleEvent_Stage_Cleared());
             return;
          }
 
@@ -285,7 +285,7 @@ namespace TeaGame
          Debug.LogWarning($"[T2.2] 整场限时 {TimeLimitSecondsValue}s 到，判负（占位，正式结算归 T3.4）。");
 
          // T3.1：限时到 → 关卡状态机 Wave → Defeat
-         BattleArchitecture.Interface.SendEvent(new BattleStageTimedOutEvent());
+         BattleArchitecture.Interface.SendEvent(new BattleEvent_StageTimedOut());
       }
 
       // ---------------- 运行时可视化（按配置自动生成目标点） ----------------

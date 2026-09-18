@@ -19,20 +19,29 @@ MonoBehaviour:
     From: 0
     NameToFullName: []
     BindInfos:
+    - TypeName: RectTransform
+      PathToRoot: Cross_LockEnemy
+      MemberName: Cross_LockEnemy
     - TypeName: UnityEngine.UI.Image
-      PathToRoot: MainCanvas/awakeMask
-      MemberName: awakeMask
-    - TypeName: TeaGame.TeaBaseButton
-      PathToRoot: MainCanvas/startButton
-      MemberName: startButton
-    - TypeName: UnityEngine.Video.VideoPlayer
-      PathToRoot: _videoPlayer
-      MemberName: _videoPlayer
-    - TypeName: UnityEngine.AudioSource
-      PathToRoot: _audioSource
-      MemberName: _audioSource
-    ScriptsFolder: Assets\02_Scripts\00_App\01_Login
-    ClassName: LoginViewController
-    Namespace: TeaGame.Login
+      PathToRoot: StatusBar/Health/Health_Main
+      MemberName: Health_Main
+    - TypeName: TMPro.TextMeshProUGUI
+      PathToRoot: StatusBar/Health/Health_Value
+      MemberName: Health_Value
+    - TypeName: UnityEngine.UI.Text
+      PathToRoot: SkillHudPanel/SkillHudRoleLine
+      MemberName: SkillHudRoleLine
+    - TypeName: UnityEngine.UI.Text
+      PathToRoot: SkillHudPanel/SkillHudELine
+      MemberName: SkillHudELine
+    - TypeName: UnityEngine.UI.Text
+      PathToRoot: SkillHudPanel/SkillHudQLine
+      MemberName: SkillHudQLine
+    - TypeName: UnityEngine.UI.Text
+      PathToRoot: SkillHudPanel/SkillHudSwitchLine
+      MemberName: SkillHudSwitchLine
+    ScriptsFolder: Assets/02_Scripts
+    ClassName: Battle_MainPanel
+    Namespace: TeaGame
     MainCode: 
     DesignerCode: 

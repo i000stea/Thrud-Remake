@@ -60,6 +60,8 @@ namespace TeaGame
       public void ResetForBattle()
       {
          State.RoleEnergy = 0f;
+         // 主 HUD 视图状态（反向绑定数据源，见 BattleHudState）
+         State.Hud.Energy.Value = 0f;
          mReadyAt = null;
          mLastRemainSeconds = null;
          mLastReady = null;
@@ -198,6 +200,8 @@ namespace TeaGame
          }
 
          State.RoleEnergy = next;
+         // 主 HUD 视图状态（反向绑定数据源，见 BattleHudState）
+         State.Hud.Energy.Value = next;
          Architecture.SendEvent(new BattleSkillEnergyChangedEvent
          {
             Energy = next,
@@ -339,6 +343,22 @@ namespace TeaGame
             Ready = ready,
             RemainSeconds = remainSeconds
          });
+
+         // 主 HUD 视图状态：只镜像"当前出战角色"的槽位（Battle_MainPanel 反向绑定消费）。
+         // remainSeconds 是**纯冷却**剩余秒数（不含能量门槛）；"就绪 / 冷却中 / 能量不足"的区分由
+         // View 按 (remainSeconds, deficit) 组合判定——与拆分前 Battle_PlayerControl 的语义一致。
+         if (roleIndex == State.SelectedRoleIndex)
+         {
+            if (slotIndex == (int)BattleSkillSlot.Elemental)
+            {
+               State.Hud.SkillERemain.Value = remainSeconds;
+            }
+            else
+            {
+               State.Hud.SkillQRemain.Value = remainSeconds;
+               State.Hud.SkillQDeficit.Value = GetSlotEnergyDeficit((BattleSkillSlot)slotIndex);
+            }
+         }
       }
 
       /// <summary>

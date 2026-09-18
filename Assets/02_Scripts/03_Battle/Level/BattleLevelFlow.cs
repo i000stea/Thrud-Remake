@@ -69,9 +69,9 @@ namespace TeaGame
 
       protected override void OnInit()
       {
-         mWaveStartedUnregister = Architecture.RegisterEvent<BattleStageWaveStartedEvent>(_ => OnWaveStarted());
-         mClearedUnregister = Architecture.RegisterEvent<BattleStageClearedEvent>(_ => OnStageCleared());
-         mTimedOutUnregister = Architecture.RegisterEvent<BattleStageTimedOutEvent>(_ => OnStageTimedOut());
+         mWaveStartedUnregister = Architecture.RegisterEvent<BattleEvent_Stage_WaveStarted>(_ => OnWaveStarted());
+         mClearedUnregister = Architecture.RegisterEvent<BattleEvent_Stage_Cleared>(_ => OnStageCleared());
+         mTimedOutUnregister = Architecture.RegisterEvent<BattleEvent_StageTimedOut>(_ => OnStageTimedOut());
          mPlayerDiedUnregister = Architecture.RegisterEvent<BattlePlayerDiedEvent>(_ => OnPlayerDied());
       }
 
@@ -207,7 +207,7 @@ namespace TeaGame
             Cursor.visible = true;
          }
 
-         Architecture.SendEvent(new BattleLevelStateChangedEvent { From = from, To = next });
+         Architecture.SendEvent(new BattleEvent_LevelStateChanged { From = from, To = next });
       }
 
       /// <summary>终局接管控制：停止移动/开火/技能（HealthSystem 已忽略后续伤害）。</summary>

@@ -24,6 +24,7 @@ namespace TeaGame
    [CreateAssetMenu(fileName = "BattleLevel", menuName = "Thrud/Battle/Level Data")]
    public class BattleLevelData : ScriptableObject
    {
+      // 文本信息 ================================================
       [Header("标识")]
       [Tooltip("关卡 id（跨场景流程/缓存用 key）。")]
       public string LevelId;
@@ -35,20 +36,26 @@ namespace TeaGame
       [Tooltip("关卡介绍（关卡选择页显示）。")]
       public string Intro;
 
+
+      // 美术信息 ================================================
       [Header("归属（D8：场景=纯美术，多关卡复用）")]
       [Tooltip("美术场景名（本 SO 在该场景的坐标系内定义布局；须加入 Build Settings）。")]
       public string ArtSceneName;
 
+
+      // 玩家信息 ================================================
       [Tooltip("玩家出生点（ArtScene 世界坐标系，基准=美术场景原点 +Y 上，D9）。")]
       public Vector3 PlayerSpawnPosition = new Vector3(0f, 2f, 0f);
 
       [Tooltip("玩家出生朝向（欧拉角，ArtScene 坐标系）。")]
       public Vector3 PlayerSpawnEuler = Vector3.zero;
 
+      // 关卡信息 ================================================
       [Header("模式（T3.2 起生效；本卡占位）")]
       [Tooltip("模式规则类型（T3.2 三种测试玩法接入后驱动不同 LevelDirector 规则）。")]
       public BattleLevelMode Mode;
 
+      // 敌人信息 ================================================
       [Header("波次/刷怪（原 BattleStageAsset 已并入，改关卡只编辑本表）")]
       [Tooltip("整场限时（秒）；0 = 不限时。")]
       public int TimeLimitSeconds = 180;

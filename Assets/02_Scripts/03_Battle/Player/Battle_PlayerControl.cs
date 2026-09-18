@@ -44,9 +44,7 @@ namespace TeaGame
       /// </summary>
       public UnityEngine.UI.Text WeaponAmmoText => weaponAmmoText;
 
-      /// <summary>
-      /// 当前控制器注册的事件反注册列表。
-      /// </summary>
+      /// <summary> 当前控制器注册的事件反注册列表。 </summary>
       public List<IUnRegister> UnregisterList { get; } = new();
 
       /// <summary>
@@ -59,7 +57,7 @@ namespace TeaGame
          set => controlTakeOff = value;
       }
 
-      /// <summary>初始选中的角色索引。</summary>
+      /// <summary> 初始选中的角色索引。</summary>
       public int InitialRoleIndex => initialRoleIndex;
 
       /// <summary>战斗环境特效控制器。</summary>
@@ -104,83 +102,10 @@ namespace TeaGame
          Time.timeScale = scale;
       }
 
-      /// <summary>角色切换事件反注册句柄（T2.4 技能 HUD）。</summary>
-      private IUnRegister mSkillHudSwitchUnregister;
-
-      /// <summary>技能能量变化事件反注册句柄（T2.4）。</summary>
-      private IUnRegister mSkillHudEnergyUnregister;
-
-      /// <summary>技能槽冷却/就绪事件反注册句柄（T2.4）。</summary>
-      private IUnRegister mSkillHudCooldownUnregister;
-
-      /// <summary>
-      /// T2.4 技能 HUD：以"反向 bind（事件注册）"方式驱动，而非每帧轮询 StateModel——
-      /// 状态写入方（角色切换 / 能量结算 / 冷却推进）在写模型后广播事件，
-      /// UI 订阅事件、事件到达才刷新文本；注册后立即初始化一次首帧数据。
-      /// 由 battle_runtime 在装配阶段调用（View 侧事件绑定，属表现职责）。
-      /// </summary>
-      public void BindSkillHudEvents()
-      {
-         mSkillHudSwitchUnregister = Architecture.RegisterEvent<BattleRoleSwitchedEvent>(_ => RefreshSkillHudUi());
-         mSkillHudEnergyUnregister = Architecture.RegisterEvent<BattleSkillEnergyChangedEvent>(_ => RefreshSkillHudUi());
-         mSkillHudCooldownUnregister = Architecture.RegisterEvent<BattleSkillCooldownChangedEvent>(_ => RefreshSkillHudUi());
-         RefreshSkillHudUi();
-      }
-
-      /// <summary>根据当前状态刷新右下角技能/切人 HUD 文本（事件驱动）。</summary>
-      private void RefreshSkillHudUi()
-      {
-         if (SkillHudRoleLine == null || SkillHudELine == null || SkillHudQLine == null || SkillHudSwitchLine == null)
-         {
-            return; // 未装配 SkillHud 的场景静默跳过
-         }
-
-         var model = Architecture.GetModel<BattleStateModel>();
-
-         var roleIndex = model.SelectedRoleIndex;
-         var data = roleIndex >= 0 && roleIndex < model.BattleDatas.Length ? model.BattleDatas[roleIndex] : null;
-         var roleName = data?.RoleName ?? "--";
-         var element = data?.RoleData != null ? data.RoleData.damageElement : DamageElement.none;
-         SkillHudRoleLine.text = roleName + " · " + ElementChineseName(element);
-
-         var skillSystem = Architecture.GetSystem<BattleSkillSystem>();
-         var hasSkill = element != DamageElement.none && BattleSkillCatalog.Get(element) != null;
-         SkillHudELine.text = hasSkill ? "[E] 元素战技 · " + FormatSlotState(skillSystem, BattleSkillSlot.Elemental) : "[E] —";
-         SkillHudQLine.text = hasSkill
-            ? $"[Q] 极奏 " + FormatSlotState(skillSystem, BattleSkillSlot.Ultimate) + $" · 能量 {(int)model.RoleEnergy}/{BattleStateModel.RoleEnergyMax:0}"
-            : $"[Q] — · 能量 {(int)model.RoleEnergy}/{BattleStateModel.RoleEnergyMax:0}";
-         SkillHudSwitchLine.text = "[1-4] 切换角色";
-      }
-
-      /// <summary>把槽位就绪/冷却/能量不足格式化为 HUD 文案。</summary>
-      private static string FormatSlotState(BattleSkillSystem skillSystem, BattleSkillSlot slot)
-      {
-         if (skillSystem.IsSlotReady(slot))
-         {
-            return "就绪";
-         }
-
-         var remain = skillSystem.GetSlotRemainSeconds(slot);
-         if (slot == BattleSkillSlot.Ultimate && remain <= 0.05f)
-         {
-            return $"能量不足({skillSystem.GetSlotEnergyDeficit(slot):0})";
-         }
-
-         return $"冷却 {remain:0.0}s";
-      }
-
-      /// <summary>元素枚举 → 中文（仅用于临时 HUD 文案）。</summary>
-      private static string ElementChineseName(DamageElement element)
-      {
-         switch (element)
-         {
-            case DamageElement.Ice: return "冰";
-            case DamageElement.Fire: return "火";
-            case DamageElement.Wind: return "风";
-            case DamageElement.Electric: return "电";
-            default: return "无";
-         }
-      }
+      // [2026-09-18] 技能 HUD 已迁出本类：文本渲染与订阅改由 Battle_MainPanel 通过
+      // BattleHudState 的 BindableProperty 反向绑定驱动（见 Battle_MainPanel / BattleHudState）。
+      // 本类不再持有任何技能 HUD 字段与反注册句柄。
+      // Designer 上的 SkillHud* 字段属 CodeGen 产物，随 rig prefab 上的 HUD 对象一并移除后再重新生成。
 
       /// <summary>
       /// 暴露给 battle_runtime 的 View 表现引用：元素子弹 prefab（开火按当前角色元素取弹）。
@@ -198,12 +123,6 @@ namespace TeaGame
 
          BattleRuntimeBridge.Clear(this);
          BattleElementBulletLibrary.Clear();
-         mSkillHudSwitchUnregister?.UnRegister();
-         mSkillHudSwitchUnregister = null;
-         mSkillHudEnergyUnregister?.UnRegister();
-         mSkillHudEnergyUnregister = null;
-         mSkillHudCooldownUnregister?.UnRegister();
-         mSkillHudCooldownUnregister = null;
          this.UnRegisterAll();
       }
 
@@ -266,7 +185,7 @@ namespace TeaGame
          var lockPoint = state.LockEnemy.IsAlive() ? state.LockEnemy.LockPoint : null;
 
          // T2.3：当前角色元素（子弹携带元素依据）
-         var activeElement = TeaGame.DamageElement.none;
+         var activeElement = DamageElement.none;
          var battleDatas = state.BattleDatas;
          if (battleDatas != null && state.SelectedRoleIndex >= 0 && state.SelectedRoleIndex < battleDatas.Length
              && battleDatas[state.SelectedRoleIndex]?.RoleData != null)
