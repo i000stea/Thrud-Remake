@@ -1,6 +1,7 @@
 # Battle 调用链与阅读目录（P1A · S2 补充交付物）
 
-> 产出日期：**2026-09-18**。定位：P1A 的 S2「现状地图」在 `03_Battle`（**63 个文件 / 9366 行**）上的补齐——**一份可以当目录用的调用链说明书**。
+> 产出日期：**2026-09-18**。定位：P1A 的 S2「现状地图」在 `03_Battle`（**66 个文件 / 9673 行**）上的补齐——**一份可以当目录用的调用链说明书**。
+> **2026-09-18 二次修订**：主 HUD（技能行）已从 `Battle_PlayerControl` 迁至 `Battle_MainPanel`（`BindableProperty` 反向绑定），新增 `UI/BattleHudState.cs` 与 `UI/Panels/Battle_MainPanel.cs`(+Designer)；`Battle_PlayerControl` 285 → **206 行**。表现层的后续规划见 `19_表现层分层_View与Actor_设计.md`。
 > 关系：域级地图见 `17_代码现状地图.md`；本文只覆盖 `03_Battle/`（不含 `Contracts/`、`Editor/`）。纪律见 `16_热更新方案选型与落地计划.md` §5A。
 > **取值说明**：所有调用顺序、事件收发点、依赖边都由脚本从源码实测（§9 的行数用 `Get-Content | .Count` 口径，与行号一致）；凡标「推断」的是按方法职责判断、未逐行验证。
 
@@ -151,7 +152,8 @@ SetupBattleSystems()
  ├─ 7. BattleElementBulletLibrary.Register(冰/火/风/电 4 个子弹 prefab)  // T2.3 元素子弹
  ├─ 8. BattleSkillSystem.ResetForBattle()       // 重建冷却表 + 清零能量 + 广播首帧
  ├─ 9. BattleLevelFlow.StartLevel()             // 状态机 → Prepare
- └─ 10. playerControl.BindSkillHudEvents()       // View 侧反向 bind（事件驱动 HUD）
+ └─ 10. [2026-09-18 迁出] 技能 HUD 不再由 rig 绑定：文本渲染与数据绑改由 Battle_MainPanel
+        在 OpenBattleUiWhenSceneReady 打开面板时自行 BindHud()（BindableProperty 反向绑定）
 ```
 
 ### `ResolveBattleDatas()` —— 最有信息量的一段（数据从哪来）
@@ -190,7 +192,7 @@ SetupBattleSystems()
 | 2 | `BattleHealthSystem` | System | 同上 | 成员级血量、受击结算、治疗、全灭判定 |
 | 3 | `BattleInputSystem` | System | 同上 | 每帧输入采样（键鼠 / 触屏二选一）、ESC 暂停请求 |
 | 4 | `BattleMovementSystem` | System | 同上 | 翻滚/冲刺状态机 + 刚体推力 |
-| 5 | `BattleViewSystem` | System | 同上 | 全部表现刷新（模型朝向/武器朝向/血条/队伍 HUD/弹药文本/FOV/动画） |
+| 5 | `BattleViewSystem` | System | 同上 | 表现刷新（模型朝向/武器朝向/血条/队伍 HUD/弹药文本/FOV/动画）。**⚠️ 技能行已于 2026-09-18 迁出到 `Battle_MainPanel`；本 System 仍有 34 处直写具体 View 字段，是 `19_表现层分层_View与Actor_设计.md` 的主要整改对象** |
 | 6 | `BattleCameraSystem` | System | 同上 | 相机状态 |
 | 7 | `BattleAimSystem` | System | 同上 | 锁敌搜索、Tab 切换、准星平滑 |
 | 8 | `BattleWeaponSystem` | System | 同上 | 换弹进度 + 开火检测 + 切人补弹 |
@@ -491,10 +493,10 @@ Battle_PlayerControl.SyncRuntimeBridge()   ← battle_runtime 每帧/装配后�
 | `BattleLevelEvents.cs` | 56 | 关卡事件 + 暂停事件 |
 | `BattleLevelConfig.cs` | 23 | 流程侧标识字段（SO） |
 
-### 9.4 `Player/`（2 个文件 / 341 行）
+### 9.4 `Player/`（2 个文件 / 262 行）
 | 文件 | 行 | 职责 |
 |---|---|---|
-| `Battle_PlayerControl.cs` | 285 | rig = **纯 View**：Designer 引用 + 工具方法 + 技能 HUD 反向 bind + `SyncRuntimeBridge` |
+| `Battle_PlayerControl.cs` | 206 | rig = **纯 View**：Designer 引用 + 工具方法 + `SyncRuntimeBridge`。**技能 HUD 已于 2026-09-18 迁出**（见 `UI/Panels/Battle_MainPanel.cs`）；Designer 上的 `SkillHud*` 字段仍保留，待 rig prefab 上的 HUD 对象删除后由 CodeGen 一并移除 |
 | `Battle_PlayerControl.Designer.cs` | 56 | CodeGen 生成：相机/枪口/Canvas/子弹 prefab/动画等序列化引用 |
 
 ### 9.5 `Weapon/`（4 个文件 / 980 行）
@@ -538,16 +540,21 @@ Battle_PlayerControl.SyncRuntimeBridge()   ← battle_runtime 每帧/装配后�
 ### 9.8 `Element/`（2 个文件 / 294 行）
 `ElementStateEffect.cs`（221，状态组件：冰减速/火 DoT/电麻痹溅射/风易伤聚怪）、`BattleElementBalance.cs`（73，克制/状态数值集中处）
 
-### 9.9 `UI/`（8 个文件 / 843 行）
+### 9.9 `UI/`（11 个文件 / 1153 行）
 | 文件 | 行 | 职责 |
 |---|---|---|
-| `BattleTeamHudView.cs` | 250 | 队伍血条 HUD（事件驱动，运行时生成） |
+| `BattleTeamHudView.cs` | 250 | 队伍血条 HUD（事件驱动，运行时由 `BattleViewSystem.BuildTeamHud` 生成） |
+| `Battle_MainPanel.cs` | 192 | **战斗主 HUD 面板（2026-09-18 新增）**：技能行渲染 + `BindableProperty` 反向注册；`TryOpenForBattle` / `CloseForBattle` |
+| `Battle_MainPanel.Designer.cs` | 76 | CodeGen：`Cross_LockEnemy` / `Health_Main` / `Health_Value` / `SkillHud*` 共 7 个字段 |
 | `BattleUiSystem.cs` | 156 | 结算/暂停面板开合 + 暂停切换（System） |
 | `Panels/Battle_TouchInputPanel.cs` | 134 | 触屏操作层（UIKit UIPanel） |
 | `Panels/Battle_PauseMenuPanel.cs` | 80 | 暂停菜单面板 |
 | `Panels/Battle_LevelResultPanel.cs` | 76 | 结算面板 |
 | `Panels/Battle_{LevelResult,PauseMenu}.Designer.cs` | 52 / 52 | CodeGen 生成 |
 | `Panels/Battle_TouchInputPanel.Designer.cs` | 43 | CodeGen 生成 |
+| `BattleHudState.cs` | 42 | **主 HUD 的可绑定视图状态（2026-09-18 新增）**：5 个 `BindableProperty<int/float>`，挂在 `BattleStateModel.Hud` |
+
+> **面板开合归属**：主 HUD 与触屏层由 **`battle_runtime`**（`OpenBattleUiWhenSceneReady`）打开、`OnDestroy` 关闭；结算/暂停由 **`BattleUiSystem`** 按事件开合。
 
 ### 9.10 `Pool/`（2 个文件 / 339 行）
 `BattleObjectPool.cs`（313）、`BattlePoolAutoReturn.cs`（26）
@@ -567,7 +574,8 @@ Battle_PlayerControl.SyncRuntimeBridge()   ← battle_runtime 每帧/装配后�
 ### 9.15 `Team/`（3 个文件 / 120 行）
 `BattleTeamRuntimeBuilder.cs`（70，会话 id → `BattleRoleRuntimeData[]`）、`BattleUiFlowPanelOpener.cs`（32）+ `BattleUiFlowNames.cs`（18）（**后两者均为死代码，待 S5 清理**）
 
-> **目录合计**：`BattleArchitecture.cs`(49) + Config(124) + Core(1883) + Data(231) + Effect(146) + Element(294) + Enemy(1195) + Input(455) + Level(1152) + Player(341) + Pool(339) + Skill(1214) + Team(120) + UI(843) + Weapon(980) = **63 个文件 / 9366 行**
+> **目录合计（2026-09-18 二次修订后）**：`BattleArchitecture.cs`(49) + Config(124) + Core(1888) + Data(231) + Effect(146) + Element(294) + Enemy(1195) + Input(455) + Level(1152) + Player(262) + Pool(339) + Skill(1247) + Team(120) + UI(1153) + Weapon(980) = **66 个文件 / 9673 行**
+> 说明：与首次统计（63 / 9366）的差值来自两部分——**本次 HUD 迁移**（新增 `BattleHudState` 42 + `Battle_MainPanel` 192 + `Designer` 76；`Battle_PlayerControl` −79；`BattleSystems` +4；`BattleSkillSystem` +20；`BattleStateModel` +6）与**用户同期在改的事件命名/结构重构**（`BattleSceneRuntimeHost` 等）。
 
 ---
 
@@ -606,6 +614,8 @@ Battle_PlayerControl.SyncRuntimeBridge()   ← battle_runtime 每帧/装配后�
 10. **`BattleObjectPool` 三个回池重置动作各有原因**（`ResetRigidbody` / `CancelAutoReturn` / `ClearPooledTrail`）——删任何一个都会复现已修过的 bug，别"顺手清理"。
 11. **`Battle_EnemyUI` 是 QFramework ViewController**（`EnemyEntity_UI` 重构产物），不是普通 MonoBehaviour。
 12. **`BattleStageDirector` 有自己的 `Start/Update`**，与 `battle_runtime` 是**两个独立 MonoBehaviour 各自跑**——波次推进不在 `battle_runtime` 的驱动链里，只是通过事件回传。
+13. **技能 HUD 已不在 rig 上（2026-09-18）**——它搬到了 `Battle_MainPanel`。所以：① 看 `Battle_PlayerControl` 找不到 HUD 代码是正常的（本类只剩 Designer 引用与工具方法）；② rig prefab 上那批 `SkillHud*` 文本对象**已成孤儿**（没有代码写它们，会冻结显示旧文本），删掉它们之前上屏会看到两套 HUD；③ `BattleViewSystem` 仍在写 rig 的血条/准星/弹药，**那部分尚未迁移**。
+14. **`Battle_MainPanel` 是 UIKit 面板，由 `battle_runtime` 打开，不是由 `BattleUiSystem`**——而结算/暂停面板由 `BattleUiSystem` 打开。查"面板为什么不出现"时先分清归属：主 HUD/触屏看 `battle_runtime`，结算/暂停看 `BattleUiSystem`。
 
 ---
 
