@@ -5,6 +5,8 @@ using UnityEngine;
 namespace TeaGame.App
 {
    /// <summary>
+   /// 后续的资源使用yooasset加载，该内容可以被移除
+   /// 
    /// ResKit 初始化收口（P0，2026-09-10）。
    ///
    /// 背景：<c>ResMgr.Init/InitAsync</c> 都是「置位即返回」——<c>mResMgrInited</c> 在真正读到
@@ -67,82 +69,83 @@ namespace TeaGame.App
          return Validate();
       }
 
+      public static bool Validate() { return true; }
       /// <summary>
       /// 校验 AB 清单是否真的可用：逐个确认 UI 面板资源能从清单解析（= 面板加载的前提）。
       /// 只查清单，不加载任何 bundle；结果缓存，只汇报一次。
       /// </summary>
-      public static bool Validate()
-      {
-         if (sValidationDone)
-         {
-            return sValidationResult;
-         }
+      //public static bool Validate()
+      //{
+      //   if (sValidationDone)
+      //   {
+      //      return sValidationResult;
+      //   }
 
-         sValidationDone = true;
-         sValidationResult = false;
+      //   sValidationDone = true;
+      //   sValidationResult = false;
 
-         if (!ResMgr.ResMgrInited)
-         {
-            Debug.LogError("[ResKit] 初始化校验失败：ResKit 尚未初始化（InitAsync/Init 未执行）——" +
-                           "所有经 ResKit 的面板/资源加载都会失败。");
-            return false;
-         }
+      //   if (!ResMgr.ResMgrInited)
+      //   {
+      //      Debug.LogError("[ResKit] 初始化校验失败：ResKit 尚未初始化（InitAsync/Init 未执行）——" +
+      //                     "所有经 ResKit 的面板/资源加载都会失败。");
+      //      return false;
+      //   }
 
-         List<string> missing = null;
-         for (var i = 0; i < ExpectedPanels.Length; i++)
-         {
-            var expected = ExpectedPanels[i];
-            if (TryResolve(expected.Bundle, expected.Asset))
-            {
-               continue;
-            }
+      //   List<string> missing = null;
+      //   for (var i = 0; i < ExpectedPanels.Length; i++)
+      //   {
+      //      var expected = ExpectedPanels[i];
+      //      if (TryResolve(expected.Bundle, expected.Asset))
+      //      {
+      //         continue;
+      //      }
 
-            missing ??= new List<string>();
+      //      missing ??= new List<string>();
 
-            missing.Add($"{expected.Bundle}/{expected.Asset}");
-         }
+      //      missing.Add($"{expected.Bundle}/{expected.Asset}");
+      //   }
 
-         var mode = Application.isEditor
-            ? $"编辑器（SimulationMode={AssetBundlePathHelper.SimulationMode}）"
-            : "真机 AB";
-         var platform = AssetBundlePathHelper.GetPlatformName();
+      //   var mode = Application.isEditor
+      //      ? $"编辑器（SimulationMode={AssetBundlePathHelper.SimulationMode}）"
+      //      : "真机 AB";
+      //   var platform = AssetBundlePathHelper.GetPlatformName();
 
-         // 角色/武器编目（battle 装配的前置数据）：单独校验一次。
-         // 2026-09-10 真机教训——标记名与代码常量不一致时，只有"打到真机进战斗"才暴露；
-         // 放在启动校验里能一眼看出来（UI 面板能开 ≠ 角色资源能取到）。
-         var roleBundle = BattleAssetService.ResolveAvailableBundle();
-         if (roleBundle == null)
-         {
-            Debug.LogError($"[ResKit] 角色/武器编目校验失败：候选 AB" +
-                           $"（{string.Join("、", BattleAssetService.RoleDataBundleCandidates)}）" +
-                           $"都不含资产 {BattleAssetService.CatalogAssetName}——真机进战斗会因编目缺失而退回主场景。\n" +
-                           "  处理：编辑器执行 Thrud/Demo/Characters/1（标记编目为 AB）+ 2（构建 AB）后重新出包。");
-         }
-         else if (roleBundle != BattleAssetService.RoleDataBundleName)
-         {
-            Debug.LogWarning($"[ResKit] 角色/武器编目 AB 命中「{roleBundle}」，但规范名是" +
-                             $"「{BattleAssetService.RoleDataBundleName}」（Inspector 默认名？）。" +
-                             "本次可用；建议用 Thrud/Demo/Characters/1 统一命名后重打 AB。");
-         }
+      //   // 角色/武器编目（battle 装配的前置数据）：单独校验一次。
+      //   // 2026-09-10 真机教训——标记名与代码常量不一致时，只有"打到真机进战斗"才暴露；
+      //   // 放在启动校验里能一眼看出来（UI 面板能开 ≠ 角色资源能取到）。
+      //   var roleBundle = BattleAssetService.ResolveAvailableBundle();
+      //   if (roleBundle == null)
+      //   {
+      //      Debug.LogError($"[ResKit] 角色/武器编目校验失败：候选 AB" +
+      //                     $"（{string.Join("、", BattleAssetService.RoleDataBundleCandidates)}）" +
+      //                     $"都不含资产 {BattleAssetService.CatalogAssetName}——真机进战斗会因编目缺失而退回主场景。\n" +
+      //                     "  处理：编辑器执行 Thrud/Demo/Characters/1（标记编目为 AB）+ 2（构建 AB）后重新出包。");
+      //   }
+      //   else if (roleBundle != BattleAssetService.RoleDataBundleName)
+      //   {
+      //      Debug.LogWarning($"[ResKit] 角色/武器编目 AB 命中「{roleBundle}」，但规范名是" +
+      //                       $"「{BattleAssetService.RoleDataBundleName}」（Inspector 默认名？）。" +
+      //                       "本次可用；建议用 Thrud/Demo/Characters/1 统一命名后重打 AB。");
+      //   }
 
-         if (missing == null)
-         {
-            sValidationResult = true;
-            Debug.Log($"[ResKit] 初始化校验通过：{mode}，平台目录 {platform}，" +
-                      $"{ExpectedPanels.Length} 个 UI 面板资源均可从 AB 清单解析" +
-                      $"，角色/武器编目 bundle = {roleBundle}。");
-            return true;
-         }
+      //   if (missing == null)
+      //   {
+      //      sValidationResult = true;
+      //      Debug.Log($"[ResKit] 初始化校验通过：{mode}，平台目录 {platform}，" +
+      //                $"{ExpectedPanels.Length} 个 UI 面板资源均可从 AB 清单解析" +
+      //                $"，角色/武器编目 bundle = {roleBundle}。");
+      //      return true;
+      //   }
 
-         Debug.LogError($"[ResKit] 初始化校验失败：{mode}，平台目录 {platform}，" +
-                        $"{missing.Count} 个 UI 面板资源不在 AB 清单中 → {string.Join("、", missing)}。\n" +
-                        "排查顺序：① 面板 prefab 的 assetBundleName 是否已标记（Assets/04_Prefabs/Panel/**）；" +
-                        "② 是否已执行 Thrud/Demo/Android/2. Build AssetBundles（生成 " +
-                        "StreamingAssets/AssetBundles/<平台>/asset_bundle_config.bin）；" +
-                        "③ 关闭 ResKit 窗口的 SimulationMode 时，对应平台目录必须已构建" +
-                        "（本工程当前只构建了 Android 目录，在 Windows 编辑器直跑会解析失败）。");
-         return false;
-      }
+      //   Debug.LogError($"[ResKit] 初始化校验失败：{mode}，平台目录 {platform}，" +
+      //                  $"{missing.Count} 个 UI 面板资源不在 AB 清单中 → {string.Join("、", missing)}。\n" +
+      //                  "排查顺序：① 面板 prefab 的 assetBundleName 是否已标记（Assets/04_Prefabs/Panel/**）；" +
+      //                  "② 是否已执行 Thrud/Demo/Android/2. Build AssetBundles（生成 " +
+      //                  "StreamingAssets/AssetBundles/<平台>/asset_bundle_config.bin）；" +
+      //                  "③ 关闭 ResKit 窗口的 SimulationMode 时，对应平台目录必须已构建" +
+      //                  "（本工程当前只构建了 Android 目录，在 Windows 编辑器直跑会解析失败）。");
+      //   return false;
+      //}
 
       /// <summary>
       /// 资源能否从 AB 清单解析（只查清单：不加载 bundle、不产生引用计数、不抛异常）。

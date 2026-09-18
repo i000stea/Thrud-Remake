@@ -17,15 +17,7 @@ namespace TeaGame
       /// <summary> 瞄准旋转速度 </summary>
       private float LockSpeed
       {
-         get
-         {
-            if (PlayerControl.I != null && PlayerControl.I.config != null)
-            {
-               return PlayerControl.I.config.LockEnemySpeed;
-            }
-
-            return BattleRuntimeBridge.LockSpeed;
-         }
+         get => BattleRuntimeBridge.LockSpeed;
       }
 
       #endregion
@@ -65,11 +57,6 @@ namespace TeaGame
 
       private Transform GetLockEnemy()
       {
-         if (PlayerControl.I != null && PlayerControl.I.config != null)
-         {
-            return PlayerControl.I.config.lockEnemy ? PlayerControl.I.config.lockEnemy.transform : null;
-         }
-
          return BattleRuntimeBridge.LockEnemyTransform;
       }
    }

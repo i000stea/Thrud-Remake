@@ -251,6 +251,15 @@ button.danger {
   color: var(--danger);
 }
 
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button:disabled:hover {
+  filter: none;
+}
+
 .table-wrap {
   overflow-x: auto;
   border-top: 1px solid var(--line);
@@ -298,7 +307,7 @@ button.danger {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1180px;
+  min-width: 1300px;
 }
 
 th,
@@ -435,6 +444,117 @@ thead th {
   gap: 8px;
 }
 
+.priority-control {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.priority-flag {
+  display: none;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 6px;
+  border: 1px solid rgba(255, 77, 77, 0.5);
+  background: var(--urgent-soft);
+  color: var(--urgent);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.is-priority-critical .priority-flag {
+  display: inline-flex;
+}
+
+.order-cell {
+  white-space: nowrap;
+}
+
+.order-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.order-slider {
+  width: 96px;
+  min-width: 96px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: grab;
+}
+
+.order-slider:active {
+  cursor: grabbing;
+}
+
+.order-slider:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.order-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--line-strong);
+}
+
+.order-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 16px;
+  margin-top: -6px;
+  border: none;
+  background: var(--accent);
+}
+
+.order-slider::-moz-range-track {
+  height: 4px;
+  background: var(--line-strong);
+}
+
+.order-slider::-moz-range-thumb {
+  width: 12px;
+  height: 16px;
+  border: none;
+  border-radius: 0;
+  background: var(--accent);
+}
+
+.order-value {
+  min-width: 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.is-priority-critical .order-value {
+  color: var(--urgent);
+  font-weight: 700;
+}
+
+.is-priority-critical .order-slider::-webkit-slider-runnable-track {
+  background: rgba(255, 77, 77, 0.44);
+}
+
+.is-priority-critical .order-slider::-webkit-slider-thumb {
+  background: var(--urgent);
+}
+
+.is-priority-critical .order-slider::-moz-range-track {
+  background: rgba(255, 77, 77, 0.44);
+}
+
+.is-priority-critical .order-slider::-moz-range-thumb {
+  background: var(--urgent);
+}
+
 tbody tr.is-status-doing {
   box-shadow: inset 4px 0 0 rgba(246, 195, 91, 0.78);
 }
@@ -481,6 +601,56 @@ tbody tr.is-priority-urgent:not(.is-status-done) td::after {
 
 .is-status-done td::after {
   display: none;
+}
+
+/* 排序 = 0：特别紧急。独立动画全部走 td 的伪元素覆盖层（z-index 1），
+   正文在 z-index 2 之上，只要保持低透明度就不会影响可读性。
+   手动置 0 视为显式覆盖，因此已完成的行同样生效（与优先级高/紧急的约定不同）。 */
+tbody tr.is-priority-critical,
+tbody tr.is-priority-critical.is-status-done {
+  box-shadow: inset 4px 0 0 var(--urgent);
+}
+
+tbody tr.is-priority-critical td,
+tbody tr.is-priority-critical.is-status-done td {
+  background-color: rgba(255, 77, 77, 0.05);
+}
+
+tbody tr.is-priority-critical td::before,
+tbody tr.is-priority-critical.is-status-done td::before {
+  content: "";
+  position: absolute;
+  inset: 0 -40px;
+  z-index: 1;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    115deg,
+    rgba(255, 77, 77, 0) 0px,
+    rgba(255, 77, 77, 0) 10px,
+    rgba(255, 77, 77, 0.1) 10px,
+    rgba(255, 77, 77, 0.1) 20px
+  );
+  animation: criticalStripeDrift 4.4s linear infinite;
+}
+
+tbody tr.is-priority-critical:not(.is-status-done) td::after,
+tbody tr.is-priority-critical.is-status-done td::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  transform-origin: bottom;
+  /* 覆盖 .is-status-done td::after 的 display: none */
+  display: block;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 77, 77, 0) 0%,
+    rgba(255, 77, 77, 0.06) 40%,
+    rgba(255, 40, 40, 0.16) 72%,
+    rgba(255, 20, 20, 0.3) 100%
+  );
+  animation: criticalPulse 1.4s ease-in-out infinite;
 }
 
 .is-status-done .inline-select--status {
@@ -570,6 +740,28 @@ tbody tr.is-priority-urgent:not(.is-status-done) td::after {
   50% {
     transform: translateY(0) scaleY(1);
     opacity: 1;
+  }
+}
+
+/* 斜纹只横向平移一个完整周期（115deg / 周期 20px ≈ 22.07px），循环无跳变 */
+@keyframes criticalStripeDrift {
+  from {
+    transform: translateX(-22.07px);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes criticalPulse {
+  0%,
+  100% {
+    transform: translateY(68%) scaleY(0.32);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(2%) scaleY(1);
+    opacity: 0.92;
   }
 }
 

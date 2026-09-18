@@ -5,6 +5,8 @@ const { randomUUID } = require("node:crypto");
 const ROOT_DIR = __dirname;
 const DOC_TASK_FILE = path.join(ROOT_DIR, "..", "Docs", "99_下一步行动", "README.md");
 const OUTPUT_FILE = path.join(ROOT_DIR, "data", "progress.json");
+// 排序拖拽条默认值，与 server.js / public/app.js 保持一致（0 = 特别紧急）
+const DEFAULT_SORT_ORDER = 5;
 
 function stripMarkdown(text) {
   return String(text || "")
@@ -190,6 +192,7 @@ function buildTasksFromDoc(markdown) {
       description: toOralDescription(cleanTask),
       status: inferStatus(cleanTask, sectionTitle),
       priority: inferPriority(cleanTask, sectionTitle),
+      sortOrder: DEFAULT_SORT_ORDER,
       owner: "Tea",
       updatedAt: new Date().toISOString(),
       source: sectionTitle,

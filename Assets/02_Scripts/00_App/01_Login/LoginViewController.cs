@@ -28,7 +28,7 @@ namespace TeaGame.Login
       /// <summary>
       /// 登录模块架构（QFramework；RegisterEvent/GetSystem 均走架构）。
       /// </summary>
-      private IArchitecture Architecture => LoginArchitecture.Interface;
+      private IArchitecture Architecture => AppArchitecture.Interface;
 
       private void Awake()
       {

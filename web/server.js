@@ -7,6 +7,10 @@ const { generateProgressData } = require("./sync-doc-tasks");
 
 const HOST = "127.0.0.1";
 const PORT = 3210;
+// 排序拖拽条范围：0 表示「特别紧急」，数值越小越靠前
+const SORT_ORDER_MIN = 0;
+const SORT_ORDER_MAX = 10;
+const DEFAULT_SORT_ORDER = 5;
 const ROOT_DIR = __dirname;
 const PUBLIC_DIR = path.join(ROOT_DIR, "public");
 const DATA_DIR = path.join(ROOT_DIR, "data");
@@ -140,6 +144,12 @@ async function parseBody(request) {
   }
 }
 
+function normalizeSortOrder(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return DEFAULT_SORT_ORDER;
+  return Math.min(SORT_ORDER_MAX, Math.max(SORT_ORDER_MIN, Math.round(numeric)));
+}
+
 function normalizeTask(input, oldTask = null) {
   const now = new Date().toISOString();
   return {
@@ -149,6 +159,8 @@ function normalizeTask(input, oldTask = null) {
     description: String(input.description || oldTask?.description || "").trim(),
     status: String(input.status || oldTask?.status || "未开始").trim(),
     priority: String(input.priority || oldTask?.priority || "中").trim(),
+    // 用 ?? 而不是 ||：0 是合法值（特别紧急）
+    sortOrder: normalizeSortOrder(input.sortOrder ?? oldTask?.sortOrder),
     owner: String(input.owner || oldTask?.owner || "").trim(),
     updatedAt: now,
   };

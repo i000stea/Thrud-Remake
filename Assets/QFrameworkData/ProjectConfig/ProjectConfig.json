@@ -1,1 +1,1 @@
-{"Namespace":"TeaGame","UIScriptDir":"/02_Scripts/UIPanel","UIPrefabDir":"/04_Prefabs/Panel","AssemblyNamesToSearch":["Assembly-CSharp","TeaGame"]}
+{"Namespace":"TeaGame","UIScriptDir":"/02_Scripts/UIPanel","UIPrefabDir":"/04_Prefabs/Panel","AssemblyNamesToSearch":["Assembly-CSharp","AmplifyShaderEditor","TeaGame.App","TeaGame.other","TeaGame.Tools"]}

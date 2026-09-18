@@ -100,10 +100,10 @@ namespace TeaGame
             battleBullet.ResetBullet(Mathf.Max(0f, damage), Mathf.Max(0.1f, lifeSeconds), element);
          }
 
-         if (bulletObject.TryGetComponent(out Bullet_Base legacyBullet))
-         {
-            legacyBullet.enabled = false; // 同挂载的旧版结算禁用，避免双重处理
-         }
+         //if (bulletObject.TryGetComponent(out Bullet_Base legacyBullet))
+         //{
+         //   legacyBullet.enabled = false; // 同挂载的旧版结算禁用，避免双重处理
+         //}
 
          if (bulletObject.TryGetComponent(out Rigidbody rigidbody))
          {

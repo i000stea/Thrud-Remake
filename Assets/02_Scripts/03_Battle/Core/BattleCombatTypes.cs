@@ -193,47 +193,47 @@ namespace TeaGame
             yield break;
          }
 
-         for (var i = 0; i < EnemyControl.enemys.Count; i++)
-         {
-            var legacyEnemy = EnemyControl.enemys[i];
-            if (legacyEnemy) yield return new LegacyBattleEnemyTarget(legacyEnemy);
-         }
+         //for (var i = 0; i < EnemyControl.enemys.Count; i++)
+         //{
+         //   var legacyEnemy = EnemyControl.enemys[i];
+         //   if (legacyEnemy) yield return new LegacyBattleEnemyTarget(legacyEnemy);
+         //}
       }
    }
 
-   /// <summary>
-   /// 旧版敌人适配器。
-   /// 该适配器只在过渡期工作，用于让新版锁敌系统和伤害系统读取旧敌人对象。
-   /// </summary>
-   public sealed class LegacyBattleEnemyTarget : IBattleEnemyTarget
-   {
-      /// <summary>
-      /// 被包装的旧版敌人实例。
-      /// </summary>
-      private readonly EnemyEntity_Main mLegacyEnemy;
+   ///// <summary>
+   ///// 旧版敌人适配器。
+   ///// 该适配器只在过渡期工作，用于让新版锁敌系统和伤害系统读取旧敌人对象。
+   ///// </summary>
+   //public sealed class LegacyBattleEnemyTarget : IBattleEnemyTarget
+   //{
+   //   /// <summary>
+   //   /// 被包装的旧版敌人实例。
+   //   /// </summary>
+   //   private readonly EnemyEntity_Main mLegacyEnemy;
 
-      /// <summary>
-      /// 构造适配器时缓存旧敌人引用。
-      /// </summary>
-      public LegacyBattleEnemyTarget(EnemyEntity_Main legacyEnemy)
-      {
-         mLegacyEnemy = legacyEnemy;
-      }
+   //   /// <summary>
+   //   /// 构造适配器时缓存旧敌人引用。
+   //   /// </summary>
+   //   public LegacyBattleEnemyTarget(EnemyEntity_Main legacyEnemy)
+   //   {
+   //      mLegacyEnemy = legacyEnemy;
+   //   }
 
-      /// <inheritdoc />
-      public Transform RootTransform => mLegacyEnemy ? mLegacyEnemy.transform : null;
+   //   /// <inheritdoc />
+   //   public Transform RootTransform => mLegacyEnemy ? mLegacyEnemy.transform : null;
 
-      /// <inheritdoc />
-      public Transform LockPoint => RootTransform;
+   //   /// <inheritdoc />
+   //   public Transform LockPoint => RootTransform;
 
-      /// <inheritdoc />
-      public bool CanBeLocked => mLegacyEnemy && mLegacyEnemy.onCame;
+   //   /// <inheritdoc />
+   //   public bool CanBeLocked => mLegacyEnemy && mLegacyEnemy.onCame;
 
-      /// <inheritdoc />
-      public void ApplyDamage(float damage)
-      {
-         if (!mLegacyEnemy) return;
-         mLegacyEnemy.BeHit(damage);
-      }
-   }
+   //   /// <inheritdoc />
+   //   public void ApplyDamage(float damage)
+   //   {
+   //      if (!mLegacyEnemy) return;
+   //      mLegacyEnemy.BeHit(damage);
+   //   }
+   //}
 }

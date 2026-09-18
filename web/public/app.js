@@ -1,8 +1,12 @@
 const THEME_STORAGE_KEY = "progress-web-theme";
+// 行内改动（状态 / 优先级 / 排序）采用防抖写盘：停止操作 5 秒后统一写入，
+// 期间再有新改动就重新计时。
+const SAVE_DEBOUNCE_MS = 5000;
+const SAVE_COUNTDOWN_TICK_MS = 250;
 const state = {
   tasks: [],
   keyword: "",
-  sortKey: "updatedAt",
+  sortKey: "priority",
   sortDirection: "desc",
   hideCompleted: false,
   editingTaskId: "",
@@ -11,6 +15,12 @@ const state = {
     statuses: new Set(),
     taskTypes: new Set(),
   },
+  // 待写入的改动：taskId -> 该任务被改动的字段（同一任务多次改动会合并成一次 PATCH）
+  pendingPatches: new Map(),
+  saveTimerId: null,
+  saveCountdownId: null,
+  lastChangeAt: 0,
+  flushPromise: null,
 };
 
 const STATUS_OPTIONS = ["未开始", "进行中", "已完成"];
@@ -23,6 +33,22 @@ const PRIORITY_ORDER = {
   中: 2,
   低: 1,
 };
+
+// 排序拖拽条：0 表示「特别紧急」，数值越小越靠前
+const SORT_ORDER_MIN = 0;
+const SORT_ORDER_MAX = 10;
+const DEFAULT_SORT_ORDER = 5;
+
+function normalizeSortOrder(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return DEFAULT_SORT_ORDER;
+  return Math.min(SORT_ORDER_MAX, Math.max(SORT_ORDER_MIN, Math.round(numeric)));
+}
+
+// 统一成「值越大越靠前」的权重，这样升/降序逻辑和优先级保持一致
+function getOrderRank(task) {
+  return SORT_ORDER_MAX - normalizeSortOrder(task.sortOrder);
+}
 
 const STATUS_ORDER = {
   进行中: 3,
@@ -44,6 +70,7 @@ const elements = {
   body: document.body,
   stats: document.getElementById("stats"),
   form: document.getElementById("taskForm"),
+  formSortOrderValue: document.getElementById("formSortOrderValue"),
   tableBody: document.getElementById("taskTableBody"),
   template: document.getElementById("taskRowTemplate"),
   searchInput: document.getElementById("searchInput"),
@@ -53,6 +80,7 @@ const elements = {
   reloadButton: document.getElementById("reloadButton"),
   toggleCompletedButton: document.getElementById("toggleCompletedButton"),
   themeToggleButton: document.getElementById("themeToggleButton"),
+  flushButton: document.getElementById("flushButton"),
   openCreateButton: document.getElementById("openCreateButton"),
   modal: document.getElementById("taskModal"),
   modalTitle: document.getElementById("modalTitle"),
@@ -68,6 +96,7 @@ function setSaveState(text, type = "default") {
   const colorMap = {
     default: "var(--text-muted)",
     loading: "var(--warning)",
+    pending: "var(--accent)",
     success: "var(--success)",
     error: "var(--danger)",
   };
@@ -135,9 +164,21 @@ function compareBySort(a, b) {
   let result = 0;
 
   switch (state.sortKey) {
-    case "priority":
+    case "priority": {
       result = (PRIORITY_ORDER[a.priority] || 0) - (PRIORITY_ORDER[b.priority] || 0);
+      if (result === 0) {
+        // 相同优先级下，再按排序数值（越小越靠前）
+        result = getOrderRank(a) - getOrderRank(b);
+      }
       break;
+    }
+    case "sortOrder": {
+      result = getOrderRank(a) - getOrderRank(b);
+      if (result === 0) {
+        result = (PRIORITY_ORDER[a.priority] || 0) - (PRIORITY_ORDER[b.priority] || 0);
+      }
+      break;
+    }
     case "status":
       result = (STATUS_ORDER[a.status] || 0) - (STATUS_ORDER[b.status] || 0);
       break;
@@ -192,12 +233,21 @@ function setInlineSelectValue(node, value) {
   node.dataset.value = value || "";
 }
 
+// 排序=0 的行标记为「特别紧急」：整行加独立动画，并在优先级旁显示标签
+function applyOrderState(row, value) {
+  const order = normalizeSortOrder(value);
+  const valueNode = row.querySelector('[data-field="sortOrderValue"]');
+  if (valueNode) valueNode.textContent = String(order);
+  row.classList.toggle("is-priority-critical", order === 0);
+  return order;
+}
+
 function renderTable() {
   const tasks = getFilteredTasks();
   elements.tableBody.innerHTML = "";
 
   if (!tasks.length) {
-    elements.tableBody.innerHTML = `<tr><td colspan="8" class="empty">当前没有匹配任务</td></tr>`;
+    elements.tableBody.innerHTML = `<tr><td colspan="9" class="empty">当前没有匹配任务</td></tr>`;
     return;
   }
 
@@ -216,19 +266,28 @@ function renderTable() {
     fillBadge(row.querySelector('[data-field="taskType"]'), task.taskType || "其他");
     const statusSelect = row.querySelector('[data-field="status"]');
     const prioritySelect = row.querySelector('[data-field="priority"]');
+    const orderSlider = row.querySelector('[data-field="sortOrder"]');
     setInlineSelectValue(statusSelect, task.status || "未开始");
     setInlineSelectValue(prioritySelect, task.priority || "中");
+    orderSlider.value = String(normalizeSortOrder(task.sortOrder));
+    applyOrderState(row, orderSlider.value);
     row.querySelector('[data-field="owner"]').textContent = task.owner || "-";
     row.querySelector('[data-field="updatedAt"]').textContent = formatDateTime(task.updatedAt);
 
     statusSelect.addEventListener("change", () => {
       statusSelect.dataset.value = statusSelect.value;
-      patchTask(task.id, { status: statusSelect.value }, { closeModalAfterSave: false });
+      schedulePatch(task.id, { status: statusSelect.value });
     });
 
     prioritySelect.addEventListener("change", () => {
       prioritySelect.dataset.value = prioritySelect.value;
-      patchTask(task.id, { priority: prioritySelect.value }, { closeModalAfterSave: false });
+      schedulePatch(task.id, { priority: prioritySelect.value });
+    });
+
+    // 拖动时只更新本行视觉（不重绘表格，避免打断拖拽），松手后交给防抖写入
+    orderSlider.addEventListener("input", () => {
+      const sortOrder = applyOrderState(row, orderSlider.value);
+      schedulePatch(task.id, { sortOrder });
     });
 
     row.querySelector('[data-action="edit"]').addEventListener("click", () => {
@@ -247,6 +306,7 @@ function renderTable() {
 function renderButtons() {
   elements.toggleCompletedButton.textContent = state.hideCompleted ? "显示已完成" : "隐藏已完成";
   elements.themeToggleButton.textContent = getThemeLabel();
+  elements.flushButton.disabled = state.pendingPatches.size === 0;
   elements.sortButtons.forEach((button) => {
     const isActive = button.dataset.sortKey === state.sortKey;
     button.classList.toggle("is-active", isActive);
@@ -274,8 +334,15 @@ function resetForm(task = null) {
   elements.form.elements.taskType.value = task?.taskType || "模块开发";
   elements.form.elements.status.value = task?.status || "进行中";
   elements.form.elements.priority.value = task?.priority || "中";
+  setFormSortOrder(normalizeSortOrder(task?.sortOrder));
   elements.form.elements.owner.value = task?.owner || "";
   elements.form.elements.description.value = task?.description || "";
+}
+
+function setFormSortOrder(value) {
+  const order = normalizeSortOrder(value);
+  elements.form.elements.sortOrder.value = String(order);
+  elements.formSortOrderValue.textContent = String(order);
 }
 
 function openModal(task = null) {
@@ -360,7 +427,119 @@ async function patchTask(id, payload, options = {}) {
   }
 }
 
+/* ---------- 防抖写盘：停止操作 5 秒后统一保存 ---------- */
+
+function renderPendingState() {
+  const count = state.pendingPatches.size;
+  if (!count) {
+    stopSaveCountdown();
+    elements.flushButton.disabled = true;
+    return;
+  }
+  const elapsed = Date.now() - state.lastChangeAt;
+  const remainSeconds = Math.max(1, Math.ceil((SAVE_DEBOUNCE_MS - elapsed) / 1000));
+  elements.flushButton.disabled = false;
+  setSaveState(`未保存 ${count} 处改动 · ${remainSeconds}s 后自动写入`, "pending");
+}
+
+function stopSaveCountdown() {
+  if (state.saveCountdownId) {
+    window.clearInterval(state.saveCountdownId);
+    state.saveCountdownId = null;
+  }
+}
+
+function startSaveCountdown() {
+  if (state.saveCountdownId) return;
+  state.saveCountdownId = window.setInterval(() => {
+    if (!state.pendingPatches.size) {
+      stopSaveCountdown();
+      return;
+    }
+    renderPendingState();
+  }, SAVE_COUNTDOWN_TICK_MS);
+}
+
+// 本地先按新值生效（表格/弹窗立刻反映最新意图），写盘交给 5 秒防抖
+function schedulePatch(taskId, patch) {
+  const task = state.tasks.find((item) => item.id === taskId);
+  if (task) Object.assign(task, patch);
+  state.pendingPatches.set(taskId, { ...(state.pendingPatches.get(taskId) || {}), ...patch });
+
+  state.lastChangeAt = Date.now();
+  window.clearTimeout(state.saveTimerId);
+  state.saveTimerId = window.setTimeout(() => {
+    state.saveTimerId = null;
+    flushPendingSaves();
+  }, SAVE_DEBOUNCE_MS);
+
+  startSaveCountdown();
+  renderPendingState();
+}
+
+async function runFlush() {
+  window.clearTimeout(state.saveTimerId);
+  state.saveTimerId = null;
+  stopSaveCountdown();
+  elements.flushButton.disabled = true;
+
+  const entries = Array.from(state.pendingPatches.entries());
+  state.pendingPatches.clear();
+  setSaveState(`正在写入 ${entries.length} 处改动...`, "loading");
+
+  let saved = 0;
+  const failed = [];
+  let lastError = "";
+  for (const [taskId, patch] of entries) {
+    try {
+      const data = await request(`/api/tasks/${encodeURIComponent(taskId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      });
+      const index = state.tasks.findIndex((task) => task.id === taskId);
+      if (index >= 0) {
+        state.tasks[index] = data.task;
+      }
+      saved += 1;
+    } catch (error) {
+      failed.push([taskId, patch]);
+      lastError = error.message;
+    }
+  }
+
+  renderAll();
+
+  if (failed.length) {
+    // 保留改动不丢：重新排队，等待用户点「立即保存」或下次改动时重试
+    failed.forEach(([taskId, patch]) => {
+      state.pendingPatches.set(taskId, { ...(state.pendingPatches.get(taskId) || {}), ...patch });
+    });
+    elements.flushButton.disabled = false;
+    setSaveState(`写入失败 ${failed.length} 处：${lastError}（改动仍保留，可点「立即保存」重试）`, "error");
+    return;
+  }
+
+  if (state.pendingPatches.size) {
+    // 写入期间又产生了新改动，继续按新的计时走
+    renderPendingState();
+    return;
+  }
+
+  setSaveState(saved ? `已保存 ${saved} 处改动` : "没有需要写入的改动", "success");
+}
+
+// 写入中的请求会被复用，避免「重新读取」与防抖定时器并发写同一批数据
+function flushPendingSaves() {
+  if (state.flushPromise) return state.flushPromise;
+  if (!state.pendingPatches.size) return Promise.resolve();
+  state.flushPromise = runFlush().finally(() => {
+    state.flushPromise = null;
+  });
+  return state.flushPromise;
+}
+
 async function deleteTask(id) {
+  state.pendingPatches.delete(id);
   setSaveState("正在删除...", "loading");
   try {
     await request(`/api/tasks/${encodeURIComponent(id)}`, { method: "DELETE" });
@@ -381,10 +560,13 @@ elements.form.addEventListener("submit", (event) => {
     description: formData.get("description"),
     status: formData.get("status"),
     priority: formData.get("priority"),
+    sortOrder: normalizeSortOrder(formData.get("sortOrder")),
     owner: formData.get("owner"),
   };
 
   if (state.editingTaskId) {
+    // 弹窗是显式「保存」动作，立即写入；该任务此前排队的行内改动已被表单值覆盖
+    state.pendingPatches.delete(state.editingTaskId);
     patchTask(state.editingTaskId, payload);
     return;
   }
@@ -392,13 +574,22 @@ elements.form.addEventListener("submit", (event) => {
   addTask(payload);
 });
 
+elements.form.elements.sortOrder.addEventListener("input", (event) => {
+  elements.formSortOrderValue.textContent = String(normalizeSortOrder(event.target.value));
+});
+
 elements.searchInput.addEventListener("input", (event) => {
   state.keyword = event.target.value;
   renderTable();
 });
 
-elements.reloadButton.addEventListener("click", () => {
+elements.reloadButton.addEventListener("click", async () => {
+  await flushPendingSaves();
   loadTasks();
+});
+
+elements.flushButton.addEventListener("click", () => {
+  flushPendingSaves();
 });
 
 elements.toggleCompletedButton.addEventListener("click", () => {
@@ -455,6 +646,17 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !elements.modal.classList.contains("hidden")) {
     closeModal();
   }
+});
+
+// 切走标签页 / 关页面 / 最小化时，不等 5 秒，直接把待写入的改动落盘
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    flushPendingSaves();
+  }
+});
+
+window.addEventListener("pagehide", () => {
+  flushPendingSaves();
 });
 
 initializeTheme();

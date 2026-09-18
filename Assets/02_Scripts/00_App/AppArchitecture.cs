@@ -15,6 +15,9 @@ namespace TeaGame
       {
          //  this.RegisterModel(new AppModel());
          //  this.RegisterSystem(new AppSystem());
+         // 登录模块在底层架构注册
+         this.RegisterModel(new Login.LoginModel());
+         this.RegisterSystem(new Login.LoginSystem());
       }
    }
 }

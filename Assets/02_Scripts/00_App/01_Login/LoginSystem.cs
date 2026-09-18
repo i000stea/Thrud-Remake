@@ -11,7 +11,7 @@ namespace TeaGame.Login
    /// </summary>
    public sealed class LoginSystem : AbstractSystem
    {
-      private IArchitecture Architecture => LoginArchitecture.Interface;
+      private IArchitecture Architecture => AppArchitecture.Interface;
       private LoginModel Model => Architecture.GetModel<LoginModel>();
 
       protected override void OnInit()

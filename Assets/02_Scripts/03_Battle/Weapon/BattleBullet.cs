@@ -103,13 +103,13 @@ namespace TeaGame
             return;
          }
 
-         var legacyEnemy = other.transform.FindParentComponent<EnemyEntity_Main>();
-         if (legacyEnemy)
-         {
-            legacyEnemy.BeHit(Damage);
-            OnHit(other);
-            return;
-         }
+         //var legacyEnemy = other.transform.FindParentComponent<EnemyEntity_Main>();
+         //if (legacyEnemy)
+         //{
+         //   legacyEnemy.BeHit(Damage);
+         //   OnHit(other);
+         //   return;
+         //}
 
          OnHit(other);
       }

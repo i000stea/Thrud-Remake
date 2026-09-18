@@ -95,17 +95,63 @@
 - [ ] C4：迁移全局对象（StoreBattleRoleData / BattleRoleRepository / LoadingGroup / UIRoot）入 ConfigScene，去 DontDestroyOnLoad
 - [ ] C6：Login/Main/Gacha/Battle 场景切换改造为 additive 请求模式
 - [ ] C7：架构文档同步（更新 08 与 01 架构文档到实际实现）
-- [ ] M0 其余（`../02_系统与玩法设计/02_热更新方案.md` + `../01_里程碑与执行/06_里程碑规划与任务依赖.md`）：HybridCLR + YooAsset 集成、热更链路联调、PC+Android 构建矩阵——**2026-09-15 已立项并拆解为 P0–P5，见 `../03_专项设计与重构/16_热更新方案选型与落地计划.md`**；开工前需用户确认 §8 待确认项，且 P1 程序集拆分前工作区须干净（该文档同时给出实测差距与版本核实结论）
+- [ ] M0 其余（`../02_系统与玩法设计/02_热更新方案.md` + `../01_里程碑与执行/06_里程碑规划与任务依赖.md`）：HybridCLR + YooAsset 集成、热更链路联调、PC+Android 构建矩阵——**2026-09-15 已立项，阶段编号重排为 P1A → P1B → P1C → P2 → P3，见 `../03_专项设计与重构/16_热更新方案选型与落地计划.md`**；原 P0（前置与环境验证）已撤销（内容去向见该文档 §5.0，其中"中国版 2022.3 兼容性实测"因 P1B 换引擎而作废）
 
-**热更新立项（2026-09-15；来源：`../03_专项设计与重构/16_热更新方案选型与落地计划.md`）**
-- [ ] **P0 · 前置与环境验证（阻断风险最高，先做）**：装 `com.code-philosophy.hybridclr#v8.14.1`、确认 git/VS2019 C++ 组件/Windows IL2CPP 模块、跑 `HybridCLR/Installer`、`manifest.json` 加 `com.unity.scriptablebuildpipeline`；**核心是中国版 Unity `2022.3.60f1c1` + IL2CPP 打包实测**（官方只声明覆盖 2022.3.x LTS，未覆盖中国版）
-- [ ] P1 · 程序集与目录拆分（`Tea.Framework` AOT / `Tea.Game`+`Tea.Data` 热更，`Assets/Game`|`Engine`）——**当前工程只有一个 `TeaGame.asmdef`，文档要求的三层均不存在**；注意先提交现有未完成的 `Assets/02_Scripts` 目录重构
-- [ ] P2 · HybridCLR 打通（Api Level 改 `.NET Framework`、Standalone 切 IL2CPP、`HotfixAssemblyLoader` + 补充元数据、Generate/All → CompileDll 管线）
-- [ ] P3 · YooAsset 接入与资源迁移（**当前 ResKit AB 已在用**，需写 YooAsset 版 `IPanelLoaderPool` 替换 `ResKitPanelLoaderPool`、`BattleAssetService` 改 AssetHandle）
-- [ ] P4 · 更新流程 + 本地模拟服务器（`VersionService`/`PatchDownloadService`/`PatchRecoveryService`，接 `ConfigScene` 启动流程）
-- [ ] P5 · Android 真机链路 + 打包一键化（并入 `../01_里程碑与执行/15…` 验收清单；注意 APK 体积已 189.2MB/200MB）
+**P1A · 通读代码 + 清理冗余代码（2026-09-15 立项，当前执行；来源：`../03_专项设计与重构/16_热更新方案选型与落地计划.md` §5A）**
+
+> 定位：Demo 已外发测试，热更线顺延。在下一个大阶段开发前，插入缓慢调整阶段，目标是"开发者本人能读懂并掌控代码结构"。**纪律：只做结构，不加功能/不改数值/不修 bug（发现的 bug 记入本清单）/不动第三方目录**。
+
+- [ ] **S1 · 先建立验证回路（必须最先做，未达成不进 S2）**：当前 `unity` CLI 不在 PATH、工程无 `com.unity.pipeline`，**我无法编译也无法读 Console**。① 方案 B（10 分钟）：装官方 CLI + `unity pipeline install`，大概率失败但顺带确认国区网络是否装成缺 `pipeline`/`command` 的老版 `0.1.x`；② 方案 A（保底）：你当编译器，小批次改动 → 你在 Editor 编译 → 贴回 Console 原文；③ 方案 C（约 1 小时，B 失败后可选）：社区手工适配 `com.unity.pipeline`（`rocwood/unity-cli-2022-mod`，作者不提供兼容性保证）——需 fork 官方包 + 手工转 DLL `.meta`，代价大且不可复现，**若做必须单独提交、可整块删除**；④ 方案 D（未验证）：CLI 能跑 ≠ DSH 的 `unity_status`/`unity_command` 接受 2022.3 Editor，不得当已确认
+- [ ] **S2 · 现状地图（核心交付物）**：结构化阅读后产出 `Docs/03_专项设计与重构/17_代码现状地图.md`——模块清单与依赖、`03_Battle` 72 文件骨架、生命周期与数据流、**24 个未挂载旧脚本的死代码判定表**
+- [ ] **S3 · 定边界（唯一架构决策点）**：① 每个模块归 AOT(`Tea.Framework`) 还是热更(`Tea.Game`/`Tea.Data`) ② `Before/` 的最终归属 ③ 现有目录 ↔ `Assets/Game`|`Engine` 映射表 ④ `03_Module` 名实对齐
+- [ ] **S4 · 机械搬迁与去纠缠（一次一个模块、一次一个提交）**：叶子优先（`Data`/`Tools` → `UIPanel` → `03_Battle`）；必须清掉 3 处新旧纠缠（`Weapon_ObjectComponent` 的 `PlayerControl.I.config`、`BattleCombatTypes` 的 `EnemyControl.enemys`、`BattleWeaponRuntime`/`SkillEffect` 的 `Bullet_Base` 运行时禁用）；顺手修 3 条失效硬编码路径
+- [ ] **S5 · 删死代码与文档对齐**：删前必跑 GUID 挂载复核（§5A.5 命令模板）；同步 01/02/04 与 `AGENTS.md` 项目事实段
+- [ ] **场景与组件清理（2026-09-15 用户决策，详见 §5A.1b）**：**保留** `4BattleScene`/`5BattleScene-Test0/1`（及 `3GachaScene`）作为美术资产，**场景内旧脚本组件全部摘除，只留美术侧内容**。**铁律：先摘组件、后删脚本**，否则留下 `Missing (Mono Script)`。
+  - A 类（只活在禁用资产里，摘组件后删脚本即可）：`EnemyControl`/`EnvEffectControl`/`StoreBattleRoleData`（三个禁用战斗场景）、`EnemyUIData`（`Battle EnemyUIData.asset`，**数据资产随脚本一起删**，需先解除三个场景引用）；`EnemyEntity_Main` 的**唯一挂载点随 `Enemy_0Base.prefab` 一起消失**
+  - **`Enemy_0Base.prefab` 已由用户删除（2026-09-15）**，实测安全：`EnemyCatalog` 引用的 21 个 guid = 20 个 typed 敌人 prefab + `EnemyCatalog.cs` 自身，**不含它** → 活敌人生成链路未受影响
+  - [ ] **遗留两个 Variant 孤儿**：`Enemy_Test-Ele.prefab` / `Enemy_Test-Fire.prefab` 是已删基座的 Prefab Variant，基座没了它们仍在（Unity 中表现为断开继承）；仅被禁用场景 `5BattleScene-Test1` 引用 → **建议一并删除**
+  - B 类（**挂在活资产上，必须进 Editor 手动摘组件**）：`MainCityControl`（`2MainScene.unity`，enabled=1）、`DevMessageDisplay`（`LoadingGroup.prefab`）
+  - 已核实：活战斗场景 `BattleGraybox.unity` 挂的全是新脚本、**零旧脚本**；20 个 typed 敌人 prefab **不是** `Enemy_0Base` 的 Variant；四个禁用场景的场景名在代码与 AB 清单中**零引用**
+  - [ ] 场景移位（**用户已批准"可以移动"**）：四个禁用场景（`3GachaScene`/`4BattleScene`/`5BattleScene-Test0`/`5BattleScene-Test1`）可移入 `Assets/01_Scenes/Legacy/`；**只移位不改名**（D25 场景名即 key）
+  - **gacha 代码**：`Gacha_MainControl`（仅挂 `3GachaScene`）/`Gacha_CoreOperation`/`Gacha_UIOperation`（无任何挂载、无代码引用）→ 保留为参考，移入隔离目录 + README 标注「M2 参考实现，未迁移，不参与运行时」；**不做"封装"**
+- [ ] 节奏与纪律（**2026-09-15 更新：不设硬时间盒**——当前无打包/发布计划，时间完全放松）：**闸门从"时间"改为"交付物 + 红旗清单"**；每完成一个 S 步骤汇报一次；任何时刻仓库须"编译通过 + 主链路可玩"；Demo 反馈的阻塞 bug 可打断 P1A（单独提交，不混进重构提交）
+  - **"优化地狱"红旗（出现任意一条即停手复盘）**：① 同一文件第三次"顺手改一下" ② 给没有失败用例的代码重做设计 ③ 写"以后可能用到"的通用化机制/接口/基类 ④ 为"更干净"去重命名或移动被引用的资产 ⑤ **开始重写 `03_Battle` 的某个系统**（本项目最大陷阱） ⑥ 连续两个会话只读不改且没产出地图文档 ⑦ 期间开始装 HybridCLR/YooAsset/配 AB ⑧ 一次提交混进两个及以上不相关范围
+  - 同等重要的纪律：**"决定不改"也是合格产出**——读完发现某处虽丑但不影响依赖可控性 → 记进地图文档并标注"本次不动"
+
+**P1B · 更新 Unity 版本（2026-09-15 决策：排在 P1A 之后且早于 P1C；来源同上文文档 §5B）**
+
+> 决策：**现在不切引擎**，P1A 先行。目标版本 **Unity 6.3 LTS（`6000.3.x`）**，**不是 6.0**（安全支持 2026-10-16 就到期），也不是 6.5/6.6。
+> 依据：`2022.3 LTS 安全支持已于 2025-05-07 结束`（endoflife.date，2026-09-11 数据）；Android targetSdk 合规与 HybridCLR 兼容性都会随引擎过旧而变紧。
+> **P1B 必须在 P1C（拆程序集 + HybridCLR + YooAsset）之前完成**——HybridCLR 的 il2cpp 补丁与 Unity 版本强绑定，先装再升等于把这份工作做两遍。
+
+- [ ] **Unity 6 发行版选择（新增首项，影响后续全部工具链）**：Unity 6 **国际版** vs **Unity 6 中国版**。本工程现为中国版 `2022.3.60f1c1`；调研中发现的两个国区问题（CLI 被国区 CDN 重定向成老版本 `0.1.x`、中国版与第三方工具缺少兼容声明）都指向"国际版可减少一类不确定性"，但需确认账号/授权与下载渠道
+- [ ] **安装 6.3 LTS 时勾选模块**：Android Build Support（含 SDK/NDK）+ **Windows Build Support (IL2CPP)**（PC 验证链路必需；当前 Standalone 后端为 Mono）
+- [ ] **P1B 前置确认清单（开工前须全部有结论）**：① RealToon — 已确认最新版支持 Unity 6，需落实**具体版本号 + 授权可升 + 需重验的材质/Shader 清单**（工程内现为 `v5.0.8p7 / 2022-12`）；② Amplify Shader Editor（独立 asmdef）Unity 6 版本；③ DOTween；④ QFramework / ResKit / UIKit / SupportOldQF 在 Unity 6 下编译；⑤ 中文字体（`Assets/08_Fonts`，TMP 并入 ugui 2.0 后需实测）；⑥ Android Gradle/AGP/NDK 版本要求对 MinSdk 28 / IL2CPP / ARM64 的影响
+- [ ] **P1B 迁移面实测结论（好消息）**：Cinemachine **0 引用**（代码与场景皆无）→ Cinemachine 3.x 破坏性改名零成本；`ai.navigation` **0 引用**；全工程唯一挂在 Renderer 上的 RendererFeature 是 URP **内置** `ScreenSpaceAmbientOcclusion` → **URP 17 Render Graph 改造几乎零成本**
+- [ ] **P1B 迁移面实测结论（坏消息）**：`Assets/RealToon/.../DeNorSob Outline/` 下 `DepthNormalsFeature.cs`、`DeNorSobOutline.cs` 使用 URP 12 前已废弃的 `RenderTargetHandle` / `renderer.cameraColorTarget`，且 RealToon **无 asmdef → 编入 `Assembly-CSharp`，编不过即全工程编不过**；升级 RealToon 版本后需专项重验
+- [ ] **P1B 步骤**：隔离分支 → 升级前快照提交 → 第三方插件逐个升级（RealToon/ASE/DOTween/TMP 字体，各单独提交）→ Hub 装 6.3 LTS 打开工程触发重序列化（**churn 单独一次提交、不含业务改动**）→ 修编译错误（重点 `Assembly-CSharp`）→ 渲染回归（角色着色/描边/后处理/粒子/UI）→ Android 重出包并按 `15` 文档重验 → 同步 `AGENTS.md` 版本事实与 01/02 文档
+- [ ] 退出条件：主链路 Play 全绿；Android 真机包可装可玩无渲染异常；`AGENTS.md` 版本段已更新；升级提交与业务提交分离且可整体回退
+
+**P1C · 热更新适配（2026-09-15 编号重排；必须排在 P1B 之后；来源同上文文档 §5C）**
+- [ ] **P1C · 热更新适配（原 P0 剩余 + P1 + P2 + P3；必须排在 P1B 之后）**
+  - [ ] C1 · 拆程序集与目录（`Tea.Framework` AOT / `Tea.Game`+`Tea.Data` 热更，`Assets/Game`|`Engine`）——**当前工程只有一个 `TeaGame.asmdef`**；边界决策由 P1A 的 S3 产出
+  - [ ] C2 · HybridCLR 打通（装 `com.code-philosophy.hybridclr#v8.14.1`、确认 git/VS2019 C++ 组件、跑 `HybridCLR/Installer`、Api Level 改 `.NET Framework`、Standalone 切 IL2CPP、`HotfixAssemblyLoader` + 补充元数据、Generate/All → CompileDll 管线）
+  - [ ] C3 · YooAsset 接入与资源迁移（**当前 ResKit AB 已在用**，需写 YooAsset 版 `IPanelLoaderPool` 替换 `ResKitPanelLoaderPool`、`BattleAssetService` 改 AssetHandle；`manifest.json` 加 `com.unity.scriptablebuildpipeline`；输出目录用默认 `Bundles/`）
+  - 注明：原 P0 的"中国版 `2022.3.60f1c1` + IL2CPP 打包实测"**已作废**（P1B 换引擎后该组合不复存在）
+  - 失败退路：HybridCLR 受阻 → ① 换上一稳定版 ② 才考虑 ILRuntime（代价见 16 文档 §2.1）
+- [ ] P2 · 更新流程 + 本地模拟服务器（`VersionService`/`PatchDownloadService`/`PatchRecoveryService`，接 `ConfigScene` 启动流程）
+- [ ] **P3 · Android 真机热更闭环验收（2026-09-15 大幅缩减）**：**打包工具与文档建设已完成、不再重做**（[x] 平台配置 IL2CPP+ARM64/MinSdk 28、[x] `AndroidDemoBuilder.cs` 一键构建、[x] `15` 文档门禁与验收清单、[x] ResKit AB 全量构建）。**保留两件事**：① **真机热更闭环本身从未做过**（此前只验过"能出包"，没验过"下发热更能生效"）——小包安装 → 局域网增量更新 → 新内容生效 → 改代码一键构建真机生效，这是 M0 的验收条款；② **P1B 换引擎后 Android 出包链路必须重验**（Gradle/AGP/NDK 随 Unity 6.3 变动，"打包已实现"在 2022.3 成立、在 Unity 6 尚不成立，见 16 文档 §5B.5 第 6 步）
+- [x] 已确认：**AB 加密不进本次范围**（保留接口与开关）
+
+**P1A 取证时顺带发现、本阶段只记录不修的问题（来源：2026-09-15 实测）**
+- [ ] 3 条硬编码资产路径指向不存在的文件，其中 `BattleArenaSceneThinner` 的 `RigPrefabPath` 无回落 → 该 T3.1C 工具当前**已不可用**（`Assets/04_Prefabs/Battle_PlayerControl.prefab` 实际在 `04_Prefabs/03Battle/`；另两条为 `04_Prefabs/Enemy/StageConfig_Demo.asset`、`Resources/New ButtonControlSetting.asset`）→ 归入 S4 处理
+- [ ] `PlayerControl.I` 与 `Bullet_Base` 未被任何场景/预制体挂载，但新代码仍在引用/`TryGetComponent` → **疑似失效代码路径**，需 S2 人工判定（涉及武器/子弹结算，勿贸然删）
+- [ ] `Assets/03_Module` 下 0 个 `.cs`（只有资源目录），与 `AGENTS.md`「03_Module = gameplay modules」描述不符 → 归入 S3 名实对齐
+- [ ] HEAD `5bc3890c` 单次提交混合了目录重构 + 新功能 + 文档 + `web/data/progress.json`，违反 AGENTS.md 提交纪律 → P1A 期间恢复"一次一个范围"
 
 ### 3.4 真机资源与战斗装配（2026-09-10 新增；来源：`../03_专项设计与重构/14_真机资源与战斗装配_分阶段修复指南.md`）
+
+> ⚠️ 编号消歧：本节的 **P0–P4 是 14 文档自己的阶段编号**（真机资源修复），与 `16` 文档的全局阶段编号（P1A/P1B/P1C/P2/P3）**不是同一套**，勿混用。
 
 > 纪律：**一次只做一个阶段**，每阶段退出条件不满足就停下回报，不进入下一阶段（详见 14 §0）。
 
@@ -156,6 +202,8 @@
 - [x] **本地写接口烟测已通过**：临时启动服务后执行 `POST /api/progress/tasks` 新建测试任务再 `DELETE` 删除，任务数 48 → 49 → 48
 - [x] **UI 微调已完成**：第一页任务表列顺序调整为「方向 / 任务 / 类型 / 描述 / 状态 / 优先级 / 操作」，并新增亮/暗色切换按钮；主题使用本地持久化值，不跟随系统主题
 - [ ] 若要正式投入使用：在 `web/server/.env` 配置 `ADMIN_TOKEN`，按 `web/README.md` 本地或宝塔启动，并做一次人工页面联调（编辑模式、备份目录、错误提示文案）
+- [x] **任务清单已于 2026-09-15 人工重排**（`web/data/progress.json`，77 条）：按 **P1A → P1B → P1C → P2 → P3** 组织，标题带阶段前缀、描述改成口语化拆解、id 改用 `p1a-1` 这类稳定值；`sortOrder` 按阶段分桶（`0` = P1A 验证回路闸门，`2` = P1A 其余，`3` = 真机资源/Demo 线，`4` = P1B，`6` = P1C，`7`/`8`/`9` = 后续与收尾，`5` = 已完成留档）
+- [ ] ⚠️ **注意**：`web/sync-doc-tasks.js` 是**整体覆写**式生成器（从本文档重新抽取 + 重发随机 id），**直接跑会丢掉上面这次人工整理**。若要重新同步，先备份 `progress.json`，或先把它改成按 `raw` 合并（保留 id/status/priority/sortOrder）
 
 ---
 

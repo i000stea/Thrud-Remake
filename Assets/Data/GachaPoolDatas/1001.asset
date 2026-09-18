@@ -15,7 +15,7 @@ MonoBehaviour:
   itemName: 1001
   itemID: 1001
   itemPinyin: "\u672A\u8BBE\u7F6E\u62FC\u97F3"
-  Rarity: 0
+  Rarity: 1
   profile: "\u6CA1\u6709\u6587\u6848"
   pooltag: 0
   sprite_PoolBg: {fileID: 21300000, guid: 3c604977df0643e4aaa797ebab78c73c, type: 3}

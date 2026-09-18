@@ -590,7 +590,7 @@ MonoBehaviour:
   MarkType: 0
   CustomComponentName: InvokeButton
   CustomComment: 
-  mComponentName: TeaFramework.TeaBaseButton
+  mComponentName: TeaGame.TeaBaseButton
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -689,10 +689,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Namespace: TeaGame.Login
   ScriptName: LoginViewController
-  ScriptsFolder: Assets\02_Scripts\01_Login
+  ScriptsFolder: Assets\02_Scripts\00_App\01_Login
   GeneratePrefab: 0
   PrefabFolder: Assets/04_Prefabs
-  ArchitectureFullTypeName: TeaGame.Login.LoginArchitecture
+  ArchitectureFullTypeName: TeaGame.AppArchitecture
   ViewControllerFullTypeName: 
   lerpTime: 2
   volumeTarget: 0.2

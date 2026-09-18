@@ -442,11 +442,11 @@ namespace TeaGame
                battleBullet.ResetBullet(damage, lifeSeconds, element);
             }
 
-            // 禁用同挂载的旧版 Bullet_Base，避免命中时双重结算/销毁
-            if (bulletObject.TryGetComponent(out Bullet_Base legacyBullet))
-            {
-               legacyBullet.enabled = false;
-            }
+            //// 禁用同挂载的旧版 Bullet_Base，避免命中时双重结算/销毁
+            //if (bulletObject.TryGetComponent(out Bullet_Base legacyBullet))
+            //{
+            //   legacyBullet.enabled = false;
+            //}
 
             return bulletObject;
          }
@@ -502,10 +502,10 @@ namespace TeaGame
             battleBullet.Damage = damage;
          }
 
-         if (bulletObject.TryGetComponent(out Bullet_Base legacyBullet))
-         {
-            legacyBullet.damage = Mathf.RoundToInt(damage);
-         }
+         //if (bulletObject.TryGetComponent(out Bullet_Base legacyBullet))
+         //{
+         //   legacyBullet.damage = Mathf.RoundToInt(damage);
+         //}
       }
    }
 

@@ -10,14 +10,10 @@ namespace TeaGame
    /// </summary>
    public sealed class BattleStateModel : AbstractModel
    {
-      /// <summary>
-      /// 当前战斗控制器。
-      /// </summary>
+      /// <summary> 当前战斗控制器。 </summary>
       public Battle_PlayerControl Controller;
 
-      /// <summary>
-      /// 当前战斗角色运行时数据集合。
-      /// </summary>
+      /// <summary> 当前战斗角色运行时数据集合。 </summary>
       public BattleRoleRuntimeData[] BattleDatas = System.Array.Empty<BattleRoleRuntimeData>();
 
       /// <summary>
@@ -75,14 +71,10 @@ namespace TeaGame
       /// </summary>
       public float CurrentFov;
 
-      /// <summary>
-      /// 当前锁定的敌人目标。
-      /// </summary>
+      /// <summary> 当前锁定的敌人目标。 </summary>
       public IBattleEnemyTarget LockEnemy;
 
-      /// <summary>
-      /// 锁敌目标在 UI 中的目标位置。
-      /// </summary>
+      /// <summary> 锁敌目标在 UI 中的目标位置。 </summary>
       public Vector2 ScreenTarget;
 
       /// <summary>
@@ -105,9 +97,7 @@ namespace TeaGame
          }
       }
 
-      protected override void OnInit()
-      {
-      }
+      protected override void OnInit()  { }
    }
 
    /// <summary>
@@ -153,34 +143,22 @@ namespace TeaGame
       public bool SkillQPressed;
    }
 
-   /// <summary>
-   /// 移动系统运行时状态。
-   /// </summary>
+   /// <summary> 移动系统运行时状态。 </summary>
    public sealed class BattleMovementState
    {
-      /// <summary>
-      /// 当前帧缓存的世界空间推力。
-      /// </summary>
+      /// <summary> 当前帧缓存的世界空间推力。 </summary>
       public Vector3 CachedForce;
 
-      /// <summary>
-      /// 翻滚方向。
-      /// </summary>
+      /// <summary> 翻滚方向。 </summary>
       public Vector2 RollForce = Vector2.up;
 
-      /// <summary>
-      /// 是否处于“翻滚后允许进入冲刺”的准备状态。
-      /// </summary>
+      /// <summary> 是否处于“翻滚后允许进入冲刺”的准备状态。 </summary>
       public bool ReadySprint;
 
-      /// <summary>
-      /// 当前是否已经进入冲刺状态。
-      /// </summary>
+      /// <summary> 当前是否已经进入冲刺状态。</summary>
       public bool Sprinting;
 
-      /// <summary>
-      /// 上一次执行翻滚的时间。
-      /// </summary>
+      /// <summary> 上一次执行翻滚的时间。 </summary>
       public float LastRollTime = -999f;
    }
 }

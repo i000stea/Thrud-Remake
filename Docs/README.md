@@ -88,7 +88,7 @@ Docs/
 | 11_Battle_Arena_薄场景化重构_设计.md | Battle_Arena 薄场景化重构（任务卡 T3.1C，2026-09-06）：决策 D1–D14、场景契约、组件规格、迁移步骤 1–8、回归基线 | 主体实现已提交；步骤 4 编辑器工具运行 / 步骤 6 回归 / 步骤 8 归档待办 |
 | 14_真机资源与战斗装配_分阶段修复指南.md | 2026-09-10 真机日志的根因与阶段化修复指南：D1 MeshCollider 被引擎剥离、D2 `battle_runtime.teamCatalog` 未挂、D3 编目资产只活在面板 AB 内、D4 `M1_TeamSelect` 滞后文案；阶段 P0–P4（含 AB 异步化与 AB 划分），每阶段带退出条件与不做清单 | **P0 待执行**（T0-A 需编辑器操作） |
 | M1_TeamSelect_预编队面板_重构设计.md | 预编队面板重构（T3.1A 配套，v0.1→v1.3 多轮迭代）：4 槽 UI、MVC 细则、PlayerMeta/Formation 归位 | v1.3（2026-09-06）用户验收通过，主路径收口为 2MainScene 覆盖层 |
-| 16_热更新方案选型与落地计划.md | 热更新选型复核（HybridCLR vs ILRuntime vs Lua/TS；YooAsset vs Addressables vs ResKit）+ 现状差距实测 + 版本核实（HybridCLR v8.14.1 / YooAsset 3.0.5）+ 分阶段落地计划 P0–P5（每阶段带退出条件） | v1.0（2026-09-15）；**待用户确认后开工**，P0 首项是中国版 Unity 兼容性实测 |
+| 16_热更新方案选型与落地计划.md | 热更新选型复核（HybridCLR vs ILRuntime vs Lua/TS；YooAsset vs Addressables vs ResKit）+ 现状差距实测 + 版本核实（HybridCLR v8.14.1 / YooAsset 3.0.5）+ **P1A 通读与清理（§5A，含场景/gacha 清理清单与"反优化地狱"纪律）** + **P1B 引擎升级至 Unity 6.3 LTS（§5B）** + P1C 热更适配 / P2 / P3（真机热更闭环验收） | v1.4（2026-09-15）；阶段编号 **P1A → P1B → P1C → P2 → P3**（原 P0 撤销）；**当前执行 P1A，不设硬时间盒** |
 
 ### 04_模块设计（原 `Modules/`）
 
