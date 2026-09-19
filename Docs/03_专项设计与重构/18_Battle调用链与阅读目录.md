@@ -1,6 +1,6 @@
 # Battle 调用链与阅读目录（P1A · S2 补充交付物）
 
-> **2026-09-19 Actor 专项更新（已实现，编译/Play 待验）**：用户确认移动/传送 Actor、角色/武器/相机表现 Actor，InputSystem 保持原样；旧 BattleViewSystem 及 InitializeView 已删除，现为 **1 Model + 10 System + 4 Actor**。Aim 发布 BindableProperty 位置，主面板负责 UI 映射与 Lerp；血条/弹药/队伍 HUD 归主面板。当前入口、帧序、生命周期、资产操作与回归步骤见 [19 当前实施记录](19_表现层分层_View与Actor_设计.md)。**下文的 §7 事件表（行号与事件名）、§8 各功能链内的旧 System 名（ViewSystem / HealthSystem）为迁移前快照，不作为当前调用依据；§2 / §4 / §5 / §6.1 / §9 / §10 的行数与归属已于 2026-09-19 重测（最后一次重测在 `248df6ca` 之后）。**
+> **2026-09-19 Actor 专项更新（已实现，编译/Play 待验）**：用户确认移动/传送 Actor、角色/武器/相机表现 Actor，InputSystem 保持原样；旧 BattleViewSystem 及 InitializeView 已删除，现为 **1 Model + 10 System + 4 Actor**。Aim 发布 BindableProperty 位置，主面板负责 UI 映射与 Lerp；血条/弹药/队伍 HUD 归主面板。当前入口、帧序、生命周期、资产操作与回归步骤见 [19 当前实施记录](19_表现层分层_View与Actor_设计.md)。**下文的 §7 事件表（行号与事件名）、§8 各功能链内的旧 System 名（ViewSystem / HealthSystem）为迁移前快照，不作为当前调用依据；§2 / §4 / §5 / §6.1 / §9 / §10 的行数与归属已于 2026-09-19 重测（最后一次重测在 `56c249bf` 之后）。**
 >
 > **2026-09-19 第二批更新（表现层分层续作 + 模型平铺）**：
 > - **系统数 10 → 9**：`BattleHealthSystem` **已合并进 `BattleRoleSystem`**（`partial`：`Role/BattleRoleSystem.cs` + `Role/BattleRoleSystem.Health.cs`），消除了 `GetSystem<BattleRoleSystem>().HandleRoleDowned(...)` 跨系统调用；`BattleArchitecture` 注册 9 项。
@@ -16,18 +16,24 @@
 > - **时机变化 1 处**：出生点传送由 `Awake` 移到装配器 `Build(...)`（Start 阶段，仍在一切 Update 之前）。
 > - 六个提交：`9b4e7e69`（第 1 步）/ `a77eb347`（第 2 步）/ `69f851ab`（第 3 步）/ `50e509b5`（第 4 步）/ `fcb43173`（`BattleRoleActor` 的 Model 改**构造期注入**，`Actor/` 内 `GetModel<` 命中 0 处）/ `248df6ca`（修「搬运引入」的真实缺陷：`Awake` 必须丢弃 `TryResolveLevel` 失败的 `out` 值）。⚠️ **Unity 侧编译与 Play 回归尚未执行**（本轮验证是离线整程序集编译，见 §12 与 21 文档 §8.2）。
 >
+> **2026-09-19 第四批更新（桥接层退役 + 弹药发布）**：
+> - **`BattleRuntimeBridge` 整个类与文件已删除**（`Data/BattleRuntimeBridge.cs` 61 行 + `.meta` 一并删，`Data/` 只剩 `BattleRuntimeData.cs`）。玩家目标改由 **`Core/BattleCombatTypes.cs` 的 `IBattlePlayerTarget` + `BattlePlayerRegistry`**（与敌人侧 `IBattleEnemyTarget`/`BattleEnemyRegistry` 同文件同形）提供，rig **`Awake` 自注册 / `OnDestroy` 自注销**（`Battle_PlayerControl.SyncRuntimeBridge()` 也已删除）。
+> - **宿主相位表少一步**：4 处 `Rig.SyncRuntimeBridge()`（Update 暂停分支、Update 尾、FixedUpdate 尾、LateUpdate 尾）与装配器里那 1 处全部删除 → **相位表里再无"同步桥接"步骤**。
+> - **弹药发布归武器系统**：宿主不再每帧 `PublishAmmo`，改由 `BattleWeaponSystem` 在**变更点**（换弹完成 / 手动换弹 / 开火 / 切人）发布，仅装填期间按帧发布进度；装配器保留一次作首帧初值。
+> - 读者新写法（8 处 / 6 文件）与新入口见 §8.10；验证口径见 §12（**只有离线整程序集编译**）。
+>
 > **行数口径（本节所有数字均为 2026-09-19 实测）**：`(Get-Content <file> -Encoding UTF8).Count`；`03_Battle/` 范围**不含** `Contracts/` 与 `Editor/`。
 
 | 原调用 | 当前归属 |
 |---|---|
 | InitializeView | Host 装配 Actor → RoleSystem.AttachActor → RoleActor.Attach/ShowMember/PlaySpawn |
-| ViewSystem.TickUpdate | Host.TickActors（动画→FOV→模型→武器）+ Hud.PublishAmmo |
+| ViewSystem.TickUpdate | Host.TickActors（动画→FOV→模型→武器）；弹药读数改由 `BattleWeaponSystem` 在变更点发布（2026-09-19） |
 | ViewSystem 血条/队伍列表 | RoleSystem 发布血量绑定；主面板渲染并持有队伍 HUD |
 | AimSystem 准星 anchoredPosition | Hud.AimPosition → 主面板 TickAim，Host 在 Aim.TickLateUpdate 之后调用 |
 | rig.TransformMoveDirection/AddForce | MovementActor.ResolveDirection/ApplyForce |
 
 
-> 产出日期：**2026-09-18**（**§2 / §4 / §5 / §6.1 / §9 / §10 的行数与归属已于 2026-09-19 重测**，见上方第三批更新块）。定位：P1A 的 S2「现状地图」在 `03_Battle`（**71 个文件 / 9822 行**）上的补齐——**一份可以当目录用的调用链说明书**。
+> 产出日期：**2026-09-18**（**§2 / §4 / §5 / §6.1 / §9 / §10 的行数与归属已于 2026-09-19 重测**，见上方第一/二/三/四批更新块）。定位：P1A 的 S2「现状地图」在 `03_Battle`（**70 个文件 / 9896 行**）上的补齐——**一份可以当目录用的调用链说明书**。
 > **2026-09-18 二次修订**：主 HUD（技能行）已从 `Battle_PlayerControl` 迁至 `Battle_MainPanel`（`BindableProperty` 反向绑定），新增 `UI/BattleHudState.cs` 与 `UI/Panels/Battle_MainPanel.cs`(+Designer)；`Battle_PlayerControl` 285 → **206 行**。表现层的后续规划见 `19_表现层分层_View与Actor_设计.md`。
 > 关系：域级地图见 `17_代码现状地图.md`；本文只覆盖 `03_Battle/`（不含 `Contracts/`、`Editor/`）。纪律见 `16_热更新方案选型与落地计划.md` §5A。
 > **取值说明**：所有调用顺序、事件收发点、依赖边都由脚本从源码实测（§9 的行数用 `Get-Content | .Count` 口径，与行号一致）；凡标「推断」的是按方法职责判断、未逐行验证。
@@ -48,7 +54,7 @@
 
 ## 1. 总览：一句话架构 + 数据流
 
-**一句话**：`BattleGraybox` 场景上的 **`battle_runtime`（`BattleSceneRuntimeHost`，314 行）是唯一的「场景生命周期 + 装配调用 + 相位表」节点**（它自己不再含数据解析与装配体，两者分别在 `BattleSetupSystem` 与 `BattleSceneAssembler`）；它驱动 QFramework 的 **`BattleArchitecture`（1 个 Model + 10 个 System）**；各 System 通过 **共享状态模型**（读）+ **强类型事件**（写通知）协作，`Battle_PlayerControl`（rig）退化为**纯 View**。
+**一句话**：`BattleGraybox` 场景上的 **`battle_runtime`（`BattleSceneRuntimeHost`，310 行）是唯一的「场景生命周期 + 装配调用 + 相位表」节点**（它自己不再含数据解析与装配体，两者分别在 `BattleSetupSystem` 与 `BattleSceneAssembler`）；它驱动 QFramework 的 **`BattleArchitecture`（1 个 Model + 10 个 System）**；各 System 通过 **共享状态模型**（读）+ **强类型事件**（写通知）协作，`Battle_PlayerControl`（rig）退化为**纯 View**。
 
 ```
                        ┌──────────────── BattleGraybox.unity ────────────────┐
@@ -84,7 +90,7 @@
 
 ---
 
-## 2. 入口与生命周期（`03_Battle/BattleSceneRuntimeHost.cs`，**314 行**）
+## 2. 入口与生命周期（`03_Battle/BattleSceneRuntimeHost.cs`，**310 行**）
 
 `BattleSceneRuntimeHost` 的对象名约定是 **`battle_runtime`**（`[DisallowMultipleComponent]`）。
 
@@ -104,7 +110,8 @@
 
 > ⚠️ **失败路径的 `out` 值必须丢弃（`248df6ca`）**：`TryResolveLevel` 返回 false 时，`out selected` 可能仍是**"属于别的美术场景"的会话关卡**（`catalog == null` 且会话关卡与本场景不符时的路径）——宿主若照用就会把错的关卡注入 `BattleStageDirector`。现在的写法是 `if (!...TryResolveLevel(..., out level)) { level = null; }`，并且 `TryResolveLevel` 自身在失败分支末尾**也置 `selected = null`**（双保险）。置空后场景保底运行（无波次数据），与搬运前"`return` 后不注入"的行为一致。
 > ⚠️ 解析失败由 `BattleSetupSystem` 记 `LogError`（会话缓存关卡与本场景不符时另有一条 `LogWarning`）；此时 `level` 为空、`ApplyLevelToScene` 立即 return，场景**保底运行（无波次）**——不会崩，但也不会有敌人。
-> ⚠️ **2026-09-19 唯一时机变化**：出生点传送 `MovementActor.Teleport(level.PlayerSpawnPosition, Quaternion.Euler(level.PlayerSpawnEuler))` 由 `Awake` 移到装配器 `Build(...)`（即 Start 阶段，**仍在一切 Update 之前**）。已静态核对：Awake→Start 之间没有任何读者依赖 rig 位置（`BattleStageDirector` 只在自身 `Update` 路径经 `BattleRuntimeBridge.PlayerTransform` 读玩家位置）——**Play 侧未回归验证**。
+> ⚠️ **2026-09-19 唯一时机变化**：出生点传送 `MovementActor.Teleport(level.PlayerSpawnPosition, Quaternion.Euler(level.PlayerSpawnEuler))` 由 `Awake` 移到装配器 `Build(...)`（即 Start 阶段，**仍在一切 Update 之前**）。已静态核对：Awake→Start 之间没有任何读者依赖 rig 位置（`BattleStageDirector` 只在自身 `Update` 路径经 `BattlePlayerRegistry.CurrentTransform` 读玩家位置）——**Play 侧未回归验证**。
+> 📌 **玩家目标不再由宿主每帧喂（2026-09-19 桥接层退役）**：rig 在 `Awake` **自注册**（`BattlePlayerRegistry.Register(this)`）、在 `OnDestroy` **自注销**（`UnRegister`，身份守卫在注册表内），敌人侧"找玩家"的 **8 处读者 / 6 个文件**（`BattleStageDirector` + 4 个 `IEnemyBehaviour` + `BattleEnemyEntity`）一律改读 `BattlePlayerRegistry.CurrentTransform`。详见 §8.10。
 
 ### 2.2 Start —— "整场装配"（见 §4）
 
@@ -153,35 +160,35 @@ Start() → assembler = new BattleSceneAssembler(Rig, StateModel,
 | 1 | `BattleRoleSystem.SetControlTakenOver(Rig.ControlTakeOff)` | 每帧把 rig 的开关**同步回** State（历史坑：不同步会导致死亡接管被写回 false） |
 | 2 | `BattleInputSystem.Tick()` | 采集键鼠 **或** 触屏（二选一，不合并） |
 | 3 | ESC → `SendEvent(new BattleEvent_PauseToggleRequested())` | 仅当 `LevelState ∉ {Victory, Defeat}` |
-| 4 | `if (state.Paused) { Rig.SyncRuntimeBridge(); return; }` | **暂停短路点在输入之后、其余系统之前** |
+| 4 | `if (state.Paused) return;` | **暂停短路点在输入之后、其余系统之前（无其他副作用）** |
 | 5 | `ApplyMovementForce(BattleMovementSystem.TickUpdate(assembler.MovementActor.Forward))` | 翻滚/冲刺状态机；**System 只算力、Actor 只施力**（2026-09-19 第 1 步同批） |
 | 6 | `BattleCameraSystem.Tick()` | 相机 |
-| 7 | `TickActors()` + `StateModel.PublishAmmo(StateModel.CurrentBattleData)` | 表现三件套：`RoleActor.Tick`（动画 + 模型朝向）/ `CameraActor.BlendFov` / `WeaponActor.Tick`（瞄准），随后广播弹药。**顺序是逻辑**：必须在 `BattleWeaponSystem.Tick()` **之前**（后者同帧写 `FreeAimRotation` 并 `PressTrigger()`）。原 `BattleViewSystem.TickUpdate()` 已于 2026-09-19 删除 |
+| 7 | `TickActors()` | 表现三件套：`RoleActor.Tick`（动画 + 模型朝向）/ `CameraActor.BlendFov` / `WeaponActor.Tick`（瞄准）。**顺序是逻辑**：必须在 `BattleWeaponSystem.Tick()` **之前**（后者同帧写 `FreeAimRotation` 并 `PressTrigger()`）。原 `BattleViewSystem.TickUpdate()` 已于 2026-09-19 删除；弹药读数已不在此处发布（见下方注） |
 | 8 | `BattleWeaponSystem.Tick()` | 换弹进度 + 开火检测 |
 | 9 | `BattleSkillSystem.Tick()` | 冷却读秒广播 + 读 E/Q 输入尝试施放 |
-| 10 | `Rig.SyncRuntimeBridge()` | 把上下文同步给 `BattleRuntimeBridge`（旧表现兼容） |
+
+*（原第 10 步 `Rig.SyncRuntimeBridge()` 已删除：**宿主相位表里不再有任何"同步桥接"步骤**——桥接层于 2026-09-19 退役，玩家目标改由 rig 自注册，见 §8.10。）*
 
 ### FixedUpdate
 
 `打桩：!battleReady || Rig == null 判空 → Paused 判空 →`
 1. `movementActor.ResolveDirection(...)`（Actor 解析世界方向，不可用则给零向量）→ `BattleMovementSystem.TickFixedUpdate(moveDirection)`（**只算力**）→ `ApplyMovementForce(...)`（宿主交 `MovementActor` 施力）
 2. `BattleAimSystem.TickFixedUpdate()`（锁敌搜索 + Tab 切换）
-3. `Rig.SyncRuntimeBridge()`
 
 ### LateUpdate
 
 1. `BattleAimSystem.TickLateUpdate()`（锁敌准星平滑移动）
 2. `Battle_MainPanel.TickForBattle(Time.deltaTime)`（主 HUD：准星位置 + 弹药/血量等 View 侧刷新）
-3. `Rig.SyncRuntimeBridge()`
 
 > **注意 3 号点**：`BattleCameraSystem.Tick()` 在 **Update** 里，`BattleAimSystem` 在 **Fixed/Late** 里——所以"相机跟随"与"准星吸附"不在同一时间粒度上。
 > **注意暂停语义**：`Paused` 用 `Time.timeScale = 0`（进程不暂停），UI 仍可点；`FixedUpdate/LateUpdate` 各自独立判 `Paused`。
+> **注意弹药读数（2026-09-19）**：`PublishAmmo` **不再出现在宿主相位表里**——发布权归生产者 `BattleWeaponSystem`（变更点：换弹完成 / 手动 `StartReload` / `PressTrigger` / `OnRoleSwitched`），唯一连续量"装填进度"**仅在 `weaponMode.IsReloading` 期间**按帧发布；装配器 `Build` 里保留一次作**首帧初值**（§4 第 9 步）。顺带修掉一处真问题：原先宿主在 `WeaponSystem.Tick()` **之前**发布 → 开火/换弹结果慢一帧进 Model（HUD 滞后一帧），现在同帧可见。
 
 ---
 
 ## 4. 启动装配链（`BattleSceneAssembler.Build(...)`，逐行）
 
-> 2026-09-19 第 4 步：原宿主私有方法 `SetupBattleSystems()` 整段搬进 **`Actor/BattleSceneAssembler.cs`（140 行）**——它是本场景的**组合根**（只在这里 `new` 具体对象、只在这里按顺序调用），**普通 C# 类、不是 System**，由宿主 `Start` 调用一次并只被宿主持有。
+> 2026-09-19 第 4 步：原宿主私有方法 `SetupBattleSystems()` 整段搬进 **`Actor/BattleSceneAssembler.cs`（139 行）**——它是本场景的**组合根**（只在这里 `new` 具体对象、只在这里按顺序调用），**普通 C# 类、不是 System**，由宿主 `Start` 调用一次并只被宿主持有。
 
 ```
 battle_runtime.Start() → assembler.Build(level)      // 只调用一次；返回「是否完成装配」
@@ -200,15 +207,15 @@ battle_runtime.Start() → assembler.Build(level)      // 只调用一次；返�
  ├─ 7. if (applyPlayerSpawn && level != null) → MovementActor.Teleport(
  │        level.PlayerSpawnPosition, Quaternion.Euler(level.PlayerSpawnEuler))
  ├─ 8. BattleAimSystem.ResetForBattle()          // 重置瞄准
- ├─ 9. state.PublishAmmo(state.CurrentBattleData)
- ├─ 10. rig.SyncRuntimeBridge()
- ├─ 11. BattleElementBulletLibrary.Register(冰/火/风/电 4 个子弹 prefab)  // T2.3 元素子弹
- ├─ 12. BattleSkillSystem.ResetForBattle()       // 重建冷却表 + 清零能量 + 广播首帧
- ├─ 13. BattleLevelFlow.StartLevel()             // 状态机 → Prepare
- └─ 14. Debug.Log("[battle_runtime] 战斗系统装配完成：出战 {n} 人。") → return true
+ ├─ 9. state.PublishAmmo(state.CurrentBattleData)   // 只给首帧一个初值；此后由 BattleWeaponSystem 在变更点发布
+ ├─ 10. BattleElementBulletLibrary.Register(冰/火/风/电 4 个子弹 prefab)  // T2.3 元素子弹
+ ├─ 11. BattleSkillSystem.ResetForBattle()       // 重建冷却表 + 清零能量 + 广播首帧
+ ├─ 12. BattleLevelFlow.StartLevel()             // 状态机 → Prepare
+ └─ 13. Debug.Log("[battle_runtime] 战斗系统装配完成：出战 {n} 人。") → return true
 ```
 
-> ⚠️ **第 7 步是相对搬运前唯一的时机变化**：出生点传送原先在宿主 `Awake`，现随装配链落在 Start 阶段（**仍在一切 Update 之前**）。静态核对结论：Awake→Start 之间无读者依赖 rig 位置（`BattleStageDirector` 只在自身 `Update` 路径经 `BattleRuntimeBridge.PlayerTransform` 读玩家位置）。**Play 侧未回归验证。**
+> ⚠️ **第 7 步是相对搬运前唯一的时机变化**：出生点传送原先在宿主 `Awake`，现随装配链落在 Start 阶段（**仍在一切 Update 之前**）。静态核对结论：Awake→Start 之间无读者依赖 rig 位置（`BattleStageDirector` 只在自身 `Update` 路径经 `BattlePlayerRegistry.CurrentTransform` 读玩家位置）。**Play 侧未回归验证。**
+> 📌 **原第 10 步 `rig.SyncRuntimeBridge()` 已删除（2026-09-19）**：装配器里那 1 处调用与宿主 4 处一并移除——桥接层退役后玩家目标由 rig 在 `Awake` 自注册，装配链不再需要"同步桥接"这一步（原 11–14 步依次上移为 10–13）。
 > **[2026-09-18 迁出]** 技能 HUD 不再由 rig 绑定：文本渲染与数据绑改由 `Battle_MainPanel` 在宿主 `OpenBattleUiWhenSceneReady` 打开面板时自行 `BindHud()`（`BindableProperty` 反向绑定）——故本装配链中已无对应步骤。
 
 ### `BattleSetupSystem.ResolveBattleDatas()` —— 最有信息量的一段（数据从哪来）
@@ -251,7 +258,7 @@ battle_runtime.Start() → assembler.Build(level)      // 只调用一次；返�
 | 4 | `BattleMovementSystem` | System | 同上 | 翻滚/冲刺状态机。**只算力、不持 Actor**：`TickUpdate`/`TickFixedUpdate` 返回力，宿主交 `BattleMovementActor` 施加 |
 | 5 | `BattleCameraSystem` | System | 同上 | 相机状态 |
 | 6 | `BattleAimSystem` | System | 同上 | 锁敌搜索、Tab 切换、准星平滑 |
-| 7 | `BattleWeaponSystem` | System | 同上 | 换弹进度 + 开火检测 + 切人补弹 |
+| 7 | `BattleWeaponSystem` | System | 同上 | 换弹进度 + 开火检测 + 切人补弹 + **弹药读数在变更点发布**（2026-09-19：宿主不再每帧发布，见 §3 注） |
 | 8 | `BattleSkillSystem` | System | 同上 | 能量经济 + E/Q 冷却 + 施放管道 |
 | 9 | `BattleLevelFlow` | System | 同上 | 关卡状态机 Prepare→Wave→Victory/Defeat→Exit |
 | 10 | `BattleUiSystem` | System | 同上 | 结算/暂停面板的 UIKit 开合 + 暂停切换（文件在 `Core/BattleUiSystem.cs`，2026-09-19 自 `UI/` 迁出） |
@@ -297,7 +304,7 @@ battle_runtime.Start() → assembler.Build(level)      // 只调用一次；返�
 
 ## 7. 事件总线（实测全表）
 
-> ⚠️ **2026-09-19 状态（本节两张表未逐条重测）**：事件类型已统一改名为 **`BattleEvent_*`**（如 `BattleEvent_RoleSwitched`），现共 **18 个**强类型事件结构（`Core/BattleEvents.cs` 12 个 + `Level/BattleLevelEvents.cs` 6 个）。**下面两张表的行号与旧名（`BattleXxxEvent`）是 2026-09-18 的快照**，按行号跳转前请先用 `Select-String "SendEvent|RegisterEvent"` 现场核对。
+> ⚠️ **2026-09-19 状态（本节两张表未逐条重测）**：事件类型已统一改名为 **`BattleEvent_*`**（如 `BattleEvent_RoleSwitched`），现共 **19 个**强类型事件结构（`Core/BattleEvents.cs` **13 个** + `Level/BattleLevelEvents.cs` 6 个；较旧文的 18 个多出 `BattleEvent_ControlTakeOverRequested`——步骤 5 控制接管事件化时新增）。**下面两张表的行号与旧名（`BattleXxxEvent`）是 2026-09-18 的快照**，按行号跳转前请先用 `Select-String "SendEvent|RegisterEvent"` 现场核对。
 
 ### 7.1 发出点（SendEvent）——共 22 处
 
@@ -513,15 +520,33 @@ BattleObjectPool（静态分桶池）
 ```
 **文件**：`Pool/BattleObjectPool.cs`（313 行）、`Pool/BattlePoolAutoReturn.cs`
 
-### 8.10 桥接层（旧表现兼容）
+### 8.10 桥接层（旧表现兼容）—— **已退役（2026-09-19，类与文件已删除）**
+
+> ⚠️ **本节原描述的 `Battle_PlayerControl.SyncRuntimeBridge()` → `BattleRuntimeBridge.UpdateState(...)` 链路已不存在**，保留此处只为给旧笔记一个落点。`BattleRuntimeBridge` 历经两批退役，第 2 批（`56c249bf`）把它的最后一个成员也拔掉后**整类连同 `Data/BattleRuntimeBridge.cs`（末态 61 行）+ `.meta` 一并删除**——`Data/` 现在只剩 `BattleRuntimeData.cs`。
+
+**退役两批**（`git log --oneline -- Assets/02_Scripts/03_Battle/Data/BattleRuntimeBridge.cs` 可复现）：
+
+| 批次 | 拔掉的成员 | 去处 |
+|---|---|---|
+| 第 1 批（`3eca3fd1`） | `Camera` / `EnvironmentEffectController` / `ActiveElement` / `LockEnemyTransform` / `LockSpeed` | `BattleStateModel` 的派生只读属性（`BattleCamera` / `EnvironmentEffects` / `CurrentDamageElement`）；`LockEnemyTransform`+`LockSpeed` 随旧武器组件自驱 `Update` 退役而**失去全部读者**（删） |
+| 第 2 批（`56c249bf`） | 最后剩下的 `PlayerTransform`（`3eca3fd1~1` 时该文件 91 行 / 7 参签名，末态 61 行 / 只剩 `UpdateState(owner, playerTransform)`） | **`IBattlePlayerTarget` + `BattlePlayerRegistry`**（`Core/BattleCombatTypes.cs`，与敌人侧对称） |
 
 ```
-Battle_PlayerControl.SyncRuntimeBridge()   ← battle_runtime 每帧/装配后调用
-      → BattleRuntimeBridge.UpdateState(owner, camera, player, lockTarget, lockSpeed, fxController, activeElement)
-读取方：旧武器组件（`BattleWeaponObjectComponent`）、旧表现脚本
-清理：BattleRuntimeBridge.Clear(owner)（仅 owner 匹配时才清）
+读玩家（取代 BattleRuntimeBridge.PlayerTransform / 宿主每帧喂镜像）
+    var player = BattlePlayerRegistry.CurrentTransform;   // 内部先判存活；玩家不存在或已销毁 → null
+    if (!player) return;                                  // 读者侧写法与旧桥接基本一致
+注册 / 注销（rig 自己，不再由宿主喂）
+    Battle_PlayerControl.Awake     → BattlePlayerRegistry.Register(this)
+    Battle_PlayerControl.OnDestroy → BattlePlayerRegistry.UnRegister(this)   // ReferenceEquals 身份守卫＝旧 owner 守卫
 ```
-**文件**：`Data/BattleRuntimeBridge.cs`（**61 行**）、`Actor/Battle_PlayerControl.cs`（**148 行**）
+
+**8 处读者 / 6 个文件**（实测 `Select-String BattlePlayerRegistry`，行号为改后现场）：`Level/BattleStageDirector.cs` L386（`IsPlayerWithin`）、`Enemy/EnemyBehaviour_Patrol.cs` L54、`Enemy/EnemyBehaviour_Missile.cs` L19 + L37、`Enemy/EnemyBehaviour_Mine.cs` L23、`Enemy/EnemyBehaviour_GunTurret.cs` L25、`Enemy/BattleEnemyEntity.cs` L364（`FireBulletAt`）+ L388（`DamagePlayerInRadius`）。
+
+> 📌 **旧文写"7 处读者"是错的**（`BattleRuntimeBridge` 类注释里也是 7）——实测是 **8 处**，因为 `EnemyBehaviour_Missile` 有 2 处。按文件数是 6 个。
+
+**与旧桥接的关键差别**：旧病根是"**由外部每帧喂**"（`SyncRuntimeBridge`）+ 静态类硬引用 rig 具体类型；新注册表把所有权还给 rig 自己，`Core/` 只按接口持有，读到的永远是"活着"的玩家（复用 09 关键坑 13 的 `IsAlive` 封装：接口持有 `UnityEngine.Object` 时**判空必须用 `BattleCombatUtility.IsAlive(this IBattlePlayerTarget)`**，直接 `!= null` 会拿到"伪非空"的已销毁对象）。
+
+**文件**（末态）：`Core/BattleCombatTypes.cs`（**321 行**，含 `IBattlePlayerTarget` / `BattlePlayerRegistry` / `IsAlive(IBattlePlayerTarget)` 重载）、`Actor/Battle_PlayerControl.cs`（**163 行**，`Awake` 自注册 / `OnDestroy` 自注销，`SyncRuntimeBridge()` 方法本身已删）。`Data/BattleRuntimeBridge.cs` **不再存在**。
 
 ---
 
@@ -530,34 +555,34 @@ Battle_PlayerControl.SyncRuntimeBridge()   ← battle_runtime 每帧/装配后�
 > 行数为实测；「职责」取自类注释与实测调用点。
 
 ### 9.1 `BattleArchitecture.cs`（47 行）— 从这开始
-架构入口，注册 1 Model + 10 System（顺序即 §5 表）。同目录（`03_Battle/` 根，共 2 个文件 / 361 行）还有 **`BattleSceneRuntimeHost.cs`（314 行）** = 场景入口 `battle_runtime`，见 §2。
+架构入口，注册 1 Model + 10 System（顺序即 §5 表）。同目录（`03_Battle/` 根，共 2 个文件 / 357 行）还有 **`BattleSceneRuntimeHost.cs`（310 行）** = 场景入口 `battle_runtime`，见 §2。
 
-### 9.2 `Core/`（6 个文件 / 1803 行）— 状态与事件的心脏
+### 9.2 `Core/`（6 个文件 / 1931 行）— 状态与事件的心脏
 | 文件 | 行 | 职责 |
 |---|---|---|
-| `BattleSystems.cs` | **705** | **10 个 System 里 5 个的实现**：Input / Movement / Camera / Aim / Weapon（Role 已拆到 `Role/`，View 已删）。**最重的一个文件** |
+| `BattleSystems.cs` | **733** | **10 个 System 里 5 个的实现**：Input / Movement / Camera / Aim / Weapon（Role 已拆到 `Role/`，View 已删）。**最重的一个文件**；`BattleWeaponSystem` 的 `PublishAmmo` 在变更点发布弹药读数（2026-09-19） |
 | `BattleStateModel.cs` | 275 | 共享状态黑板 + `BattleInputSnapshot` + `BattleMovementState`；`BattleHudState` 已删除，HUD 字段平铺于此 |
 | `BattleSetupSystem.cs` | **247** | **2026-09-19 新增（宿主瘦身第 2 步）**：入场数据解析——`TryResolveLevel` + `ResolveBattleDatas` → `BattleTeamResolution`。无状态，场景固件按次传参；**解析失败时自置 `selected = null`**（`248df6ca`） |
-| `BattleCombatTypes.cs` | 239 | `IBattleEnemyTarget` / `IBattleWeaponView` / `BattleCombatUtility`（含 `IsAlive`）/ `BattleEnemyRegistry` |
-| `BattleEvents.cs` | 181 | 12 个强类型事件结构（`BattleEvent_*`） |
+| `BattleCombatTypes.cs` | 321 | `IBattleEnemyTarget` / `IBattleWeaponView` / `BattleCombatUtility`（含 `IsAlive`）/ `BattleEnemyRegistry` / **`IBattlePlayerTarget` + `BattlePlayerRegistry`**（2026-09-19 桥接层退役时新增，见 §8.10） |
+| `BattleEvents.cs` | 199 | 13 个强类型事件结构（`BattleEvent_*`；较 2026-09-18 的 12 个新增 `BattleEvent_ControlTakeOverRequested`，见 §7 状态注） |
 | `BattleUiSystem.cs` | 156 | 结算/暂停面板开合 + 暂停切换（System；2026-09-19 自 `UI/` 迁入，`UI/` 现为纯 View 层） |
 
-### 9.3 `Level/`（4 个文件 / 739 行）
+### 9.3 `Level/`（4 个文件 / 737 行）
 | 文件 | 行 | 职责 |
 |---|---|---|
-| `BattleStageDirector.cs` | 430 | 波次/站点/批次/刷怪 + 4 个关卡事件发送 |
-| `BattleLevelFlow.cs` | 230 | 关卡状态机 + 事件订阅 + 重开/退出 |
+| `BattleStageDirector.cs` | 430 | 波次/站点/批次/刷怪 + 4 个关卡事件发送；`IsPlayerWithin` 读 `BattlePlayerRegistry.CurrentTransform` |
+| `BattleLevelFlow.cs` | 228 | 关卡状态机 + 事件订阅 + 重开/退出 |
 | `BattleLevelEvents.cs` | 56 | 关卡事件 + 暂停事件（6 个事件结构） |
 | `BattleLevelConfig.cs` | 23 | 流程侧标识字段（SO） |
 
-> `BattleSceneRuntimeHost.cs` 已移出本目录、位于 `03_Battle/` 根，现 **314 行**（旧文记 418 行、瘦身前实测 559 行，见 §9 末注）——见 §9.1。
+> `BattleSceneRuntimeHost.cs` 已移出本目录、位于 `03_Battle/` 根，现 **310 行**（旧文记 418 行、瘦身前实测 559 行，见 §9 末注）——见 §9.1。
 
-### 9.4 `Actor/`（7 个文件 / 655 行）— 原 `Player/`：Actor 与装配器驻地
+### 9.4 `Actor/`（7 个文件 / 669 行）— 原 `Player/`：Actor 与装配器驻地
 | 文件 | 行 | 职责 |
 |---|---|---|
 | `BattleRoleActor.cs` | 202 | 角色/武器实例挂点、显隐、动画、模型朝向（自订阅切人/阵亡/翻滚）。`Tick(animationVelocity, sprinting, deltaTime)` 内聚 `SetMovement(...)` 与跟随视角旋转（`ClampLookRotation(camera.transform.forward)`，无相机回落 `yawAxis.rotation`）；**Model 构造期注入**（`fcb43173`：`Actor/` 内已无 `GetModel<` 运行期查找）；纯 C# 类，靠 `Dispose()` 反注册 |
-| `Battle_PlayerControl.cs` | 148 | rig = **纯 View**：Designer 引用 + 工具方法 + `SyncRuntimeBridge`。**技能 HUD 已于 2026-09-18 迁出**（见 `UI/Panels/Battle_MainPanel.cs`）；Designer 上的 `SkillHud*` 字段仍保留，待 rig prefab 上的 HUD 对象删除后由 CodeGen 一并移除 |
-| `BattleSceneAssembler.cs` | **140** | **2026-09-19 新增（宿主瘦身第 4 步）：场景组合根**——普通 C# 类（非 System），`Build(level)` 按序装配，只读暴露 4 个 Actor，见 §4 |
+| `Battle_PlayerControl.cs` | 163 | rig = **纯 View**：Designer 引用 + 工具方法 + 实现 `IBattlePlayerTarget`（`RootTransform`）。**技能 HUD 已于 2026-09-18 迁出**（见 `UI/Panels/Battle_MainPanel.cs`）；`SyncRuntimeBridge()` 已随桥接层删除，改为 `Awake` `BattlePlayerRegistry.Register(this)` / `OnDestroy` `UnRegister(this)`（§8.10）。Designer 上的 `SkillHud*` 字段仍保留，待 rig prefab 上的 HUD 对象删除后由 CodeGen 一并移除 |
+| `BattleSceneAssembler.cs` | **139** | **2026-09-19 新增（宿主瘦身第 4 步）：场景组合根**——普通 C# 类（非 System），`Build(level)` 按序装配，只读暴露 4 个 Actor，见 §4 |
 | `BattleWeaponActor.cs` | 66 | 武器瞄准表现（**不接管发射/弹药/投射物**）。`Tick()` 内聚三个中间量：锁敌目标（`state.LockEnemy`，经 `IsAlive()`）、自由瞄准点（相机位置 + 前向 ×10，回落 `yawAxis` 再回落 `root`）、吸附速度（`config.LockEnemySpeed × Mathf.Max(1f, state.LockSpeedMultiplier)`），随后 `Aim(...)` |
 | `BattleMovementActor.cs` | 51 | 移动表现：`Forward` / `AnimationVelocity` / `IsAvailable` / `ResolveDirection` / `ApplyForce` / `Teleport` |
 | `Battle_PlayerControl.Designer.cs` | 28 | CodeGen 生成：相机/枪口/Canvas/子弹 prefab/动画等序列化引用 |
@@ -626,8 +651,9 @@ Battle_PlayerControl.SyncRuntimeBridge()   ← battle_runtime 每帧/装配后�
 ### 9.11 `Input/`（5 个文件 / 455 行）
 `BattleVirtualInput.cs`（184，虚拟输入源）+ `TouchHoldButton.cs`（93）/ `TouchJoystick.cs`（74）/ `TouchTapButton.cs`（64）/ `TouchDragLookZone.cs`（40）——4 个触屏控件都只写 `BattleVirtualInput`
 
-### 9.12 `Data/`（2 个文件 / 201 行）
-`BattleRuntimeData.cs`（140，`BattleRoleRuntimeData` = 角色运行时数据 + 血量/阵亡）、`BattleRuntimeBridge.cs`（61，旧表现兼容桥）
+### 9.12 `Data/`（1 个文件 / 140 行）
+`BattleRuntimeData.cs`（140，`BattleRoleRuntimeData` = 角色运行时数据 + 血量/阵亡）。
+> `BattleRuntimeBridge.cs`（末态 61 行）已于 2026-09-19 整类删除（`56c249bf`），`Data/` 从 2 文件 / 201 行变为 1 文件 / 140 行；玩家目标入口现为 `Core/BattleCombatTypes.cs` 的 `BattlePlayerRegistry`（§8.10）。
 
 ### 9.13 `Effect/`（1 个文件 / 147 行）
 `BattleEnvironmentEffectController.cs`（伤害飘字，走池）
@@ -635,11 +661,12 @@ Battle_PlayerControl.SyncRuntimeBridge()   ← battle_runtime 每帧/装配后�
 ### 9.14 `Config/`（1 个文件 / 96 行）
 `BattlePlayerConfig.cs`（+ `.asset`；`MainFov`/`SprintFov`/`MoveForwardFollowView`/`LockEnemySpeed` 等手感参数）
 
-### 9.15 `Role/`（3 个文件 / 313 行）— 原 `Team/`：角色系统驻地
-`BattleRoleSystem.cs`（156，角色初始化/切人/阵亡自动切人/接管控制）、`BattleRoleSystem.Health.cs`（87，`partial`：成员级血量/受击/治疗/阵亡/全灭）、`BattleTeamRuntimeBuilder.cs`（70，会话 id → `BattleRoleRuntimeData[]`）
+### 9.15 `Role/`（3 个文件 / 312 行）— 原 `Team/`：角色系统驻地
+`BattleRoleSystem.cs`（156，角色初始化/切人/阵亡自动切人/接管控制）、`BattleRoleSystem.Health.cs`（86，`partial`：成员级血量/受击/治疗/阵亡/全灭）、`BattleTeamRuntimeBuilder.cs`（70，会话 id → `BattleRoleRuntimeData[]`）
 
-> **目录合计（2026-09-19 重测，最后一次在 `248df6ca` 之后；口径同上：`03_Battle/` 不含 `Contracts/` 与 `Editor/`）**：根(361 = `BattleArchitecture.cs` 47 + `BattleSceneRuntimeHost.cs` 314) + Actor(655) + Config(96) + Core(1803) + Data(201) + Effect(147) + Element(294) + Enemy(1196) + Input(455) + Level(739) + Pool(339) + Role(313) + Skill(1231) + UI(1095) + Weapon(897) = **71 个文件 / 9822 行**（旧 `Team/`、`Player/` 已分别改名 `Role/`、`Actor/`；`BattleUiFlowPanelOpener.cs` / `BattleUiFlowNames.cs` 已删除）
-> 说明：与上次统计（66 / 9673）的差值是两轮改动的叠加——**2026-09-19 宿主瘦身四步及其后续两个提交**（新增 `Core/BattleSetupSystem.cs` 与 `Actor/BattleSceneAssembler.cs`；宿主 **559 → 314** 行；`BattleHealthSystem` 并入 `Role/BattleRoleSystem.Health.cs`；`BattleUiSystem` 迁入 `Core/`；`BattleRoleActor` 构造期注入 Model）与**同期武器/桥接/面板清理**（`BattleWeaponRuntime` 703 → 614、`BattleRuntimeBridge` 91 → 61、旧武器组件改名、主面板拆出 `Presentation` 等）。逐项归属未逐一追溯。
+> **目录合计（2026-09-19 重测，最后一次在 `56c249bf` 之后；口径同上：`03_Battle/` 不含 `Contracts/` 与 `Editor/`）**：根(357 = `BattleArchitecture.cs` 47 + `BattleSceneRuntimeHost.cs` 310) + Actor(669) + Config(96) + Core(1931) + Data(140) + Effect(147) + Element(294) + Enemy(1196) + Input(455) + Level(737) + Pool(339) + Role(312) + Skill(1231) + UI(1095) + Weapon(897) = **70 个文件 / 9896 行**（旧 `Team/`、`Player/` 已分别改名 `Role/`、`Actor/`；`BattleUiFlowPanelOpener.cs` / `BattleUiFlowNames.cs` 已删除）
+> 说明（第三轮差值，`248df6ca` → `56c249bf`，**净 +74 行 / −1 文件**，逐文件实测 `git diff` 后的行数）：**删除 `Data/BattleRuntimeBridge.cs`（61 行，桥接层整类退役）**；`Core/BattleCombatTypes.cs` 239 → 321（**+82，新增 `IBattlePlayerTarget` + `BattlePlayerRegistry`**）；`Core/BattleSystems.cs` 705 → 733（**+28，弹药读数改「变更点发布」**）；`BattleSceneRuntimeHost.cs` 314 → 310（**−4，删掉 4 处 `SyncRuntimeBridge()`**）；`Actor/Battle_PlayerControl.cs` 148 → 163（+15，实现接口 + 自注册/自注销）、`Actor/BattleSceneAssembler.cs` 140 → 139（−1，删同步调用）；`Core/BattleEvents.cs` 181 → 199（+18）、`Level/BattleLevelFlow.cs` 230 → 228（−2）、`Role/BattleRoleSystem.Health.cs` 87 → 86（−1）＝步骤 5「控制接管改事件驱动」。
+> 说明（上一轮差值）：与再上次统计（66 / 9673）的差值是两轮改动的叠加——**2026-09-19 宿主瘦身四步及其后续两个提交**（新增 `Core/BattleSetupSystem.cs` 与 `Actor/BattleSceneAssembler.cs`；宿主 **559 → 314** 行；`BattleHealthSystem` 并入 `Role/BattleRoleSystem.Health.cs`；`BattleUiSystem` 迁入 `Core/`；`BattleRoleActor` 构造期注入 Model）与**同期武器/桥接/面板清理**（`BattleWeaponRuntime` 703 → 614、`BattleRuntimeBridge` 91 → 61、旧武器组件改名、主面板拆出 `Presentation` 等）。逐项归属未逐一追溯。
 > ⚠️ 本文件 §2 旧文写的宿主「418 行」是更早的口径：瘦身前基线（`1518dfc4`）实测为 **559 行**（`git show 1518dfc4:Assets/02_Scripts/03_Battle/BattleSceneRuntimeHost.cs` 计 559）。
 
 ---
@@ -650,16 +677,16 @@ Battle_PlayerControl.SyncRuntimeBridge()   ← battle_runtime 每帧/装配后�
 |---|---|---|
 | 1 | `BattleArchitecture.cs`（47 行） | 战斗由哪些系统组成？谁先注册？ |
 | 2 | `Core/BattleStateModel.cs`（275） | 各系统共享哪些状态？输入快照有哪些字段？ |
-| 3 | `Core/BattleEvents.cs` + `Level/BattleLevelEvents.cs`（181 + 56 = 237） | 有哪些事件？语义边界在哪（比如"仅玩家击杀才发 Killed"）？ |
-| 4 | `Core/BattleCombatTypes.cs`（239） | 两个关键接口是什么？为什么必须用 `IsAlive`？ |
-| 5 | **`BattleSceneRuntimeHost.cs`（309）** + `Core/BattleSetupSystem.cs`（244）+ `Actor/BattleSceneAssembler.cs`（140） | 一场战斗怎么被装配起来？每帧按什么顺序跑？数据从哪来？（三者依次是相位表 / 数据解析 / 装配链） |
-| 6 | `Core/BattleSystems.cs`（**705**，5 个 System） | 输入/移动/视角/相机/锁敌/武器各自怎么实现？ |
-| 7 | `Level/BattleLevelFlow.cs`（230）+ `Level/BattleStageDirector.cs`（430） | 关卡状态怎么流转？波次怎么刷？ |
+| 3 | `Core/BattleEvents.cs` + `Level/BattleLevelEvents.cs`（199 + 56 = 255） | 有哪些事件？语义边界在哪（比如"仅玩家击杀才发 Killed"）？ |
+| 4 | `Core/BattleCombatTypes.cs`（321） | 三个关键接口（敌人目标 / 玩家目标 / 武器视图）是什么？为什么必须用 `IsAlive`？ |
+| 5 | **`BattleSceneRuntimeHost.cs`（310）** + `Core/BattleSetupSystem.cs`（247）+ `Actor/BattleSceneAssembler.cs`（139） | 一场战斗怎么被装配起来？每帧按什么顺序跑？数据从哪来？（三者依次是相位表 / 数据解析 / 装配链） |
+| 6 | `Core/BattleSystems.cs`（**733**，5 个 System） | 输入/移动/视角/相机/锁敌/武器各自怎么实现？弹药读数在哪发布？ |
+| 7 | `Level/BattleLevelFlow.cs`（228）+ `Level/BattleStageDirector.cs`（430） | 关卡状态怎么流转？波次怎么刷？ |
 | 8 | `Weapon/BattleWeaponRuntime.cs`（614） | 4 类 16 子类怎么组织？开火一发子弹经历什么？ |
 | 9 | `Enemy/BattleEnemyEntity.cs`（500）+ `Enemy/EnemyKind.cs` | 敌人怎么组织？4 类行为怎么插拔？ |
 | 10 | `Skill/BattleSkillSystem.cs` + `SkillContext.cs` + `Executors/` | E/Q 三层模型怎么组装？能量怎么来？ |
 | 11 | `Element/` + `UI/` + `Pool/` | 元素状态、面板开合、对象池各自边界 |
-| 12 | `Data/BattleRuntimeBridge.cs` | 还有哪些旧代码在靠桥接层活着 |
+| 12 | `Core/BattleCombatTypes.cs` 的 `BattlePlayerRegistry` | 玩家目标怎么被找到？——**已解决（2026-09-19）**：rig 在 `Awake` 自注册、`OnDestroy` 自注销，8 处读者读 `BattlePlayerRegistry.CurrentTransform`（内部做存活判空）。接口持有的 `UnityEngine.Object` 判空**必须走 `BattleCombatUtility.IsAlive`**。旧的 `Data/BattleRuntimeBridge.cs` **已整体删除**，见 §8.10 |
 
 > **不必通读的**：`Weapon/BattleWeaponObjectComponent.cs`（旧武器组件）、`*.Designer.cs`（CodeGen 产物，看字段即可）。（原表内 `Team/BattleUiFlow*.cs` 死代码与 `Sensor/*.Designer.cs` 均已不存在——2026-09-19 实测全 `Assets` 下无该文件与目录。）
 
@@ -667,7 +694,7 @@ Battle_PlayerControl.SyncRuntimeBridge()   ← battle_runtime 每帧/装配后�
 
 ## 11. 读的时候一定会困惑的地方（实测，先看这里）
 
-1. **`Battle_PlayerControl` 没有 `Update`/`Start`** —— 不是漏写，是 2026-09-08 上移到 `battle_runtime` 了（关键坑 24）。它现在只有 `Awake`（设 timeScale）和 `OnDestroy`（清桥接/事件）。
+1. **`Battle_PlayerControl` 没有 `Update`/`Start`** —— 不是漏写，是 2026-09-08 上移到 `battle_runtime` 了（关键坑 24）。它现在只有 `Awake`（设 timeScale + 订阅控制接管请求事件 + **自注册玩家目标** `BattlePlayerRegistry.Register`）和 `OnDestroy`（**注销玩家目标** / 清池 / 反注册事件）。
 2. **`BattleSystems.cs` 一个文件装 5 个 System** —— 不是笔误，是历史演进结果（逐卡加系统时没有拆文件）；Role 已拆到 `Role/BattleRoleSystem.cs`(+`.Health.cs`)，View 已删除。它对 09 关键坑 10（"prefab 挂载的 MonoBehaviour 必须独立文件"）**不适用**，因为这些是纯 System 类、从不出现在资源上。
 3. **`BattleArchitecture` 类注释说"未通读、能用就行"** —— 这句是本次任务存在的原因，别当成设计意图。
 4. **`BattleEnemyRegistry.EnumerateTargets()` 里有一段注释掉的旧敌人回退** —— 是"新旧双轨"的残骸，现在新版敌人列表非空就 `yield break`，回退分支永不可达。
@@ -681,14 +708,16 @@ Battle_PlayerControl.SyncRuntimeBridge()   ← battle_runtime 每帧/装配后�
 12. **`BattleStageDirector` 有自己的 `Start/Update`**，与 `battle_runtime` 是**两个独立 MonoBehaviour 各自跑**——波次推进不在 `battle_runtime` 的驱动链里，只是通过事件回传。
 13. **技能 HUD 已不在 rig 上（2026-09-18）**——它搬到了 `Battle_MainPanel`。所以：① 看 `Battle_PlayerControl` 找不到 HUD 代码是正常的（本类只剩 Designer 引用与工具方法）；② rig prefab 上那批 `SkillHud*` 文本对象**已成孤儿**（没有代码写它们，会冻结显示旧文本），删掉它们之前上屏会看到两套 HUD；③ rig 的血条/准星/弹药**已不由任何 System 直写**——`BattleViewSystem` 已于 2026-09-19 删除，现在由宿主 `TickActors()` 驱动的 4 个 Actor + `Battle_MainPanel`（`BattleStateModel` 的 `BindableProperty`）承担。
 14. **`Battle_MainPanel` 是 UIKit 面板，由 `battle_runtime` 打开，不是由 `BattleUiSystem`**——而结算/暂停面板由 `BattleUiSystem` 打开。查"面板为什么不出现"时先分清归属：主 HUD/触屏看 `battle_runtime`，结算/暂停看 `BattleUiSystem`。
+15. **搜不到 `BattleRuntimeBridge` / `SyncRuntimeBridge` 是正常的（2026-09-19）**——桥接层（含 `Data/BattleRuntimeBridge.cs`）**已整类删除**，"找玩家"改走 `BattlePlayerRegistry.CurrentTransform`（rig 自注册、`OnDestroy` 自注销），宿主相位表里也没有"同步桥接"这一步了。详见 §8.10；接口判空必须用 `BattleCombatUtility.IsAlive`（同 §6 的 `LockEnemy` 纪律）。
 
 ---
 
 ## 12. 本次未做 / 未验证
 
-- **2026-09-19 宿主瘦身已提交 6 个提交，但 Unity 侧验证未做**：`9b4e7e69`（rig 由 Model 唯一持有）/ `a77eb347`（数据管道搬入 `BattleSetupSystem`）/ `69f851ab`（Actor `Tick` 内聚中间量）/ `50e509b5`（抽 `BattleSceneAssembler`）/ `fcb43173`（`BattleRoleActor` 改构造期注入 Model）/ `248df6ca`（**修一处搬运引入的真实缺陷**：`Awake` 忽略 `TryResolveLevel` 的返回值时，错误的会话关卡会被注入 Director——现改为失败即 `level = null`，System 侧也自置 `selected = null`）。宿主 **559 → 314 行**（第 4 步完成时 309，缺陷修复 +5）；**Unity 侧编译与 Play 回归尚未执行**——本轮验证只是「离线整程序集编译校验通过」（Unity 自带 Roslyn + 引用程序集整程序集编译，非猜测）。Play 验收清单见 21 文档 §8.5，逐条证据见 21 文档 §8.2。**本文 §2 / §3 / §4 / §5 / §6.1 / §9 / §10 的行数与归属是 2026-09-19 对源码重测的结果（最后一次在 `248df6ca` 之后），仍未在 Editor 里跑过。**
+- **2026-09-19 宿主瘦身已提交 6 个提交，但 Unity 侧验证未做**：`9b4e7e69`（rig 由 Model 唯一持有）/ `a77eb347`（数据管道搬入 `BattleSetupSystem`）/ `69f851ab`（Actor `Tick` 内聚中间量）/ `50e509b5`（抽 `BattleSceneAssembler`）/ `fcb43173`（`BattleRoleActor` 改构造期注入 Model）/ `248df6ca`（**修一处搬运引入的真实缺陷**：`Awake` 忽略 `TryResolveLevel` 的返回值时，错误的会话关卡会被注入 Director——现改为失败即 `level = null`，System 侧也自置 `selected = null`）。宿主 **559 → 314 行**（第 4 步完成时 309，缺陷修复 +5；`56c249bf` 再删 4 处 `SyncRuntimeBridge()` 后为 **310 行**）；**Unity 侧编译与 Play 回归尚未执行**——本轮验证只是「离线整程序集编译校验通过」（Unity 自带 Roslyn + 引用程序集整程序集编译，非猜测）。Play 验收清单见 21 文档 §8.5，逐条证据见 21 文档 §8.2。**本文 §2 / §3 / §4 / §5 / §6.1 / §9 / §10 的行数与归属是 2026-09-19 对源码重测的结果（最后一次在 `56c249bf` 之后），仍未在 Editor 里跑过。**
+- **2026-09-19 第四批（`821547ae` 步骤 5 控制接管事件化 / `3fdb3417` 弹药改变更点发布 / `56c249bf` 桥接层整类退役）**：本轮改动**只做了离线整程序集编译（编辑器 / player 各 0 error CS）**——`powershell -File Build\_check\CheckBattle.ps1`（真实 csc + 真实引用程序集，能查出跨文件签名不一致与 `#if` 分支写错）；**Unity 侧导入编译与 Play 回归均未做**（`Library/ScriptAssemblies/TeaGame.Battle.dll` 是否已随这批源码重编译未验）。Play 待验重点：4 类敌人找玩家（游走者开火 / 炮台射程 / 导弹追踪+引爆 / 地雷感应引爆）、站点到达判定（`BattleStageDirector.IsPlayerWithin`）、重开本关无 `MissingReferenceException`、弹药 HUD 是否"同帧可见"（原先慢一帧）。
 - **`248df6ca` 的失败路径修复本身未经验证**：只做了静态判读（读 `Awake` 与 `TryResolveLevel` 的失败分支），**没有构造"会话关卡属于别的美术场景 + catalog 为空"的运行时场景去复现**——这一点属「未验证」。
-- **未通读的实现体**：`BattleSystems.cs`（**705 行**，现 5 个 System）只读了全部方法签名 + 与驱动链相关的段落；`ElementStateEffect`、4 个 `EnemyBehaviour_*`、`BattleWeaponModeBase` 及 16 个子类的**方法体未逐行读**——本文对这些的描述来自类注释 + 调用点。
+- **未通读的实现体**：`BattleSystems.cs`（**733 行**，现 5 个 System；2026-09-19 弹药发布改动的那段已逐行读）只读了全部方法签名 + 与驱动链相关的段落；`ElementStateEffect`、4 个 `EnemyBehaviour_*`、`BattleWeaponModeBase` 及 16 个子类的**方法体未逐行读**——本文对这些的描述来自类注释 + 调用点。
 - **§7 事件总线的行号与事件名未重测**（`BattleEvent_*` 改名 + 行号整体位移），已在 §7 就地标注；§6.2 / §6.3 中的"View"读取方标签也是迁移前的写法（`BattleViewSystem` 已删除）。
 - **`BattleStateModel` 的"谁写谁读"表**是按方法职责推断的，**未逐行核对**（§6 已标注）。
 - **未验证运行时行为**：本文全部结论来自源码静态分析 + `Editor.log`；**Play 模式主链路回归仍未做**（见 17 文档 §5）。
