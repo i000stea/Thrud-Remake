@@ -189,11 +189,8 @@ namespace TeaGame
 
          // 各系统初始化
 
-         // 角色和生命为什么要分开？
-         // 角色系统
+         // 角色系统（含成员级血量复位——2026-09-19 BattleHealthSystem 已并入本系统）
          Architecture.GetSystem<BattleRoleSystem>().Initialize(playerControl, datas);
-         // 生命系统
-         Architecture.GetSystem<BattleHealthSystem>().Initialize();
          
          // 角色显示
          roleActor = new BattleRoleActor(playerControl.Roles, playerControl.GetWeaponParent(), playerControl.ViewRotateAxis);

@@ -1,6 +1,13 @@
 # Battle 调用链与阅读目录（P1A · S2 补充交付物）
 
 > **2026-09-19 Actor 专项更新（已实现，编译/Play 待验）**：用户确认移动/传送 Actor、角色/武器/相机表现 Actor，InputSystem 保持原样；旧 BattleViewSystem 及 InitializeView 已删除，现为 **1 Model + 10 System + 4 Actor**。Aim 发布 BindableProperty 位置，主面板负责 UI 映射与 Lerp；血条/弹药/队伍 HUD 归主面板。当前入口、帧序、生命周期、资产操作与回归步骤见 [19 当前实施记录](19_表现层分层_View与Actor_设计.md)。**下文的旧行号、66 文件统计、§5 系统表、§8.8 / §9.4 / §9.9 中 ViewSystem 链为迁移前快照，不作为当前调用依据。**
+>
+> **2026-09-19 第二批更新（表现层分层续作 + 模型平铺）**：
+> - **系统数 10 → 9**：`BattleHealthSystem` **已合并进 `BattleRoleSystem`**（`partial`：`Role/BattleRoleSystem.cs` + `Role/BattleRoleSystem.Health.cs`），消除了 `GetSystem<BattleRoleSystem>().HandleRoleDowned(...)` 跨系统调用；`BattleArchitecture` 注册 9 项。
+> - **`BattleHudState` 已删除**：字段**平铺**进 `BattleStateModel`（12 个 `#region` 分区）；`SelectedRoleIndex`/`RoleEnergy` 由"仿真字段 + HUD 镜像"**合并为单一 `BindableProperty`**；重命名为 `CurrentMemberHealth`/`CurrentMemberMaxHealth`/`CurrentWeaponMagazine`/`CurrentWeaponMaxMagazine`/`CurrentWeaponReloading`/`CurrentWeaponReloadProgress`（**原始 0..1**，百分比由 Panel 自己算并做 View 侧节流）。
+> - **`UI/BattleUiSystem.cs` → `Core/`**（`UI/` 现为纯 View 层：`BattleTeamHudView` + `Panels/*`）。
+> - **`BattleMovementSystem` 不再持有 Actor**：`TickUpdate(basisForward)`/`TickFixedUpdate(moveDirection)` **只返回力**，宿主 `ApplyMovementForce` 交给 `BattleMovementActor`；`IsAvailable` 门控移到宿主。**全部 System 已无 View 字段（实测 0 处）**。
+> - **`BattleStateModel` 不按"关卡/玩家/敌人"拆分**（评估结论，已跳过）：一个模型 = 一个生命周期 + 一组不变量；三域共享生命周期且 `LevelState`/`ControlTakenOver`/`Paused` 为横切字段。详见 `19` 文档状态块。
 
 | 原调用 | 当前归属 |
 |---|---|

@@ -3,6 +3,21 @@
 > 产出日期：**2026-09-18**。定位：对「System 直接驱动 View」这一现状的架构分析与改进方案。
 > 触发问题（用户提出）：① `BattleViewSystem` 该不该存在？各自的 View 是否应由各自的 ViewController 处理？② 能否在 View 与 System 之间单独建一层，用于**针对 3D 对象的操控**，让 System 与该层沟通完成 3D 空间交互？
 > **状态：2026-09-19 用户确认修订方案，代码已落地；编译 / Play / Editor 资产清理待验证。以下“当前实施记录”优先于原始草案。**
+>
+> **执行状态（2026-09-19 收口）**：§6 路线 **步骤 0/1/2/3/4 已完成**，`BattleViewSystem` 已删除（步骤 5 基本完成）。
+>
+> | 步 | 内容 | 状态 | 落地物 / 证据 |
+> |---|---|---|---|
+> | 0 | 补规范（01 架构文档「表现层（View / Actor）分层」一节） | ✅ | `../02_系统与玩法设计/01_技术架构设计.md` |
+> | 1 | 切掉 System 持有的 View（**Role 与 Movement 两处**） | ✅ | `BattleRoleActor` 自持订阅 3 事件 + `Dispose()`；`BattleMovementSystem` 改为 `Vector3 TickUpdate(basisForward)` / `Vector3 TickFixedUpdate(moveDirection)` **只返回力**，宿主 `ApplyMovementForce` 交给 Actor；**实测所有 System 的 View 字段 = 0 处** |
+> | 2 | 平铺模型（删 `BattleHudState` 容器） | ✅ | `BattleStateModel` 平铺 + **12 个 `#region`**；`SelectedRoleIndex`/`RoleEnergy` 合并为单一 `BindableProperty`（消除双重真相）；`ReloadStep`(×20) → `CurrentWeaponReloadProgress` **原始 0..1**（显示百分比 + 节流归 Panel）；`AimReferenceWidth` 迁到 `Battle_MainPanel` |
+> | 3 | `UI/` 纯化为 View 层 | ✅ | `BattleUiSystem.cs` → `Core/`（GUID 保留）；`UI/` 仅剩 `BattleTeamHudView` + `Panels/*` |
+> | 4 | 合并 `BattleHealthSystem` → `BattleRoleSystem` | ✅ | `Role/BattleRoleSystem.Health.cs`（partial，**不带基类**）；订阅/`OnDeinit` 收口到主文件；血量复位并入 `Initialize`；`GetSystem<BattleRoleSystem>().HandleRoleDowned(...)` → 同类内部调用；注册 **10 → 9** |
+> | 5 | `BattleViewSystem` 降级 | ✅ 基本完成 | 类**已删除**，拆为 `Actor/` 4 个 Actor + `Battle_MainPanel` |
+> | 6 | 最小引用注入（替掉"总仓库"） | ⏳ **未做** | 残留：`BattleRoleSystem.Initialize(Battle_PlayerControl controller, …)` 只要 3 个引用却要整台 rig；`BattleRoleSystem.Health` 写 `State.Controller.ControlTakeOff` |
+> | — | **瞄准量下沉**（`AimPosition`/`AimLerpSpeed` 离开模型） | ⏳ **未做** | 需把 Canvas 投影搬进 `Battle_MainPanel.TickForBattle`（用 `BattleRuntimeBridge.Camera`）；**临时**在 `BattleAimSystem` 内重复了一份 `AimReferenceWidth` 并在注释标明，待下沉后删除 |
+>
+> **模型拆分评估（新增，已决定跳过）**：**不按"关卡/玩家/敌人"拆 `BattleStateModel`**。一个模型 = 一个生命周期 + 一组不变量；三域共享同一生命周期（都是"每场战斗"），且 `LevelState`/`ControlTakenOver`/`Paused` 是**横切字段**被多域读写；"敌人"目前没有模型（血量/行为由 `BattleEnemyEntity` 自持，经 `BattleEnemyRegistry` 暴露）。拆分收益要等"多场战斗并行/回放""模型需独立序列化""跨程序集共享"三者之一成立时才出现；届时**优先只拆关卡**（`BattleLevelModel`）。结论已写入 `Core/BattleStateModel.cs` 类注释。
 > 关系：总体架构见 `../02_系统与玩法设计/01_技术架构设计.md`（已加「表现层（View / Actor）分层」一节指向本文）；域与程序集边界见 `17_代码现状地图.md`；`03_Battle` 调用链与文件目录见 `18_Battle调用链与阅读目录.md`。
 
 ---

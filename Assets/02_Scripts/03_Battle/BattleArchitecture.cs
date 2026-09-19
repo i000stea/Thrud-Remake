@@ -22,10 +22,8 @@ namespace TeaGame
          // 状态
          this.RegisterModel(new BattleStateModel());
 
-         // 角色
+         // 角色（含成员级血量与阵亡流程；2026-09-19 BattleHealthSystem 并入本系统）
          this.RegisterSystem(new BattleRoleSystem());
-         // 生命
-         this.RegisterSystem(new BattleHealthSystem());
          // 输入
          this.RegisterSystem(new BattleInputSystem());
          // 移动

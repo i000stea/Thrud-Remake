@@ -7,7 +7,7 @@ namespace TeaGame
    /// 角色系统。
    /// 负责初始化战斗角色、管理当前选角以及处理控制权接管等全局角色状态。
    /// </summary>
-   public sealed class BattleRoleSystem : AbstractSystem
+   public sealed partial class BattleRoleSystem : AbstractSystem
    {
       /// <summary>
       /// 当前战斗架构实例。
@@ -17,21 +17,23 @@ namespace TeaGame
 
       private BattleStateModel State => Architecture.GetModel<BattleStateModel>();
 
-      private IUnRegister downed, health;
+      private IUnRegister downed, health, damaged;
 
       protected override void OnInit()
       {
-         // 阵亡 / 生命变化 → 只更新"当前出战成员"的 HUD 读数。
+         // 阵亡 / 生命变化 → 只更新"当前出战成员"的读数。
          // 角色显隐与翻滚演出**不再由本系统驱动**：BattleRoleActor 自己订阅
          // BattleEvent_RoleSwitched / RoleDowned / RollTriggered（19 文档第 1 步）。
          // 死亡事件
          downed = Architecture.RegisterEvent<BattleEvent_RoleDowned>(_ => PublishCurrentMemberHealth());
          // 生命
          health = Architecture.RegisterEvent<BattleEvent_RoleHealthChanged>(_ => PublishCurrentMemberHealth());
+         // 受击结算（2026-09-19：原 BattleHealthSystem.OnInit 合并进本类）
+         damaged = Architecture.RegisterEvent<BattleEvent_PlayerDamaged>(OnPlayerDamaged);
       }
 
       protected override void OnDeinit()
-      { downed?.UnRegister(); health?.UnRegister(); }
+      { downed?.UnRegister(); health?.UnRegister(); damaged?.UnRegister(); }
 
       /// <summary>
       /// 把"当前出战成员"的血量读数同步给 HUD 视图状态。
@@ -66,6 +68,14 @@ namespace TeaGame
          State.Movement.Sprinting = false;
          State.Movement.CachedForce = Vector3.zero;
          State.Movement.RollForce = Vector2.up;
+
+         // 成员级血量复位（2026-09-19：原 BattleHealthSystem.Initialize 合并进本类）。
+         // 放在选角之后，保证 CurrentBattleData 已可解析。
+         for (var i = 0; i < State.BattleDatas.Length; i++)
+         {
+            State.BattleDatas[i]?.ResetHealth();
+         }
+         PublishCurrentMemberHealth();
       }
 
       /// <summary>

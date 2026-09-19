@@ -175,6 +175,16 @@
 - [ ] `Assets/03_Module` 下 0 个 `.cs`（只有资源目录），与 `AGENTS.md`「03_Module = gameplay modules」描述不符 → 归入 S3 名实对齐
 - [ ] HEAD `5bc3890c` 单次提交混合了目录重构 + 新功能 + 文档 + `web/data/progress.json`，违反 AGENTS.md 提交纪律 → P1A 期间恢复"一次一个范围"
 
+**P1A · 2026-09-19（表现层分层落地）新增待办（来源：`../03_专项设计与重构/19_表现层分层_View与Actor_设计.md`）**
+
+- [ ] **⚠️ 编译未验（最高优先）**：本会话改动分两截——**已编译通过**：源码时间 ≤ **20:36:24**（`BattleSystems.cs` 20:36:01 / `Battle_MainPanel.cs`、`BattleSkillSystem.cs` 20:36:24 …），产出 `TeaGame.Battle.dll` 122,880 bytes @ **20:37:02**，0 `error CS`、0 非 RealToon `warning CS` → **脱 View、模型平铺主体、`UI/` 纯化均在此截内**；**未编译**：20:45–20:47 的 `BattleRoleSystem.cs` / `BattleRoleSystem.Health.cs` / `BattleArchitecture.cs` / `BattleSceneRuntimeHost.cs` / `BattleStateModel.cs`（Health 合并 + `#region` 分区）。判据：`Editor.log` mtime = **20:37:09**，此后无写入 → Editor 空闲、未感知新改动。**动作：切回 Unity 窗口触发刷新即可**（`Battle.dll` mtime ≥ 全部源码 mtime 即通过）。读日志时**锚定"最后一条 `Csc` 行号向后扫"**，不要按"最后 N 行"取窗口（跨会话日志会命中过期段）
+- [ ] **Play 回归（随主链路一起做）**：主 HUD 面板能否打开；技能行/血条/队伍血条/弹药显示是否正确（`ReloadProgress` 改为原始 0..1 后，Panel 侧百分比与节流是否正常）；切人与阵亡后的显隐与读数；翻滚/冲刺（力由宿主交给 Actor 施加后手感是否一致）
+- [ ] **步骤 6 · 最小引用注入（19 文档 §6；收益更根本、风险更大）**：`BattleRoleSystem.Initialize(Battle_PlayerControl controller, …)` 只要 `InitialRoleIndex`/`ControlTakeOff`/`PlayerConfig` 三个引用却要整台 rig；`BattleRoleSystem.Health` 写 `State.Controller.ControlTakeOff`。目标是让 System 不再依赖"场景引用总仓库"类型（动所有 System 的装配签名）
+- [ ] **瞄准量下沉（19 文档 §7）**：`AimPosition`/`AimLerpSpeed` 仍是 `BattleStateModel` 里的**视图空间量**。需把 Canvas 投影搬进 `Battle_MainPanel.TickForBattle`（用 `BattleRuntimeBridge.Camera`），System 侧只留 `LockEnemy`/`LockSpeedMultiplier`。**完成前 `BattleAimSystem` 内有一份重复的 `AimReferenceWidth` 常量**（已在注释标明待删）
+- [ ] **`18_Battle调用链与阅读目录.md` 需完整重算**：文件清单/行号/§5 系统表仍是迁移前快照（已在头部加更正表标注）。目录现状：`Player/` → **`Actor/`**（含 4 个 Actor）、新增 **`Role/`**（`BattleRoleSystem.cs` + `.Health.cs` + `BattleTeamRuntimeBuilder.cs`）、`Team/` **删除**、`BattleSceneRuntimeHost.cs` 移到 **`03_Battle/` 根**、`UI/BattleUiSystem.cs` → **`Core/`**、`UI/BattleHudState.cs` **删除**
+- [x] **`17_代码现状地图.md` §1.3 目录树** 已同步（2026-09-19：`Player` → `Actor`、新增 `Role/`、`Team/` 删除、host 移到 `03_Battle/` 根、`UI/BattleUiSystem` → `Core/`、`UI/BattleHudState` 删除），并在头部加"增量（二）"banner 修正措辞
+- [ ] **本会话新增的关键坑（建议并入 09 关键坑清单，已写在 09 2026-09-19 段）**：① `replace_all` 替换文本别自带 `.Value`；② 删类前查全工程**真实代码**引用（`BattleHudState.AimReferenceWidth` 教训）；③ `Editor.log` 必须锚定最后一条 `Csc` 向后扫
+
 **P1A · 2026-09-18（域拆分会话）新增待办与待确认项（来源：`../03_专项设计与重构/17_代码现状地图.md`）**
 
 - [ ] **待用户执行（Play 回归，S3 落地后的必须项）**：主链路 `0ConfigScene → Login → 2MainScene → 选关 → 编队 → BattleGraybox → 结算 → 返回` 走一遍；并抽查 prefab/场景引用未断（`Assets/04_Prefabs/Panel/Formation/Main_FormationPanel.prefab`、`LevelSelectPanel.prefab`、`BattleGraybox.unity` 上 `battle_runtime` 的 `teamCatalog`）与 Editor 菜单可用性（`Thrud/Battle/T3.1C/…`、`Thrud/Demo/Android/0. 构建前置检查`）。**编译已通过但运行未验**，见 17 文档 §5

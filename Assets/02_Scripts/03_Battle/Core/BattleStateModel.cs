@@ -18,11 +18,18 @@ namespace TeaGame
    /// - ⚠️ `AimPosition` / `AimLerpSpeed` 是**视图空间量**（Canvas 参考坐标 + 缓动参数），
    ///   是本类仅存的"越界"项，待下沉到 UI 层（见 `19_表现层分层_View与Actor_设计.md` §7）。
    ///
+   /// **为何仍是单一 Model（2026-09-19 评估结论）**：一个模型 = 一个生命周期 + 一组不变量。
+   /// "关卡 / 玩家 / 敌人"三个域共享同一生命周期（都是"每场战斗"），且 `LevelState` / `ControlTakenOver` / `Paused`
+   /// 是**横切字段**被多域同时读写；按域拆只会把交叉藏进跨模型的读写里，比单一 Model 更难追踪。
+   /// 且"敌人"目前根本没有模型（血量/行为由 `BattleEnemyEntity` 自持，经 `BattleEnemyRegistry` 暴露）。
+   /// 拆分的收益要等到"多场战斗并行/回放""模型需独立序列化""跨程序集共享"三者之一成立时才出现。
+   /// 届时**优先只拆关卡**（`BattleLevelModel`：每关独立、由 BattleLevelFlow/BattleStageDirector 独占读写）。
+   ///
    /// **写入方约定**：每个字段在注释里写明唯一写入口；View 只读。
    /// </summary>
    public sealed class BattleStateModel : AbstractModel
    {
-      // ==================== 装配期引用（战斗开始时写一次） ====================
+      #region 装配期引用（战斗开始时写一次）
 
       /// <summary>当前战斗 rig（场景装配入口）。写入：battle_runtime 装配。</summary>
       public Battle_PlayerControl Controller;
@@ -30,22 +37,30 @@ namespace TeaGame
       /// <summary>出战成员运行时数据（槽位序 = 切人序）。写入：BattleRoleSystem.Initialize。</summary>
       public BattleRoleRuntimeData[] BattleDatas = System.Array.Empty<BattleRoleRuntimeData>();
 
-      // ==================== 每帧输入 ====================
+      #endregion
+
+      #region 每帧输入
 
       /// <summary>每帧输入快照。写入：BattleInputSystem.Tick（唯一）。其余系统只读。</summary>
       public readonly BattleInputSnapshot Input = new();
 
-      // ==================== 移动 ====================
+      #endregion
+
+      #region 移动
 
       /// <summary>移动运行时状态（缓存推力 / 翻滚方向 / 冲刺标记）。写入：BattleMovementSystem。</summary>
       public readonly BattleMovementState Movement = new();
 
-      // ==================== 视角与相机 ====================
+      #endregion
+
+      #region 视角与相机
 
       /// <summary>相机俯仰角缓存。写入：BattleCameraSystem。</summary>
       public float CameraPitch;
 
-      // ==================== 锁敌 ====================
+      #endregion
+
+      #region 锁敌
 
       /// <summary>当前锁定目标。判空必须用 <see cref="BattleCombatUtility.IsAlive"/>（接口判空不触发 Unity 重载）。</summary>
       public IBattleEnemyTarget LockEnemy;
@@ -53,7 +68,9 @@ namespace TeaGame
       /// <summary>锁敌插值速度倍率（按准星距目标远近动态调整）。写入：BattleAimSystem。</summary>
       public float LockSpeedMultiplier = 1f;
 
-      // ==================== 角色与生命（可绑定） ====================
+      #endregion
+
+      #region 角色与生命（可绑定；View 直接消费）
 
       /// <summary>当前出战角色槽位。写入：BattleRoleSystem 选角 / 自动切人。</summary>
       public readonly BindableProperty<int> SelectedRoleIndex = new(0);
@@ -64,7 +81,9 @@ namespace TeaGame
       /// <summary>当前出战成员的最大血量。写入：同上。</summary>
       public readonly BindableProperty<float> CurrentMemberMaxHealth = new(1f);
 
-      // ==================== 技能（可绑定） ====================
+      #endregion
+
+      #region 技能（可绑定；View 直接消费）
 
       /// <summary>技能能量上限。</summary>
       public const float RoleEnergyMax = 100f;
@@ -81,7 +100,9 @@ namespace TeaGame
       /// <summary>Q 的能量缺口（冷却已到但能量不足时 &gt;0）。写入：同上。</summary>
       public readonly BindableProperty<float> SkillQDeficit = new(0f);
 
-      // ==================== 武器（可绑定） ====================
+      #endregion
+
+      #region 武器（可绑定；View 直接消费）
 
       /// <summary>当前武器弹匣余弹；&lt;0 表示当前没有武器。写入：PublishAmmo。</summary>
       public readonly BindableProperty<int> CurrentWeaponMagazine = new(-1);
@@ -98,7 +119,9 @@ namespace TeaGame
       /// </summary>
       public readonly BindableProperty<float> CurrentWeaponReloadProgress = new(0f);
 
-      // ==================== 瞄准（⚠️ 视图空间量，待下沉到 UI 层） ====================
+      #endregion
+
+      #region 瞄准（⚠️ 视图空间量，待下沉到 UI 层）
 
       /// <summary>准星目标位置（**Canvas/UI 参考空间**，非世界坐标）。写入：BattleAimSystem。</summary>
       public readonly BindableProperty<Vector2> AimPosition = new(Vector2.zero);
@@ -106,7 +129,9 @@ namespace TeaGame
       /// <summary>准星插值速度（视图缓动参数）。写入：BattleAimSystem。</summary>
       public readonly BindableProperty<float> AimLerpSpeed = new(10f);
 
-      // ==================== 关卡流程与控制权 ====================
+      #endregion
+
+      #region 关卡流程与控制权
 
       /// <summary>关卡流程状态（Prepare/Wave/Victory/Defeat/Exit）。写入：BattleLevelFlow 状态机。</summary>
       public BattleLevelState LevelState = BattleLevelState.Exit;
@@ -117,7 +142,9 @@ namespace TeaGame
       /// <summary>控制权是否被接管（终局 / 演出）。</summary>
       public bool ControlTakenOver;
 
-      // ==================== 派生只读 ====================
+      #endregion
+
+      #region 派生只读
 
       /// <summary>当前正在操控的成员数据；无有效成员时返回 null。</summary>
       public BattleRoleRuntimeData CurrentBattleData
@@ -130,7 +157,9 @@ namespace TeaGame
          }
       }
 
-      // ==================== 写入辅助（生产者在状态变更点调用；View 不调用） ====================
+      #endregion
+
+      #region 写入辅助（生产者调用；View 不调用）
 
       /// <summary>把某成员的当前血量同步到"当前出战成员"读数（扣血 / 治疗 / 切人时）。</summary>
       public void PublishHealth(BattleRoleRuntimeData member)
@@ -148,6 +177,8 @@ namespace TeaGame
          CurrentWeaponReloading.Value = mode != null && mode.IsReloading ? 1 : 0;
          CurrentWeaponReloadProgress.Value = mode != null ? Mathf.Clamp01(mode.ReloadProgress) : 0f;
       }
+
+      #endregion
 
       protected override void OnInit() { }
    }
