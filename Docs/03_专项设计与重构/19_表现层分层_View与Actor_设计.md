@@ -111,6 +111,16 @@
 - **静态结果**：System 侧对 `State.Controller` / `ControlTakeOff` 的**写入点归零**；剩余 `State.Controller` 全是只读（相机 / 双轴 / 配置）。**仍未做的**：4 个 System（Input/Camera/Aim/Weapon）的形参类型仍是 `Battle_PlayerControl`，收窄为只读引用包是另一件事（用户本轮未选 A 方案）。
 - 同批把 §3 三通道与 21 的五条纪律**升格进 `01_技术架构设计.md`**（新增「场景装配与宿主职责」一节）。
 
+### 续（2026-09-19 晚）· 弹药读数改「变更点发布」（§3 通道纪律的第一个完整实例）
+
+用户提问「`StateModel.PublishAmmo(...)` 为什么每帧更新？射击/换弹/切人/技能时事件更新即可」，评审后按 **A 方案**落地（`3fdb3417`）：
+
+- **先分清 4 个量的性质**：`CurrentWeaponMagazine` / `CurrentWeaponMaxMagazine` / `CurrentWeaponReloading` 是**离散状态**（变更点全在 `BattleWeaponModeBase` 内）；`CurrentWeaponReloadProgress` 是**连续量**——由 `Time.time` 派生（`BattleWeaponRuntime.cs` 的 `ReloadProgress`），**没有任何"变更点"可挂**。
+- **落地**：发布权从宿主交还生产者 `BattleWeaponSystem`——`TickReload` 完成、手动 `StartReload`、`PressTrigger` 三处（+ `OnRoleSwitched` 切人补满）变更点发布；**装填进度仅在 `IsReloading` 期间按帧发布**（约 1.5s 窗口）。宿主 `Update` 删除那行；装配器保留一次作为**首帧初值**。
+- **顺带修掉一个真问题**：原先宿主在 `WeaponSystem.Tick()` **之前**发布 → 开火/换弹结果慢一帧进 Model（HUD 滞后一帧）；现在同帧可见。
+- **纪律层面**：这正是 §3「命令 vs 状态」与 21 纪律 6 的落地样例——`BindableProperty` 是**状态观察通道**（setter 对未变值早退），不能被当成"每帧命令流"的搬运工；连续量要么由生产者按帧推、要么由 View 自己拉，二者必选其一，不能假装它也是状态。
+- **覆盖审计**：`BattleWeaponModeBase` 的 6 个变更点（`Setup` / `PressTrigger` / `StartReload` / `CancelReload` / `TickReload` / `OnRoleSwitched`）各有对应发布；`Setup` 只在装配期发生，由装配器那次发布覆盖。唯一行为差异：控制接管后不再发布（原先仍每帧刷），装填中阵亡时 HUD 停在最后百分比而不是继续爬到 100%（视为修正）。
+
 ---
 
 ## 原始草案存档（2026-09-18，以下待确认项已被上方用户决策替代）
