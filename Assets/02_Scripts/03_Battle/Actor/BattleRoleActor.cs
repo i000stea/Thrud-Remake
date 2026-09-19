@@ -26,6 +26,12 @@ namespace TeaGame
       private readonly Transform roles;
       private readonly Transform weapons;
       private readonly Transform viewAxis;
+      /// <summary>表现朝向的参考相机（构造期注入；无相机时回落 <see cref="yawAxis"/>）。</summary>
+      private readonly Camera camera;
+      /// <summary>水平控制轴（相机缺失时的朝向兜底）。</summary>
+      private readonly Transform yawAxis;
+      /// <summary>表现参数（跟随旋转平滑速度）。注入引用而非快照值：Play 中调参仍即时生效。</summary>
+      private readonly BattlePlayerConfig config;
       private BattleRoleRuntimeData[] members = System.Array.Empty<BattleRoleRuntimeData>();
       private Animator animator;
 
@@ -36,8 +42,19 @@ namespace TeaGame
 
       private static IArchitecture Architecture => BattleArchitecture.Interface;
 
-      public BattleRoleActor(Transform roles, Transform weapons, Transform viewAxis)
-      { this.roles = roles; this.weapons = weapons; this.viewAxis = viewAxis; }
+      /// <summary>
+      /// 依赖集合（21 文档纪律 4：构造期注入，一眼看全；运行期只读，不做任何查找）。
+      /// </summary>
+      public BattleRoleActor(Transform roles, Transform weapons, Transform viewAxis,
+         Camera camera, Transform yawAxis, BattlePlayerConfig config)
+      {
+         this.roles = roles;
+         this.weapons = weapons;
+         this.viewAxis = viewAxis;
+         this.camera = camera;
+         this.yawAxis = yawAxis;
+         this.config = config;
+      }
 
       /// <summary>
       /// 装配：把角色/武器实例挂到挂点、订阅自身的表现事件、按当前出战槽刷新一次显隐，
@@ -129,6 +146,33 @@ namespace TeaGame
          animator.SetFloat("MoveFront", velocity.x);
          animator.SetFloat("MoveSide", velocity.y);
          animator.SetBool("OnSprint", sprinting);
+      }
+
+      /// <summary>
+      /// 每帧表现（2026-09-19 第 3 步：中间量内聚）。
+      ///
+      /// **参数只传"每帧值"**（速度 / 冲刺标记 / dt）；**派生中间量在本类内算出**——
+      /// 此前宿主 <c>TickActors()</c> 替本 Actor 算 `ClampLookRotation(camera.forward)` 并挑参考轴，
+      /// 是"宿主里长出表现逻辑"。现在宿主只负责在正确的相位调用本方法。
+      /// </summary>
+      /// <param name="animationVelocity">移动 Actor 解析出的水平速度（动画参数）。</param>
+      /// <param name="sprinting">本帧是否冲刺。</param>
+      /// <param name="deltaTime">帧间隔。</param>
+      public void Tick(Vector2 animationVelocity, bool sprinting, float deltaTime)
+      {
+         SetMovement(animationVelocity, sprinting);
+
+         // 跟随视角：有相机用相机朝向（只含 yaw+pitch、俯仰限幅），无相机退回落控制轴旋转；
+         // 两者都没有则不跟随（与原 host 内联写法等价，原写法对 viewAxis 的判空在 FollowView 内）。
+         var speed = config ? config.RotationSpeed : 10f;
+         if (camera)
+         {
+            FollowView(ClampLookRotation(camera.transform.forward), speed, deltaTime);
+         }
+         else if (yawAxis)
+         {
+            FollowView(yawAxis.rotation, speed, deltaTime);
+         }
       }
 
       public void FollowView(Quaternion rotation, float speed, float deltaTime)

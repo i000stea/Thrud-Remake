@@ -182,10 +182,12 @@ namespace TeaGame
          // 角色系统（含成员级血量复位——2026-09-19 BattleHealthSystem 已并入本系统）
          Architecture.GetSystem<BattleRoleSystem>().Initialize(Rig, datas);
          
-         // 角色显示
-         roleActor = new BattleRoleActor(Rig.Roles, Rig.GetWeaponParent(), Rig.ViewRotateAxis);
-         // 武器显示
-         weaponActor = new BattleWeaponActor(Rig.WepLookatTarget);
+         // 角色显示（依赖集合由各 Actor 构造函数一眼看全；每帧中间量在 Actor 内派生——第 3 步）
+         roleActor = new BattleRoleActor(Rig.Roles, Rig.GetWeaponParent(), Rig.ViewRotateAxis,
+            Rig.Control_Camera, Rig.ControlXAxis, Rig.PlayerConfig);
+         // 武器显示（锁敌目标 / 回正点 / 吸附速度在 Actor 内派生，只读 Model）
+         weaponActor = new BattleWeaponActor(Rig.WepLookatTarget, Rig.Control_Camera, Rig.ControlXAxis,
+            Rig.transform, StateModel, Rig.PlayerConfig);
          // 相机显示
          cameraActor = new BattleCameraActor(Rig.Control_Camera, Rig.PlayerConfig.MainFov);
          
@@ -313,27 +315,21 @@ namespace TeaGame
          movementActor.ApplyForce(force);
       }
 
-      // 保留原 Update 顺序：动画 → FOV → 模型 → 武器 → 武器开火。
+      /// <summary>
+      /// 表现层每帧 tick（**顺序是逻辑，不是样板**，与 21 文档 §2.2 反例 3 对应）：
+      /// 动画 → FOV → 模型朝向 → 武器朝向。
+      /// ⚠️ 必须在 <see cref="BattleWeaponSystem"/>.Tick() <b>之前</b>调用——后者每帧写
+      /// `FreeAimRotation`/`ActiveElement` 并在同一方法内 `PressTrigger()` 开火。
+      /// 中间量（目标点 / 回正点 / 朝向）已下沉到各 Actor（2026-09-19 第 3 步），本方法只传每帧值。
+      /// </summary>
       private void TickActors()
       {
-         // 数据
          var state = StateModel;
-         // 配置
          var config = Rig.PlayerConfig;
-         roleActor.SetMovement(movementActor.AnimationVelocity, state.Movement.Sprinting);
+         roleActor.Tick(movementActor.AnimationVelocity, state.Movement.Sprinting, Time.deltaTime);
          cameraActor.BlendFov(state.Movement.Sprinting ? config.SprintFov : config.MainFov,
             config.FovLerpSpeed, Time.deltaTime);
-         var camera = Rig.Control_Camera;
-         var axis = Rig.ControlXAxis;
-         if (camera || axis)
-         {
-            var rotation = camera ? BattleRoleActor.ClampLookRotation(camera.transform.forward) : axis.rotation;
-            roleActor.FollowView(rotation, config.RotationSpeed, Time.deltaTime);
-         }
-         var target = state.LockEnemy.IsAlive() ? state.LockEnemy.LockPoint : null;
-         var freePoint = camera ? camera.transform.position + camera.transform.forward * 10f
-            : axis ? axis.position + axis.forward * 10f : Rig.transform.position;
-         weaponActor.Aim(state.CurrentBattleData, target, freePoint, Rig.GetCurrentLockSpeed(state.LockSpeedMultiplier));
+         weaponActor.Tick();
       }
 
       #endregion
