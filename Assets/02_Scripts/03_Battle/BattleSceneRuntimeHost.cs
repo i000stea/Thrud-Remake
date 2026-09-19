@@ -37,7 +37,7 @@ namespace TeaGame
       [SerializeField] private BattleTeamCatalog teamCatalog;
 
       // 这个地方有点问题，他为什么是手动拖拽的？我希望应该是通过某种方式查找当前场景中存在的该脚本，没有的话去呼叫热更新模块把相应的预制件创建然后进行获取
-      [Tooltip("场景固定 rig（Battle_Rig.prefab 实例，提供 Actor 装配引用；HUD 在独立面板）。")]
+      [Tooltip("场景固定 rig（Battle_PlayerControl.prefab 实例，提供 Actor 装配引用；HUD 在独立面板）。")]
       [SerializeField] private Battle_PlayerControl playerControl;
 
       [Tooltip("场景固定敌人管理（波次/目标点/刷怪 Director，数据由本宿主注入）。")]
