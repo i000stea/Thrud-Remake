@@ -78,6 +78,28 @@
 
 > 代码会关闭尚未清理的 rig MainCanvas，避免重复上屏；这是旧资产隔离，不是旧 ViewSystem 兼容执行路径。资产工具尚未运行，不宣称 prefab 已完成清理。
 
+### 桥接层退役 · 第 1 批（2026-09-19 晚，本轮落地）
+
+**决策**：`BattleRuntimeBridge` 实测 **20 处真实引用 / 10 个文件**，不能整体删；但逐个成员看，其中 5 个成员都只是 `BattleStateModel` + rig 引用的**静态可变镜像**（与已消灭的 `RoleEnergy` / `SelectedRoleIndex` 镜像同类），本批按"每个成员能否从 Model 派生"逐个拔掉。
+
+**动作前实测（关键发现）**：`Wep-Base.prefab`（唯一挂武器组件的 prefab）挂的是**旧版** `Weapon_ObjectComponent`（GUID `19b44bcf…`），全工程**没有任何 prefab 挂新版** `BattleWeaponObjectComponent` → `BattleWeaponViewFactory.Create` 走 legacy 分支 → `LegacyBattleWeaponViewAdapter.RefreshAim` 是**空实现**（注释写明"旧版组件已通过自身 Update + Bridge 驱动朝向，故意留空避免重复插值"）。也就是说 **武器朝向完全由旧组件的自驱 `Update` + Bridge 驱动，`BattleWeaponActor.Aim` 在这条链上一直空转**——即 Actor 化在武器表现上只落地了一半。
+
+| 成员 | 原读者 | 处置 |
+|---|---|---|
+| `ActiveElement` | 3（`BattleWeaponModeBase` / `BattleWeaponMode_Sniper`，均为**普通类**） | 新增 `BattleWeaponModeBase.ActiveElement`（由 `BattleWeaponSystem.Tick` 每帧写 `State.CurrentDamageElement`，写法对齐既有 `FreeAimRotation`）→ **删 Bridge 成员** |
+| `Camera` | 3（`Battle_EnemyUI` / `BattleEnemyEntity` / `BattleEnvironmentEffectController`） | 新增 Model 派生只读 `BattleCamera`（`Controller ? Controller.Control_Camera : null`）→ **删 Bridge 成员** |
+| `EnvironmentEffectController` | 1（`BattleEnemyEntity`） | 新增 Model 派生只读 `EnvironmentEffects` → **删 Bridge 成员** |
+| `LockEnemyTransform` / `LockSpeed` | 各 1（都是 `Weapon_ObjectComponent`） | 退役该组件自驱：删 `Update`/`TowardsUpdate`/`GetLockEnemy`，改为公开 `RefreshAim(Transform, float)`，由 `LegacyBattleWeaponViewAdapter.RefreshAim` 转发（宿主 `TickActors` 里那句 `weaponActor.Aim(...)` 原本就在每帧调用）→ **删 Bridge 成员** |
+| `PlayerTransform` | **7**（`BattleStageDirector` + 4 个 `IEnemyBehaviour` + `BattleEnemyEntity` ×2） | **本批不动**（本质是"目标选择"，需先有 `IBattlePlayerTarget` 注册表 → 见下方第 2 批） |
+
+**当前状态：`BattleRuntimeBridge` 只剩 `PlayerTransform` 一个成员**（写入方仍只有 `Battle_PlayerControl.SyncRuntimeBridge`；`UpdateState` 签名已收窄为 `(owner, playerTransform)`）。
+
+**行为等价性**：武器瞄准的**目标与速度表达式与原实现逐字相同**——宿主传的就是 `state.LockEnemy.IsAlive() ? LockPoint : null` 与 `GetCurrentLockSpeed(state.LockSpeedMultiplier)`，且 `RefreshAim` 内部保留 `Mathf.Max(0.01f, lockSpeed)`。**唯一差异**：原先旧组件在 `battleReady` 之前与**暂停中**也继续插值，现在只在 `TickActors()` 里推进 → 暂停时武器朝向冻结（与 `roleActor`/`cameraActor` 同批行为一致，视为修正）。
+
+**验收边界**：静态自检通过（Bridge 已无 `Camera`/`ActiveElement`/`EnvironmentEffectController`/`LockSpeed`/`LockEnemyTransform` 字样除注释；`BattleCamera` 3 读者、`EnvironmentEffects` 1 读者、`CurrentDamageElement` 1 写者、武器 `ActiveElement` 3 读者；`PlayerTransform` 7 读者）。**未编译、未 Play**——本批改动晚于 20:37:02 那次干净构建，需在 Editor 触发刷新后取证。
+
+**第 2 批（未做）**：`PlayerTransform` → `IBattlePlayerTarget` 注册表（对称于既有 `BattleEnemyRegistry`，是"敌人实体化"的地基），完成后 `BattleRuntimeBridge.cs` 可整体删除；与本文件 §6"最小引用注入"（`Battle_PlayerControl` 场景引用总仓库）是同一件事的两半，建议合并成一个任务。
+
 ---
 
 ## 原始草案存档（2026-09-18，以下待确认项已被上方用户决策替代）

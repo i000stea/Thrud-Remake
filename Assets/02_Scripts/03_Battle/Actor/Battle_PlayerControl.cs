@@ -16,6 +16,8 @@ namespace TeaGame
    /// </summary>
    public partial class Battle_PlayerControl : ViewController, IController, IUnRegisterList
    {
+      #region 运行时
+
       [Header("运行时")]
       [SerializeField][Range(0.01f, 4f)] private float scale = 1f;
       [SerializeField] private bool controlTakeOff;
@@ -33,6 +35,9 @@ namespace TeaGame
       [SerializeField] private GameObject bulletWindPrefab;
       [SerializeField] private GameObject bulletElectricPrefab;
 
+      #endregion
+      
+      #region 参数变量
       /// <summary> 当前控制器注册的事件反注册列表。 </summary>
       public List<IUnRegister> UnregisterList { get; } = new();
 
@@ -77,11 +82,22 @@ namespace TeaGame
       }
 
       /// <summary>
+      /// 暴露给 battle_runtime 的 View 表现引用：元素子弹 prefab（开火按当前角色元素取弹）。
+      /// </summary>
+      public GameObject BulletIcePrefab => bulletIcePrefab;
+      public GameObject BulletFirePrefab => bulletFirePrefab;
+      public GameObject BulletWindPrefab => bulletWindPrefab;
+      public GameObject BulletElectricPrefab => bulletElectricPrefab;
+
+
+      /// <summary>
       /// 当前战斗架构实例。
       /// 这里不直接依赖 `GetSystem/GetModel` 扩展方法，
       /// 这样可以规避部分 IDE 对扩展方法识别不稳定导致的"方法丢失"提示。
       /// </summary>
       private IArchitecture Architecture => BattleArchitecture.Interface;
+
+      #endregion
 
       /// <summary>
       /// 初始化（View 只做最轻的时间缩放设置；战斗装配/驱动由 battle_runtime 负责）。
@@ -95,14 +111,6 @@ namespace TeaGame
       }
 
       // 所有 HUD 字段已迁出；资产清理由 Thrud/Battle/Actor 菜单完成。
-
-      /// <summary>
-      /// 暴露给 battle_runtime 的 View 表现引用：元素子弹 prefab（开火按当前角色元素取弹）。
-      /// </summary>
-      public GameObject BulletIcePrefab => bulletIcePrefab;
-      public GameObject BulletFirePrefab => bulletFirePrefab;
-      public GameObject BulletWindPrefab => bulletWindPrefab;
-      public GameObject BulletElectricPrefab => bulletElectricPrefab;
 
       /// <summary>控制器销毁时清理桥接层与事件注册。</summary>
       private void OnDestroy()
@@ -127,29 +135,14 @@ namespace TeaGame
          return PlayerConfig.LockEnemySpeed * Mathf.Max(1f, multiplier);
       }
 
-      /// <summary>把当前战斗上下文同步到桥接层（旧表现脚本兼容；由 battle_runtime 每帧调用）。</summary>
+      /// <summary>
+      /// 把剩余上下文同步到桥接层（旧表现脚本兼容；由 battle_runtime 每帧调用）。
+      /// 2026-09-19：相机 / 元素 / 飘字控制器 / 锁敌量已不再经过此处——
+      /// 它们改从 <see cref="BattleStateModel"/> 的派生只读属性取，或由各自系统写入。
+      /// </summary>
       public void SyncRuntimeBridge()
       {
-         var state = Architecture.GetModel<BattleStateModel>();
-         var lockPoint = state.LockEnemy.IsAlive() ? state.LockEnemy.LockPoint : null;
-
-         // T2.3：当前角色元素（子弹携带元素依据）
-         var activeElement = DamageElement.none;
-         var battleDatas = state.BattleDatas;
-         if (battleDatas != null && state.SelectedRoleIndex.Value >= 0 && state.SelectedRoleIndex.Value < battleDatas.Length
-             && battleDatas[state.SelectedRoleIndex.Value]?.RoleData != null)
-         {
-            activeElement = battleDatas[state.SelectedRoleIndex.Value].RoleData.damageElement;
-         }
-
-         BattleRuntimeBridge.UpdateState(
-            this,
-            Control_Camera,
-            transform,
-            lockPoint,
-            GetCurrentLockSpeed(state.LockSpeedMultiplier),
-            environmentEffectController,
-            activeElement);
+         BattleRuntimeBridge.UpdateState(this, transform);
       }
    }
 }

@@ -598,6 +598,7 @@ namespace TeaGame
 
       protected override void OnInit()
       {
+         // 角色切换
          mRoleSwitchedUnregister = Architecture.RegisterEvent<BattleEvent_RoleSwitched>(_ => OnRoleSwitched());
       }
 
@@ -632,6 +633,10 @@ namespace TeaGame
          weaponMode.FreeAimRotation = !hasLockTarget && aimCamera
             ? aimCamera.transform.rotation
             : (Quaternion?)null;
+
+         // 元素：子弹 prefab 与命中表现按"当前操控角色"的元素取用。
+         // 由本系统每帧从 Model 派生值写入（原先读静态 BattleRuntimeBridge.ActiveElement）。
+         weaponMode.ActiveElement = State.CurrentDamageElement;
 
          // 推进换弹进度，计时结束补满弹匣并派发完成事件（占位：控制台日志）
          if (weaponMode.TickReload())

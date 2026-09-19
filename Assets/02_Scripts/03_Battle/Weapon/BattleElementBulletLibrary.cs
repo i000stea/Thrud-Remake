@@ -6,7 +6,7 @@ namespace TeaGame
    /// <summary>
    /// T2.3.1 玩家元素子弹库（2026-09-04）。
    /// PlayerControl 在战斗启动时把 4 个元素子弹 prefab（Bullet_Player_Ice/Fire/Wind/Electric）注册进来；
-   /// 武器开火时按 <see cref="BattleRuntimeBridge.ActiveElement"/> 解析对应元素子弹打出——
+   /// 武器开火时按 <see cref="BattleWeaponModeBase.ActiveElement"/> 解析对应元素子弹打出——
    /// 每把武器不再单独配置元素子弹，统一走本库。
    /// 未注册 / 元素为 none 时返回 null，调用方回退武器默认子弹 prefab（Bullet_Player_Base）。
    /// </summary>

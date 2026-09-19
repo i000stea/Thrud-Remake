@@ -126,7 +126,8 @@ namespace TeaGame
 
    /// <summary>
    /// 旧版武器组件适配器。
-   /// 旧版组件仍然保留自己的 Update 朝向逻辑，因此这里只负责暴露数据和特效播放接口。
+   /// 旧版组件仍挂在实际使用的 `Wep-Base.prefab` 上，但自 2026-09-19 起
+   /// **朝向也交给本适配器转发驱动**（原组件的自驱 Update 已删除）。
    /// </summary>
    public sealed class LegacyBattleWeaponViewAdapter : IBattleWeaponView
    {
@@ -152,8 +153,7 @@ namespace TeaGame
 
       public void RefreshAim(Transform lookTarget, float lockSpeed)
       {
-         // 旧版组件已经通过自身 Update + BattleRuntimeBridge 驱动朝向，
-         // 这里故意留空，避免重复插值导致旋转抖动。
+         mComponent?.RefreshAim(lookTarget, lockSpeed);
       }
    }
 
@@ -219,6 +219,14 @@ namespace TeaGame
       /// 从而保证"子弹打向准星/视角正前"而武器视觉不歪向远处点。
       /// </summary>
       public Quaternion? FreeAimRotation { get; set; }
+
+      /// <summary>
+      /// 当前操控角色的元素，供子弹 prefab 与命中表现按元素取用。
+      /// **由 <see cref="BattleWeaponSystem"/> 每帧写入**（同 <see cref="FreeAimRotation"/> 的写法），
+      /// 取代原先读静态的 `BattleRuntimeBridge.ActiveElement`——元素本来就能从
+      /// `BattleStateModel.CurrentDamageElement` 推出，不需要再维护一份全局镜像。
+      /// </summary>
+      public DamageElement ActiveElement { get; set; } = DamageElement.none;
 
       /// <summary>
       /// 子弹飞行速度。
@@ -380,7 +388,7 @@ namespace TeaGame
             WeaponView.FirePoint.position,
             baseRotation,
             WeaponData.damage,
-            BattleRuntimeBridge.ActiveElement);
+            ActiveElement);
 
          if (!bulletObject) return;
 
@@ -393,7 +401,7 @@ namespace TeaGame
       /// </summary>
       protected GameObject ResolvePlayerBulletPrefab()
       {
-         var elementPrefab = BattleElementBulletLibrary.Resolve(BattleRuntimeBridge.ActiveElement);
+         var elementPrefab = BattleElementBulletLibrary.Resolve(ActiveElement);
          return elementPrefab ? elementPrefab : WeaponView.BulletPrefab;
       }
 
@@ -663,7 +671,7 @@ namespace TeaGame
             hitPoint,
             Quaternion.identity,
             WeaponData.damage,
-            BattleRuntimeBridge.ActiveElement,
+            ActiveElement,
             5f);
 
          if (!WeaponView.BulletLinePrefab) return;

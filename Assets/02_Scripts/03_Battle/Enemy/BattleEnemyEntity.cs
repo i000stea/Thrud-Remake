@@ -342,10 +342,11 @@ namespace TeaGame
 
       /// <summary>
       /// 判断敌人是否位于当前战斗相机的可视范围内。
+      /// 相机取自 Model 的派生只读属性（原先读静态 `BattleRuntimeBridge.Camera`）。
       /// </summary>
       private bool IsVisibleInBattleCamera()
       {
-         var camera = BattleRuntimeBridge.Camera;
+         var camera = BattleArchitecture.Interface.GetModel<BattleStateModel>().BattleCamera;
          if (!camera || !LockPoint) return false;
 
          var screenPoint = camera.WorldToViewportPoint(LockPoint.position);
@@ -409,7 +410,7 @@ namespace TeaGame
       /// </summary>
       public void ShowDamageText(int amount, Color color, bool big)
       {
-         var controller = BattleRuntimeBridge.EnvironmentEffectController;
+         var controller = BattleArchitecture.Interface.GetModel<BattleStateModel>().EnvironmentEffects;
          if (!controller) return;
          controller.CreateDamageText(transform.position, amount, color, big);
       }

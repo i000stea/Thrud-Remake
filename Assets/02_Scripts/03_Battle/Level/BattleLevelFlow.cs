@@ -11,10 +11,15 @@ namespace TeaGame
    /// </summary>
    public enum BattleLevelState
    {
+      /// <summary> 准备 </summary>
       Prepare,
+      /// <summary> 波次 </summary>
       Wave,
+      /// <summary> 胜利 </summary>
       Victory,
+      /// <summary> 失败 </summary>
       Defeat,
+      /// <summary> 退出 </summary>
       Exit
    }
 

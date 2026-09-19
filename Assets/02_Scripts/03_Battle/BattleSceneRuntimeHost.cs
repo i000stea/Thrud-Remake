@@ -398,9 +398,14 @@ namespace TeaGame
       private void Update()
       {
          var state = StateModel;
+
+         // 状态检测
          if (!battleReady || playerControl == null) return;
 
+         // 接管状态？
          Architecture.GetSystem<BattleRoleSystem>().SetControlTakenOver(playerControl.ControlTakeOff);
+         
+         // 监控输入
          Architecture.GetSystem<BattleInputSystem>().Tick();
 
          // T3.1：ESC = 暂停/恢复请求（终局由结算弹窗接管，不再响应）

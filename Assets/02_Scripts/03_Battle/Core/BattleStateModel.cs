@@ -157,6 +157,24 @@ namespace TeaGame
          }
       }
 
+      /// <summary>
+      /// 当前操控角色的元素（子弹携带依据）。
+      /// 派生只读；与 <see cref="CurrentBattleData"/> 同源，取不到时回落 `none`。
+      /// </summary>
+      public DamageElement CurrentDamageElement => CurrentBattleData?.RoleData?.damageElement ?? DamageElement.none;
+
+      /// <summary>
+      /// 战斗相机。**派生只读**：由装配期写入的 <see cref="Controller"/>（rig 上的序列化引用）推出，
+      /// 取不到时返回 null。原先相机被镜像到静态的 `BattleRuntimeBridge.Camera`，本属性取代那条路径。
+      /// </summary>
+      public Camera BattleCamera => Controller ? Controller.Control_Camera : null;
+
+      /// <summary>
+      /// 环境特效控制器（伤害飘字等）。**派生只读**，同 <see cref="BattleCamera"/>，取不到时返回 null。
+      /// </summary>
+      public BattleEnvironmentEffectController EnvironmentEffects
+         => Controller ? Controller.EnvironmentEffectController : null;
+
       #endregion
 
       #region 写入辅助（生产者调用；View 不调用）

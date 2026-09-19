@@ -84,7 +84,7 @@ namespace TeaGame
 		/// </summary>
 		private void LateUpdate()
 		{
-			var battleCamera = BattleRuntimeBridge.Camera;
+			var battleCamera = this.GetModel<BattleStateModel>().BattleCamera;
 			if (battleCamera)
 			{
 				transform.rotation = battleCamera.transform.rotation;
