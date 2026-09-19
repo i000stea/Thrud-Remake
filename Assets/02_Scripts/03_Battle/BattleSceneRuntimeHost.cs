@@ -424,9 +424,15 @@ namespace TeaGame
 
          // 移动：System 只算，Actor 只执行（2026-09-19 第 1 步同批）
          ApplyMovementForce(Architecture.GetSystem<BattleMovementSystem>().TickUpdate(movementActor.Forward));
+
+         // 相机tick
          Architecture.GetSystem<BattleCameraSystem>().Tick();
+         
          TickActors();
+         
          StateModel.PublishAmmo(StateModel.CurrentBattleData);
+         
+         // 武器 tick
          Architecture.GetSystem<BattleWeaponSystem>().Tick();
 
          // T2.4：技能管道（输入快照已含 E/Q，冷却读秒 + 施放校验在本系统内收口）
@@ -468,6 +474,7 @@ namespace TeaGame
       /// </summary>
       private void ApplyMovementForce(Vector3 force)
       {
+         
          if (!movementActor.IsAvailable) return;
          if (force.sqrMagnitude <= 0f) return;
          movementActor.ApplyForce(force);
@@ -476,7 +483,9 @@ namespace TeaGame
       // 保留原 Update 顺序：动画 → FOV → 模型 → 武器 → 武器开火。
       private void TickActors()
       {
+         // 数据
          var state = StateModel;
+         // 配置
          var config = playerControl.PlayerConfig;
          roleActor.SetMovement(movementActor.AnimationVelocity, state.Movement.Sprinting);
          cameraActor.BlendFov(state.Movement.Sprinting ? config.SprintFov : config.MainFov,

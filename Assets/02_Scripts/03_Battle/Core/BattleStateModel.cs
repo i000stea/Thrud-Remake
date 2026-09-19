@@ -13,8 +13,14 @@ namespace TeaGame
    /// - **只为"当前值"建标量**：QFramework 的 `BindableProperty` 没有集合变更通知，
    ///   不要为"每个成员 / 每个槽位"建属性。需要"每成员"的 View（如队伍血条）自行订阅
    ///   `BattleEvent_Role*` 后按索引拉取。
-   /// - 类型纪律：`BindableProperty<T>.Comparer` 是**按 T 共享的 static 字段**，默认比较对值类型会装箱；
-   ///   只用 `int` / `float` / `Vector2`（框架 `ComparerAutoRegister` 已注册快速比较器）。
+   /// - 类型纪律：`BindableProperty<T>.Comparer` 是**按 T 共享的 static 字段**，默认比较 `(a,b)=>a.Equals(b)`
+   ///   对值类型会退化为 `object.Equals` → 装箱。框架 `ComparerAutoRegister`（`QFramework.cs:754`）已在
+   ///   `BeforeSceneLoad` 注册：`int/long/float/double/string` + `Vector2/Vector3/Vector4/Quaternion/Color/Color32/
+   ///   Bounds/Rect/Vector2Int/Vector3Int/BoundsInt/RangeInt/RectInt`，**这些类型可安全直接用**。
+   ///   ⚠️ `WithComparer` 改的是**静态**字段（按 T 全局生效），不要用它做局部约定。
+   /// - **通道纪律**：`BindableProperty` 是"**状态观察通道**"，**不是每帧命令通道**——
+   ///   其 setter 对"值未变"直接 return（`QFramework.cs:717`），所以对每帧都要消费的命令流会静默丢帧。
+   ///   本类只承载"会被 UI 观察、且值不变就无需通知"的状态（血量/弹药/技能/选中位）。
    /// - ⚠️ `AimPosition` / `AimLerpSpeed` 是**视图空间量**（Canvas 参考坐标 + 缓动参数），
    ///   是本类仅存的"越界"项，待下沉到 UI 层（见 `19_表现层分层_View与Actor_设计.md` §7）。
    ///

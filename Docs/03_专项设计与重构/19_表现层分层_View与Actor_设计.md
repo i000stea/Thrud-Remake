@@ -191,7 +191,7 @@
 - View 侧：`property.RegisterWithInitValue(_ => Refresh()).UnRegisterWhenGameObjectDestroyed(gameObject)`——**注册即渲染一次**，无需首帧手动刷新；面板销毁时自动反注册。
 - **实测框架坑（必须记住）**：
   1. `BindableProperty<T>.Comparer` 是**按 T 共享的 static 字段**（不是每实例），`WithComparer` 会改全局；
-  2. 默认比较器 `(a, b) => a.Equals(b)` 对未约束泛型 T 会退化为 `object.Equals` → **值类型装箱**；`ComparerAutoRegister` 只为 int/float/string/Vector2~4/Color 等注册了快速比较器；
+  2. 默认比较器 `(a, b) => a.Equals(b)` 对未约束泛型 T 会退化为 `object.Equals` → **值类型装箱**；`ComparerAutoRegister`（`QFramework.cs:754`）实际已在 `BeforeSceneLoad` 为 `int/long/float/double/string` + `Vector2/Vector3/Vector4/Quaternion/Color/Color32/Bounds/Rect/Vector2Int/Vector3Int/BoundsInt/RangeInt/RectInt` 注册快速比较器（**含 Vector3**，故力/位置类量用 Vector3 安全）；⚠️ `WithComparer` 改的是静态字段、按 T 全局生效；
   3. → **契约：只用 `int` / `float` / `string`，不要自定义 struct。**
 - **纪律**：`BattleHudState` 只放"UI 直接消费"的值，**不要扩成第二个 StateModel**。
 

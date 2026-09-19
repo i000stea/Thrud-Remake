@@ -14,7 +14,8 @@ namespace TeaGame
    /// - `Camera` → `BattleStateModel.BattleCamera`（读者：`Battle_EnemyUI` / `BattleEnemyEntity` / `BattleEnvironmentEffectController`）
    /// - `EnvironmentEffectController` → `BattleStateModel.EnvironmentEffects`（读者：`BattleEnemyEntity`）
    /// - `ActiveElement` → `BattleStateModel.CurrentDamageElement`，由 `BattleWeaponSystem` 每帧写入武器模式的 `ActiveElement`
-   /// - `LockEnemyTransform` / `LockSpeed` → 随 `Weapon_ObjectComponent` 自驱 Update 退役而**失去全部读者**（删）
+   /// - `LockEnemyTransform` / `LockSpeed` → 随旧版 `Weapon_ObjectComponent` 自驱 Update 退役而**失去全部读者**（删）；
+   ///   该旧组件也已在同批**整体删除**（全部武器 prefab 均为 `Wep-Base` 的变体，统一挂新版 `BattleWeaponObjectComponent`）
    ///
    /// **剩余唯一成员 `PlayerTransform`**（7 处读者：`BattleStageDirector` + 4 个 `IEnemyBehaviour` + `BattleEnemyEntity`）：
    /// 敌人"找玩家"本质是**目标选择**而非"要一个 Transform"，应改为 `IBattlePlayerTarget` 注册表

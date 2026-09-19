@@ -201,10 +201,13 @@ namespace TeaGame
       /// <returns>本次翻滚需施加的冲量；无需施力时为 <see cref="Vector3.zero"/>。</returns>
       public Vector3 TickUpdate(Vector3 basisForward)
       {
+         // 被接管，强制返回0
          if (State.ControlTakenOver) return Vector3.zero;
 
+         // 返回数值初始化
          var pending = Vector3.zero;
 
+         // 是否冲刺 
          if (State.Input.SprintPressed && CanRoll())
          {
             State.Movement.ReadySprint = true;
@@ -212,14 +215,26 @@ namespace TeaGame
             pending = PerformRoll(basisForward);
          }
 
-         if (!State.Input.SprintHeld || !(Mathf.Abs(State.Input.MoveHorizontal) > 0.01f || Mathf.Abs(State.Input.MoveVertical) > 0.01f))
+         if (
+            // 未持续按下冲刺键
+            !State.Input.SprintHeld ||
+            // 水平距离不为0
+            !(Mathf.Abs(State.Input.MoveHorizontal) > 0.01f || 
+            // 横向距离不为0
+            Mathf.Abs(State.Input.MoveVertical) > 0.01f))
          {
+            // 停止冲刺
             Architecture.GetSystem<BattleRoleSystem>().StopSprint();
          }
-         else if (!State.Movement.Sprinting
-                  && State.Movement.ReadySprint
-                  && Time.time > State.Movement.LastRollTime + config.RollAfterSprintDelay)
+         else if (
+            // 未进入冲刺状态
+            !State.Movement.Sprinting
+            // 准备好冲刺
+            && State.Movement.ReadySprint
+            // 冲刺状态时间已到
+            && Time.time > State.Movement.LastRollTime + config.RollAfterSprintDelay)
          {
+            // 开启冲刺状态
             State.Movement.Sprinting = true;
          }
 
@@ -257,22 +272,30 @@ namespace TeaGame
       /// <summary>执行翻滚：返回需施加的冲量，并广播翻滚事件（表现层/Actor 自行订阅）。</summary>
       private Vector3 PerformRoll(Vector3 basisForward)
       {
+         // 空间推力
          var force = State.Movement.CachedForce;
+         // 推力无，直接等
          if (force.sqrMagnitude < 0.01f)
          {
             force = basisForward;
          }
+         // 推力有，归一化
          else
          {
             force = force.normalized;
          }
 
+         // 乘算 基础速度 和 翻滚叠加速度
          force *= config.MoveForce * config.RollMultiForce;
 
+         // 翻滚向量
          var rollForce = new Vector2(State.Input.MoveHorizontal, State.Input.MoveVertical);
+         // 翻滚方向
          State.Movement.RollForce = rollForce == Vector2.zero ? Vector2.up : rollForce.normalized;
+         // 广播翻滚事件
          Architecture.SendEvent(new BattleEvent_RollTriggered { RollForce = State.Movement.RollForce });
 
+         // 返回速度
          return force;
       }
    }
@@ -524,7 +547,7 @@ namespace TeaGame
 
       // 吸附倍率属于武器规则，使用独立逻辑游标，不读取 View 的 RectTransform。
       private Vector2 trackingPosition;
-      
+
       /// <summary> 重置瞄准 </summary>
       public void ResetForBattle()
       {

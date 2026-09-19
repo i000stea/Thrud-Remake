@@ -95,6 +95,7 @@ Docs/
 | 18_Battle调用链与阅读目录.md | 调用链与文件阅读目录；头部新增 Actor 迁移映射，旧行号及系统表标明历史快照 | 2026-09-19 已补当前入口，详见 19 |
 | 19_表现层分层_View与Actor_设计.md | 用户确认的移动/角色/武器/相机 Actor、Aim 绑定与 View 插值、当前调用链和一次性验收；保留旧草案存档 | 2026-09-19 代码已落地；编译 / Play / Editor 资产清理待验 |
 | 20_代码知识图谱可视化工具_设计与实施计划.md | `web/ProgressChaser` 代码关系画布升级方案：两层知识图谱、Cytoscape.js Canvas、ELK Worker、三类 JSON 契约、性能预算、K0–K6 实施与验收 | 2026-09-19 **K0–K5 已实施**：Cytoscape + ELK Worker 落地、10 项测试通过、layout 迁移到 schemaVersion 2；K6 文档同步中，浏览器视觉验收待用户执行（见 `web/ProgressChaser/PERFORMANCE.md`） |
+| 21_战斗场景装配与宿主瘦身_设计与落地指导.md | **`BattleSceneRuntimeHost`（559 行）职责收拢方案**：559 行构成与 32 处 `playerControl` 访问点的实测诊断、**同意做 5 步 / 不同意做 3 条**的评估（附反例）、目标形状（`BattleSceneAssembler` + `BattleSetupSystem`）、五步落地路线与逐步验收口径/回滚 | 2026-09-19 **指导文档，代码未开始**；落地按 §4 五步执行，每步完成后回填状态 |
 
 ### 04_模块设计（原 `Modules/`）
 

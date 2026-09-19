@@ -6,76 +6,17 @@ using UnityEngine;
 namespace TeaGame
 {
    /// <summary>
-   /// 新版武器表现组件。
-   /// 该组件用于承载新武器 prefab 的表现信息，并由战斗系统统一驱动瞄准朝向。
-   /// </summary>
-   public class BattleWeaponObjectComponent : MonoBehaviour
-   {
-      [Header("武器挂点")]
-      [SerializeField] private Transform showPoint;
-      [SerializeField] private ParticleSystem muzzleFireEffect;
-      [SerializeField] private GameObject bulletPrefab;
-      [SerializeField] private GameObject bulletLinePrefab;
-
-      /// <summary>
-      /// 子弹发射点。
-      /// 若未手动配置，则退回到当前物体自身。
-      /// </summary>
-      public Transform ShowPoint => showPoint ? showPoint : transform;
-
-      /// <summary>
-      /// 子弹预制体。
-      /// </summary>
-      public GameObject BulletPrefab => bulletPrefab;
-
-      /// <summary>
-      /// 线性弹道表现预制体。
-      /// </summary>
-      public GameObject BulletLinePrefab => bulletLinePrefab;
-
-      /// <summary>
-      /// 播放枪口火焰。
-      /// </summary>
-      public void PlayMuzzleFire()
-      {
-         if (muzzleFireEffect)
-         {
-            muzzleFireEffect.Play();
-         }
-      }
-
-      /// <summary>
-      /// 刷新武器瞄准朝向。
-      /// 若存在锁敌目标，则朝向目标；
-      /// 否则缓动回到本地零旋转，保持武器挂回默认朝向。
-      /// </summary>
-      public void RefreshAim(Transform lookTarget, float lockSpeed)
-      {
-         if (lookTarget)
-         {
-            var targetAxis = lookTarget.position - transform.position;
-            var targetRotation = Quaternion.LookRotation(targetAxis);
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, lockSpeed * Time.deltaTime);
-         }
-         else
-         {
-            transform.localRotation = Quaternion.Lerp(
-               transform.localRotation,
-               Quaternion.identity,
-               lockSpeed * Time.deltaTime);
-         }
-      }
-   }
-
-   /// <summary>
    /// 武器视图工厂。
    /// 该工厂负责根据 prefab 上实际挂载的组件，返回统一的武器视图适配器。
+   /// 2026-09-19：旧版 `Weapon_ObjectComponent` 已退役（全部武器 prefab 都是 `Wep-Base` 的变体，
+   /// 统一挂新版 <see cref="BattleWeaponObjectComponent"/>），故**不再保留回退分支**。
    /// </summary>
    public static class BattleWeaponViewFactory
    {
       /// <summary>
       /// 为武器实例创建视图适配器。
-      /// 优先读取新版组件，若 prefab 仍然挂着旧版组件，则自动回退到旧版适配器。
+      /// 未挂 <see cref="BattleWeaponObjectComponent"/> 时返回 null 并告警——
+      /// 此时 `BattleWeaponModeBase.WeaponView` 为空，开火会被 `PressTrigger` 首行守卫静默跳过。
       /// </summary>
       public static IBattleWeaponView Create(Transform weaponInstance)
       {
@@ -86,12 +27,7 @@ namespace TeaGame
             return new BattleWeaponViewAdapter(battleComponent);
          }
 
-         if (weaponInstance.TryGetComponent(out Weapon_ObjectComponent legacyComponent))
-         {
-            return new LegacyBattleWeaponViewAdapter(legacyComponent);
-         }
-
-         Debug.LogWarning($"武器实例 {weaponInstance.name} 没有找到可用的武器表现组件。");
+         Debug.LogWarning($"武器实例 {weaponInstance.name} 没有找到可用的武器表现组件（BattleWeaponObjectComponent）。");
          return null;
       }
    }
@@ -116,39 +52,6 @@ namespace TeaGame
       public void PlayMuzzleFire()
       {
          mComponent?.PlayMuzzleFire();
-      }
-
-      public void RefreshAim(Transform lookTarget, float lockSpeed)
-      {
-         mComponent?.RefreshAim(lookTarget, lockSpeed);
-      }
-   }
-
-   /// <summary>
-   /// 旧版武器组件适配器。
-   /// 旧版组件仍挂在实际使用的 `Wep-Base.prefab` 上，但自 2026-09-19 起
-   /// **朝向也交给本适配器转发驱动**（原组件的自驱 Update 已删除）。
-   /// </summary>
-   public sealed class LegacyBattleWeaponViewAdapter : IBattleWeaponView
-   {
-      private readonly Weapon_ObjectComponent mComponent;
-
-      public LegacyBattleWeaponViewAdapter(Weapon_ObjectComponent component)
-      {
-         mComponent = component;
-      }
-
-      public Transform RootTransform => mComponent ? mComponent.transform : null;
-      public Transform FirePoint => mComponent ? mComponent.showPoint : null;
-      public GameObject BulletPrefab => mComponent ? mComponent.bulletPrefab : null;
-      public GameObject BulletLinePrefab => mComponent ? mComponent.bulletLinePrefab : null;
-
-      public void PlayMuzzleFire()
-      {
-         if (mComponent && mComponent.eff_MuzzleFire)
-         {
-            mComponent.eff_MuzzleFire.Play();
-         }
       }
 
       public void RefreshAim(Transform lookTarget, float lockSpeed)

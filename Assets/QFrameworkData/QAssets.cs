@@ -21,10 +21,20 @@ namespace QAssetBundle
         public const string BundleName = "battle_levelresultpanel_prefab";
         public const string Battle_LevelResultPanel = "Battle_LevelResultPanel";
     }
+    public class Battle_mainpanel_prefab
+    {
+        public const string BundleName = "battle_mainpanel_prefab";
+        public const string Battle_MainPanel = "Battle_MainPanel";
+    }
     public class Battle_pausemenupanel_prefab
     {
         public const string BundleName = "battle_pausemenupanel_prefab";
         public const string Battle_PauseMenuPanel = "Battle_PauseMenuPanel";
+    }
+    public class Battle_playercontrol_prefab
+    {
+        public const string BundleName = "battle_playercontrol_prefab";
+        public const string Battle_PlayerControl = "Battle_PlayerControl";
     }
     public class Battle_touchinputpanel_prefab
     {
