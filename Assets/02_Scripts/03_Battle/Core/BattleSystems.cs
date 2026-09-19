@@ -130,7 +130,7 @@ namespace TeaGame
          if (datas == null || datas.Length <= 1) return;
 
          var count = datas.Length;
-         var start = State.SelectedRoleIndex;
+         var start = State.SelectedRoleIndex.Value;
          for (var step = 1; step <= count; step++)
          {
             var index = ((start + direction * step) % count + count) % count;
@@ -391,14 +391,14 @@ namespace TeaGame
             }
             else
             {
-               State.Hud.AimPosition.Value = ProjectEnemyToAimSpace(State.LockEnemy, controller);
+               State.AimPosition.Value = ProjectEnemyToAimSpace(State.LockEnemy, controller);
             }
          }
 
          if (!mManualLocked)
          {
             State.LockEnemy = FindLockEnemy(controller, out var screenTarget);
-            State.Hud.AimPosition.Value = screenTarget;
+            State.AimPosition.Value = screenTarget;
          }
 
          if (previousEnemy != State.LockEnemy)
@@ -464,7 +464,7 @@ namespace TeaGame
 
          mManualLocked = true;
          State.LockEnemy = candidates[nextIndex];
-         State.Hud.AimPosition.Value = ProjectEnemyToAimSpace(State.LockEnemy, controller);
+         State.AimPosition.Value = ProjectEnemyToAimSpace(State.LockEnemy, controller);
       }
 
       /// <summary>
@@ -511,8 +511,16 @@ namespace TeaGame
       {
          var pixel = camera.WorldToScreenPoint(position);
          return new Vector2(pixel.x - Screen.width * 0.5f, pixel.y - Screen.height * 0.5f)
-            * (BattleHudState.AimReferenceWidth / Mathf.Max(1, Screen.width));
+            * (AimReferenceWidth / Mathf.Max(1, Screen.width));
       }
+
+      /// <summary>
+      /// 准星偏移的参考屏宽（与 <see cref="Battle_MainPanel.AimReferenceWidth"/> **必须一致**）。
+      /// 为何在此重复一份：本常量属"视图空间"参数，而 Aim 的 Canvas 投影尚未下沉到 UI 层
+      /// （见 19 文档 §7 待办）。让 System 反向引用 UI 类型会立刻违反刚确立的"System 不认识 View"规则，
+      /// 因此宁可暂时重复一个数字；待投影下沉到 `Battle_MainPanel` 后，这份重复随之删除。
+      /// </summary>
+      private const float AimReferenceWidth = 1920f;
 
       // 吸附倍率属于武器规则，使用独立逻辑游标，不读取 View 的 RectTransform。
       private Vector2 trackingPosition;
@@ -523,20 +531,20 @@ namespace TeaGame
          mManualLocked = false;
          mSwitchCooldownUntil = 0f;
          trackingPosition = Vector2.zero;
-         State.Hud.AimPosition.Value = Vector2.zero;
+         State.AimPosition.Value = Vector2.zero;
          State.LockSpeedMultiplier = 1f;
-         State.Hud.AimLerpSpeed.Value = State.Controller ? State.Controller.PlayerConfig.LockEnemySpeed : 10f;
+         State.AimLerpSpeed.Value = State.Controller ? State.Controller.PlayerConfig.LockEnemySpeed : 10f;
       }
 
       public void TickLateUpdate()
       {
          var controller = State.Controller;
          if (!controller) return;
-         var target = State.Hud.AimPosition.Value;
+         var target = State.AimPosition.Value;
          var distance = Vector2.Distance(trackingPosition, target);
          State.LockSpeedMultiplier = distance > 50f || distance <= 0f ? 1f : distance > 15f ? 4f : 12f;
-         State.Hud.AimLerpSpeed.Value = controller.GetCurrentLockSpeed(State.LockSpeedMultiplier);
-         trackingPosition = Vector2.Lerp(trackingPosition, target, State.Hud.AimLerpSpeed.Value * Time.deltaTime);
+         State.AimLerpSpeed.Value = controller.GetCurrentLockSpeed(State.LockSpeedMultiplier);
+         trackingPosition = Vector2.Lerp(trackingPosition, target, State.AimLerpSpeed.Value * Time.deltaTime);
       }
 
       /// <summary>

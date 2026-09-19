@@ -39,7 +39,7 @@ namespace TeaGame
       /// </summary>
       private void PublishCurrentMemberHealth()
       {
-         State.Hud.PublishHealth(State.CurrentBattleData);
+         State.PublishHealth(State.CurrentBattleData);
       }
 
       /// <summary>
@@ -55,11 +55,11 @@ namespace TeaGame
          State.Controller = controller;
          State.ControlTakenOver = controller != null && controller.ControlTakeOff;
          State.BattleDatas = battleDatas ?? System.Array.Empty<BattleRoleRuntimeData>();
-         State.SelectedRoleIndex = Mathf.Clamp(controller != null ? controller.InitialRoleIndex : 0,
+         State.SelectedRoleIndex.Value = Mathf.Clamp(controller != null ? controller.InitialRoleIndex : 0,
             0, Mathf.Max(0, State.BattleDatas.Length - 1));
          State.CameraPitch = 0f;
          State.LockEnemy = null;
-         State.Hud.AimPosition.Value = Vector2.zero;
+         State.AimPosition.Value = Vector2.zero;
          State.LockSpeedMultiplier = 1f;
          State.Movement.LastRollTime = -Mathf.Max(0.01f, controller != null ? controller.PlayerConfig.GetRollCooldown() : 1f);
          State.Movement.ReadySprint = false;
@@ -94,7 +94,7 @@ namespace TeaGame
          if (index < 0 || index >= State.BattleDatas.Length) return;
 
          // 切换目标和当前显示一致，不需要切换，打回
-         if (State.SelectedRoleIndex == index) return;
+         if (State.SelectedRoleIndex.Value == index) return;
 
          // 切换目标
          var target = State.BattleDatas[index];
@@ -102,10 +102,8 @@ namespace TeaGame
          // 目标为空或目标已死亡，无法切换，打回
          if (target == null || target.IsDowned) return;
 
-         State.SelectedRoleIndex = index;
+         State.SelectedRoleIndex.Value = index;
          PublishCurrentMemberHealth();
-         // 主 HUD 视图状态（反向绑定数据源，见 BattleHudState）
-         State.Hud.SelectedRoleIndex.Value = index;
          Architecture.SendEvent(new BattleEvent_RoleSwitched { Index = index });
       }
 
@@ -124,10 +122,8 @@ namespace TeaGame
             var candidate = State.BattleDatas[index];
             if (candidate == null || candidate.IsDowned) continue;
 
-            State.SelectedRoleIndex = index;
+            State.SelectedRoleIndex.Value = index;
             PublishCurrentMemberHealth();
-            // 主 HUD 视图状态（反向绑定数据源，见 BattleHudState）
-            State.Hud.SelectedRoleIndex.Value = index;
             Debug.Log($"[T3.1B] 自动切至存活成员：{candidate.RoleName}（槽 {index + 1}）。");
             Architecture.SendEvent(new BattleEvent_RoleSwitched { Index = index });
             return true;

@@ -11,7 +11,7 @@ namespace TeaGame
    /// 战斗主 HUD 面板（原 <see cref="Battle_PlayerControl"/> 上的 SkillHud 逻辑迁入）。
    ///
    /// **驱动方式：BindableProperty 反向绑定**——面板只负责"注册 + 渲染"，
-   /// 数据变化时由 <see cref="BattleHudState"/> 反过来通知本面板刷新（View 注册、Model 推送）。
+   /// 数据变化时由 <see cref="BattleStateModel"/> 上平铺的 `BindableProperty` 反过来通知本面板刷新（View 注册、Model 推送）。
    /// 与拆分前的区别：以前是 `Battle_PlayerControl` 用 `RegisterEvent` 订阅 3 个事件再自己拼字符串，
    /// 逻辑与渲染都挂在 rig（View 载体）上；现在数据源是可绑定属性、渲染在**面板**里，
    /// rig 不再承担任何 UI 文本职责。
@@ -35,6 +35,12 @@ namespace TeaGame
 
       /// <summary>prefab 资源名（UIKit 经 ResKit 加载用，= prefab 文件名）。</summary>
       public const string PrefabName = "Battle_MainPanel";
+
+      /// <summary>
+      /// 准星偏移的参考屏宽（与旧 rig CanvasScaler 的 1920 一致）。
+      /// **视图常量**：原先放在 Model 的 `BattleHudState` 里，属"模型里塞显示参数"，随平铺重构迁到本面板。
+      /// </summary>
+      public const float AimReferenceWidth = 1920f;
 
       /// <summary>是否已注册过绑定（防止同一面板实例重复 Open 时重复注册）。</summary>
       private bool mBound;
@@ -98,13 +104,13 @@ namespace TeaGame
          if (mBound) return;
          mBound = true;
 
-         var hud = BattleArchitecture.Interface.GetModel<BattleStateModel>().Hud;
+         var state = BattleArchitecture.Interface.GetModel<BattleStateModel>();
 
-         Bind(hud.SelectedRoleIndex); // 角色名 · 元素
-         Bind(hud.Energy);            // Q 行能量
-         Bind(hud.SkillERemain);      // E 行就绪/冷却
-         Bind(hud.SkillQRemain);      // Q 行就绪/冷却
-         Bind(hud.SkillQDeficit);     // Q 行能量不足提示
+         Bind(state.SelectedRoleIndex); // 角色名 · 元素
+         Bind(state.RoleEnergy);        // Q 行能量
+         Bind(state.SkillERemain);      // E 行就绪/冷却
+         Bind(state.SkillQRemain);      // Q 行就绪/冷却
+         Bind(state.SkillQDeficit);     // Q 行能量不足提示
       }
 
       /// <summary>
@@ -128,9 +134,8 @@ namespace TeaGame
       private void RefreshHud()
       {
          var state = BattleArchitecture.Interface.GetModel<BattleStateModel>();
-         var hud = state.Hud;
 
-         var roleIndex = hud.SelectedRoleIndex.Value;
+         var roleIndex = state.SelectedRoleIndex.Value;
          var datas = state.BattleDatas;
          var data = datas != null && roleIndex >= 0 && roleIndex < datas.Length ? datas[roleIndex] : null;
          var element = data?.RoleData != null ? data.RoleData.damageElement : DamageElement.none;
@@ -142,19 +147,19 @@ namespace TeaGame
 
          // 无技能档案/执行器的角色（如 none 元素）E/Q 行只显示占位
          var hasSkill = element != DamageElement.none && BattleSkillCatalog.Get(element) != null;
-         var energyText = $"能量 {(int)hud.Energy.Value}/{BattleStateModel.RoleEnergyMax:0}";
+         var energyText = $"能量 {(int)state.RoleEnergy.Value}/{BattleStateModel.RoleEnergyMax:0}";
 
          if (SkillHudELine != null)
          {
             SkillHudELine.text = hasSkill
-               ? "[E] 元素战技 · " + FormatSlot(hud.SkillERemain.Value, 0f)
+               ? "[E] 元素战技 · " + FormatSlot(state.SkillERemain.Value, 0f)
                : "[E] —";
          }
 
          if (SkillHudQLine != null)
          {
             SkillHudQLine.text = hasSkill
-               ? "[Q] 极奏 " + FormatSlot(hud.SkillQRemain.Value, hud.SkillQDeficit.Value) + " · " + energyText
+               ? "[Q] 极奏 " + FormatSlot(state.SkillQRemain.Value, state.SkillQDeficit.Value) + " · " + energyText
                : "[Q] — · " + energyText;
          }
 

@@ -209,7 +209,7 @@ namespace TeaGame
          // 重置瞄准
          Architecture.GetSystem<BattleAimSystem>().ResetForBattle();
 
-         StateModel.Hud.PublishAmmo(StateModel.CurrentBattleData);
+         StateModel.PublishAmmo(StateModel.CurrentBattleData);
 
          playerControl.SyncRuntimeBridge();
 
@@ -424,7 +424,7 @@ namespace TeaGame
          ApplyMovementForce(Architecture.GetSystem<BattleMovementSystem>().TickUpdate(movementActor.Forward));
          Architecture.GetSystem<BattleCameraSystem>().Tick();
          TickActors();
-         StateModel.Hud.PublishAmmo(StateModel.CurrentBattleData);
+         StateModel.PublishAmmo(StateModel.CurrentBattleData);
          Architecture.GetSystem<BattleWeaponSystem>().Tick();
 
          // T2.4：技能管道（输入快照已含 E/Q，冷却读秒 + 施放校验在本系统内收口）

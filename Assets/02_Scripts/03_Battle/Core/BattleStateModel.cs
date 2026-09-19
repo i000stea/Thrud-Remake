@@ -4,99 +4,152 @@ using UnityEngine;
 namespace TeaGame
 {
    /// <summary>
-   /// 战斗状态模型。
-   /// 所有角色控制系统共享的运行时状态都保存在这里，
-   /// 这样输入、移动、瞄准、武器与表现系统就可以围绕同一份数据协作。
+   /// 战斗状态模型（战斗架构唯一的 Model）。
+   ///
+   /// **组织原则（2026-09-19 平铺重构，用户评审意见）**：
+   /// - **不为任何 View 单独开容器**：原 `BattleHudState Hud` 已删除；数据**平铺**在本类上，
+   ///   View 自行绑定它需要的那几个字段（原话："模型中不需要为 hud 单独考虑…view 显示内容由 view 层自己负责"）。
+   /// - `BindableProperty` 只用于**需要通知 UI 的仿真事实（标量）**；其余保持普通字段。
+   /// - **只为"当前值"建标量**：QFramework 的 `BindableProperty` 没有集合变更通知，
+   ///   不要为"每个成员 / 每个槽位"建属性。需要"每成员"的 View（如队伍血条）自行订阅
+   ///   `BattleEvent_Role*` 后按索引拉取。
+   /// - 类型纪律：`BindableProperty<T>.Comparer` 是**按 T 共享的 static 字段**，默认比较对值类型会装箱；
+   ///   只用 `int` / `float` / `Vector2`（框架 `ComparerAutoRegister` 已注册快速比较器）。
+   /// - ⚠️ `AimPosition` / `AimLerpSpeed` 是**视图空间量**（Canvas 参考坐标 + 缓动参数），
+   ///   是本类仅存的"越界"项，待下沉到 UI 层（见 `19_表现层分层_View与Actor_设计.md` §7）。
+   ///
+   /// **写入方约定**：每个字段在注释里写明唯一写入口；View 只读。
    /// </summary>
    public sealed class BattleStateModel : AbstractModel
    {
-      /// <summary> 当前战斗控制器。 </summary>
+      // ==================== 装配期引用（战斗开始时写一次） ====================
+
+      /// <summary>当前战斗 rig（场景装配入口）。写入：battle_runtime 装配。</summary>
       public Battle_PlayerControl Controller;
 
-      /// <summary> 当前战斗角色运行时数据集合。 </summary>
+      /// <summary>出战成员运行时数据（槽位序 = 切人序）。写入：BattleRoleSystem.Initialize。</summary>
       public BattleRoleRuntimeData[] BattleDatas = System.Array.Empty<BattleRoleRuntimeData>();
 
-      /// <summary>
-      /// ！ 模型中不需要为hud单独考虑，而是将数据平铺，让hud自行进行绑定，view显示内容由view层自己负责
-      /// 主 HUD 的可绑定视图状态（反向绑定数据源，见 <see cref="BattleHudState"/>）。
-      /// 由角色系统 / 技能系统在原有写入口同步写入，只有 UI（<see cref="Battle_MainPanel"/>）读取。
-      /// </summary>
-      public readonly BattleHudState Hud = new();
+      // ==================== 每帧输入 ====================
 
-      /// <summary>
-      /// 每帧输入快照。
-      /// 输入系统只负责写入，其他系统只负责读取。
-      /// </summary>
+      /// <summary>每帧输入快照。写入：BattleInputSystem.Tick（唯一）。其余系统只读。</summary>
       public readonly BattleInputSnapshot Input = new();
 
-      /// <summary>
-      /// 移动系统运行时状态。
-      /// 包括缓存推力、翻滚方向、冲刺准备态等。
-      /// </summary>
+      // ==================== 移动 ====================
+
+      /// <summary>移动运行时状态（缓存推力 / 翻滚方向 / 冲刺标记）。写入：BattleMovementSystem。</summary>
       public readonly BattleMovementState Movement = new();
 
-      /// <summary>
-      /// 当前选中的角色索引。
-      /// </summary>
-      public int SelectedRoleIndex;
+      // ==================== 视角与相机 ====================
 
-      /// <summary>
-      /// T2.4 技能能量上限（命中/击杀增长，极奏 Q 消耗）。
-      /// </summary>
-      public const float RoleEnergyMax = 100f;
-
-      /// <summary>
-      /// T2.4 当前技能能量（0~<see cref="RoleEnergyMax"/>）。
-      /// </summary>
-      public float RoleEnergy;
-
-      /// <summary>
-      /// T3.1 当前关卡流程状态（Prepare/Wave/Victory/Defeat/Exit）。
-      /// 由 BattleLevelFlow 状态机写入，HUD/表现层只读。
-      /// </summary>
-      public BattleLevelState LevelState = BattleLevelState.Exit;
-
-      /// <summary>
-      /// T3.1 暂停标记（ESC 暂停菜单：Time.timeScale=0，进程不暂停）。
-      /// 暂停期间战斗输入/物理/表现不推进，UI 菜单可点击。
-      /// </summary>
-      public bool Paused;
-
-      /// <summary>
-      /// 当前是否处于控制接管状态。
-      /// 例如过场动画、暂停、技能演出、全灭终局等都可能接管控制。
-      /// </summary>
-      public bool ControlTakenOver;
-
-      /// <summary>
-      /// 相机俯仰角缓存。
-      /// </summary>
+      /// <summary>相机俯仰角缓存。写入：BattleCameraSystem。</summary>
       public float CameraPitch;
 
-      /// <summary> 当前锁定的敌人目标。 </summary>
+      // ==================== 锁敌 ====================
+
+      /// <summary>当前锁定目标。判空必须用 <see cref="BattleCombatUtility.IsAlive"/>（接口判空不触发 Unity 重载）。</summary>
       public IBattleEnemyTarget LockEnemy;
 
-      /// <summary>
-      /// 锁敌插值速度倍率。
-      /// 根据准星距目标的远近动态调整。
-      /// </summary>
+      /// <summary>锁敌插值速度倍率（按准星距目标远近动态调整）。写入：BattleAimSystem。</summary>
       public float LockSpeedMultiplier = 1f;
 
+      // ==================== 角色与生命（可绑定） ====================
+
+      /// <summary>当前出战角色槽位。写入：BattleRoleSystem 选角 / 自动切人。</summary>
+      public readonly BindableProperty<int> SelectedRoleIndex = new(0);
+
+      /// <summary>当前出战成员的当前血量。写入：扣血 / 治疗 / 切人时（PublishHealth）。</summary>
+      public readonly BindableProperty<float> CurrentMemberHealth = new(0f);
+
+      /// <summary>当前出战成员的最大血量。写入：同上。</summary>
+      public readonly BindableProperty<float> CurrentMemberMaxHealth = new(1f);
+
+      // ==================== 技能（可绑定） ====================
+
+      /// <summary>技能能量上限。</summary>
+      public const float RoleEnergyMax = 100f;
+
+      /// <summary>当前技能能量（0~<see cref="RoleEnergyMax"/>）。写入：BattleSkillSystem 能量结算。</summary>
+      public readonly BindableProperty<float> RoleEnergy = new(0f);
+
+      /// <summary>E（元素战技）剩余冷却秒数；&gt;0 表示冷却中。写入：BattleSkillSystem 广播。</summary>
+      public readonly BindableProperty<float> SkillERemain = new(0f);
+
+      /// <summary>Q（极奏）剩余冷却秒数；&gt;0 表示冷却中。写入：同上。</summary>
+      public readonly BindableProperty<float> SkillQRemain = new(0f);
+
+      /// <summary>Q 的能量缺口（冷却已到但能量不足时 &gt;0）。写入：同上。</summary>
+      public readonly BindableProperty<float> SkillQDeficit = new(0f);
+
+      // ==================== 武器（可绑定） ====================
+
+      /// <summary>当前武器弹匣余弹；&lt;0 表示当前没有武器。写入：PublishAmmo。</summary>
+      public readonly BindableProperty<int> CurrentWeaponMagazine = new(-1);
+
+      /// <summary>当前武器弹匣容量。写入：PublishAmmo。</summary>
+      public readonly BindableProperty<int> CurrentWeaponMaxMagazine = new(0);
+
+      /// <summary>是否正在装填（0/1；用 int 以走框架的快速比较器）。写入：PublishAmmo。</summary>
+      public readonly BindableProperty<int> CurrentWeaponReloading = new(0);
+
       /// <summary>
-      /// 当前正在操控的角色数据。
-      /// 若当前没有有效角色，则返回 null。
+      /// 装填进度 **原始 0..1**。
+      /// 刻意不存"百分比 / 显示步数"——那是 View 的显示决定（见 19 文档 §3.1）。
       /// </summary>
+      public readonly BindableProperty<float> CurrentWeaponReloadProgress = new(0f);
+
+      // ==================== 瞄准（⚠️ 视图空间量，待下沉到 UI 层） ====================
+
+      /// <summary>准星目标位置（**Canvas/UI 参考空间**，非世界坐标）。写入：BattleAimSystem。</summary>
+      public readonly BindableProperty<Vector2> AimPosition = new(Vector2.zero);
+
+      /// <summary>准星插值速度（视图缓动参数）。写入：BattleAimSystem。</summary>
+      public readonly BindableProperty<float> AimLerpSpeed = new(10f);
+
+      // ==================== 关卡流程与控制权 ====================
+
+      /// <summary>关卡流程状态（Prepare/Wave/Victory/Defeat/Exit）。写入：BattleLevelFlow 状态机。</summary>
+      public BattleLevelState LevelState = BattleLevelState.Exit;
+
+      /// <summary>暂停标记（Time.timeScale=0，进程不暂停）。写入：BattleUiSystem。</summary>
+      public bool Paused;
+
+      /// <summary>控制权是否被接管（终局 / 演出）。</summary>
+      public bool ControlTakenOver;
+
+      // ==================== 派生只读 ====================
+
+      /// <summary>当前正在操控的成员数据；无有效成员时返回 null。</summary>
       public BattleRoleRuntimeData CurrentBattleData
       {
          get
          {
             if (BattleDatas == null || BattleDatas.Length == 0) return null;
-            var safeIndex = Mathf.Clamp(SelectedRoleIndex, 0, BattleDatas.Length - 1);
+            var safeIndex = Mathf.Clamp(SelectedRoleIndex.Value, 0, BattleDatas.Length - 1);
             return BattleDatas[safeIndex];
          }
       }
 
-      protected override void OnInit()  { }
+      // ==================== 写入辅助（生产者在状态变更点调用；View 不调用） ====================
+
+      /// <summary>把某成员的当前血量同步到"当前出战成员"读数（扣血 / 治疗 / 切人时）。</summary>
+      public void PublishHealth(BattleRoleRuntimeData member)
+      {
+         CurrentMemberMaxHealth.Value = member != null ? Mathf.Max(1f, member.MaxHealth) : 1f;
+         CurrentMemberHealth.Value = member != null && !member.IsDowned ? member.CurrentHealth : 0f;
+      }
+
+      /// <summary>把某成员的武器状态同步到"当前武器"读数（每帧 / 换弹时）。</summary>
+      public void PublishAmmo(BattleRoleRuntimeData member)
+      {
+         var mode = member?.WeaponMode;
+         CurrentWeaponMagazine.Value = mode?.CurrentMagazine ?? -1;
+         CurrentWeaponMaxMagazine.Value = mode?.MaxMagazine ?? 0;
+         CurrentWeaponReloading.Value = mode != null && mode.IsReloading ? 1 : 0;
+         CurrentWeaponReloadProgress.Value = mode != null ? Mathf.Clamp01(mode.ReloadProgress) : 0f;
+      }
+
+      protected override void OnInit() { }
    }
 
    /// <summary>
@@ -151,7 +204,7 @@ namespace TeaGame
       /// <summary> 翻滚方向。 </summary>
       public Vector2 RollForce = Vector2.up;
 
-      /// <summary> 是否处于“翻滚后允许进入冲刺”的准备状态。 </summary>
+      /// <summary> 是否处于"翻滚后允许进入冲刺"的准备状态。 </summary>
       public bool ReadySprint;
 
       /// <summary> 当前是否已经进入冲刺状态。</summary>

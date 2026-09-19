@@ -77,7 +77,7 @@ namespace TeaGame
       {
          var state = Architecture.GetModel<BattleStateModel>();
          var data = state.CurrentBattleData;
-         ShowMember(state.SelectedRoleIndex, data != null && !data.IsDowned);
+         ShowMember(state.SelectedRoleIndex.Value, data != null && !data.IsDowned);
       }
 
       /// <summary>把全部成员的角色/武器实例挂到对应挂点下并归零局部变换。</summary>

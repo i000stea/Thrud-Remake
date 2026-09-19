@@ -50,7 +50,7 @@ namespace TeaGame
       /// <param name="amount">治疗量（内部截断为 ≥0）。</param>
       public void HealPlayer(float amount)
       {
-         var index = State.SelectedRoleIndex;
+         var index = State.SelectedRoleIndex.Value;
          var data = State.CurrentBattleData;
          if (data == null || data.IsDowned) return;
 
@@ -75,7 +75,7 @@ namespace TeaGame
             return;
          }
 
-         var index = State.SelectedRoleIndex;
+         var index = State.SelectedRoleIndex.Value;
          var data = State.CurrentBattleData;
          if (data == null || data.IsDowned) return;
 

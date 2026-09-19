@@ -136,10 +136,10 @@ namespace TeaGame
          // T2.3：当前角色元素（子弹携带元素依据）
          var activeElement = DamageElement.none;
          var battleDatas = state.BattleDatas;
-         if (battleDatas != null && state.SelectedRoleIndex >= 0 && state.SelectedRoleIndex < battleDatas.Length
-             && battleDatas[state.SelectedRoleIndex]?.RoleData != null)
+         if (battleDatas != null && state.SelectedRoleIndex.Value >= 0 && state.SelectedRoleIndex.Value < battleDatas.Length
+             && battleDatas[state.SelectedRoleIndex.Value]?.RoleData != null)
          {
-            activeElement = battleDatas[state.SelectedRoleIndex].RoleData.damageElement;
+            activeElement = battleDatas[state.SelectedRoleIndex.Value].RoleData.damageElement;
          }
 
          BattleRuntimeBridge.UpdateState(

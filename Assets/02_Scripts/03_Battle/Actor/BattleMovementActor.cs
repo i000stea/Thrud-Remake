@@ -35,7 +35,10 @@ namespace TeaGame
       // 保留原 AddForce 默认 ForceMode 和调用阶段，翻滚不擅自改成 Impulse。
       public void ApplyForce(Vector3 force) { if (body) body.AddForce(force); }
 
-      public void Teleport(Vector3 position, Quaternion rotation, bool clearVelocity)
+      /// <summary>
+      /// 传送（装配/复活用）。`clearVelocity` 默认 false——与原 `BattleMovementSystem.Teleport` 的默认值一致。
+      /// </summary>
+      public void Teleport(Vector3 position, Quaternion rotation, bool clearVelocity = false)
       {
          if (!root) return;
          root.SetPositionAndRotation(position, rotation);

@@ -59,9 +59,8 @@ namespace TeaGame
       /// </summary>
       public void ResetForBattle()
       {
-         State.RoleEnergy = 0f;
-         // 主 HUD 视图状态（反向绑定数据源，见 BattleHudState）
-         State.Hud.Energy.Value = 0f;
+         // 能量归零（绑定属性直写；原 BattleHudState 的镜像已随平铺重构合并为同一处字段）
+         State.RoleEnergy.Value = 0f;
          mReadyAt = null;
          mLastRemainSeconds = null;
          mLastReady = null;
@@ -77,7 +76,7 @@ namespace TeaGame
       {
          EnsureRuntime();
 
-         var roleIndex = State.SelectedRoleIndex;
+         var roleIndex = State.SelectedRoleIndex.Value;
          if (roleIndex >= 0 && roleIndex < mReadyAt.GetLength(0))
          {
             TickCooldownBroadcast(roleIndex);
@@ -120,7 +119,7 @@ namespace TeaGame
       /// </summary>
       private bool TryCast(BattleSkillSlot slot)
       {
-         var roleIndex = State.SelectedRoleIndex;
+         var roleIndex = State.SelectedRoleIndex.Value;
          var battleDatas = State.BattleDatas;
          if (battleDatas == null || roleIndex < 0 || roleIndex >= battleDatas.Length)
          {
@@ -151,7 +150,7 @@ namespace TeaGame
 
          var slotData = profile.GetSlot(slot);
          var energyCost = Mathf.Max(0f, slotData.EnergyCost);
-         if (energyCost > 0f && State.RoleEnergy < energyCost)
+         if (energyCost > 0f && State.RoleEnergy.Value < energyCost)
          {
             return false; // 能量不足
          }
@@ -193,22 +192,20 @@ namespace TeaGame
       private void AddEnergy(float delta)
       {
          var max = BattleStateModel.RoleEnergyMax;
-         var next = Mathf.Clamp(State.RoleEnergy + delta, 0f, max);
-         if (Mathf.Approximately(next, State.RoleEnergy))
+         var next = Mathf.Clamp(State.RoleEnergy.Value + delta, 0f, max);
+         if (Mathf.Approximately(next, State.RoleEnergy.Value))
          {
             return;
          }
 
-         State.RoleEnergy = next;
-         // 主 HUD 视图状态（反向绑定数据源，见 BattleHudState）
-         State.Hud.Energy.Value = next;
+         State.RoleEnergy.Value = next;
          Architecture.SendEvent(new BattleEvent_SkillEnergyChanged
          {
             Energy = next,
             Max = max
          });
 
-         var roleIndex = State.SelectedRoleIndex;
+         var roleIndex = State.SelectedRoleIndex.Value;
          if (roleIndex >= 0)
          {
             BroadcastSlot(roleIndex, (int)BattleSkillSlot.Ultimate);
@@ -218,7 +215,7 @@ namespace TeaGame
       /// <summary>广播当前角色的 E/Q 槽状态（切人/开战时调用）。</summary>
       private void BroadcastCurrentRoleCooldowns()
       {
-         var roleIndex = State.SelectedRoleIndex;
+         var roleIndex = State.SelectedRoleIndex.Value;
          if (roleIndex < 0 || roleIndex >= mReadyAt.GetLength(0))
          {
             return;
@@ -233,7 +230,7 @@ namespace TeaGame
       /// <summary>当前角色指定槽是否就绪（含极奏能量门槛）。HUD 查询用，不驱动广播。</summary>
       public bool IsSlotReady(BattleSkillSlot slot)
       {
-         var roleIndex = State.SelectedRoleIndex;
+         var roleIndex = State.SelectedRoleIndex.Value;
          EnsureRuntime();
          if (roleIndex < 0 || mReadyAt == null || roleIndex >= mReadyAt.GetLength(0))
          {
@@ -258,7 +255,7 @@ namespace TeaGame
             var element = GetRoleElement(roleIndex);
             var profile = BattleSkillCatalog.Get(element);
             var energyCost = profile?.Ultimate.EnergyCost ?? 0f;
-            if (energyCost > 0f && State.RoleEnergy < energyCost)
+            if (energyCost > 0f && State.RoleEnergy.Value < energyCost)
             {
                return false;
             }
@@ -270,7 +267,7 @@ namespace TeaGame
       /// <summary>当前角色指定槽的剩余冷却秒数（就绪为 0）。HUD 查询用。</summary>
       public float GetSlotRemainSeconds(BattleSkillSlot slot)
       {
-         var roleIndex = State.SelectedRoleIndex;
+         var roleIndex = State.SelectedRoleIndex.Value;
          EnsureRuntime();
          if (roleIndex < 0 || mReadyAt == null || roleIndex >= mReadyAt.GetLength(0))
          {
@@ -289,7 +286,7 @@ namespace TeaGame
             return 0f;
          }
 
-         var roleIndex = State.SelectedRoleIndex;
+         var roleIndex = State.SelectedRoleIndex.Value;
          EnsureRuntime();
          if (roleIndex < 0 || mReadyAt == null || roleIndex >= mReadyAt.GetLength(0))
          {
@@ -299,7 +296,7 @@ namespace TeaGame
          var element = GetRoleElement(roleIndex);
          var profile = BattleSkillCatalog.Get(element);
          var energyCost = profile?.Ultimate.EnergyCost ?? 0f;
-         return Mathf.Max(0f, energyCost - State.RoleEnergy);
+         return Mathf.Max(0f, energyCost - State.RoleEnergy.Value);
       }
 
       /// <summary>冷却读秒广播：仅整秒变化 / 就绪翻转时派发（节流，避免每帧刷 UI）。</summary>
@@ -347,16 +344,16 @@ namespace TeaGame
          // 主 HUD 视图状态：只镜像"当前出战角色"的槽位（Battle_MainPanel 反向绑定消费）。
          // remainSeconds 是**纯冷却**剩余秒数（不含能量门槛）；"就绪 / 冷却中 / 能量不足"的区分由
          // View 按 (remainSeconds, deficit) 组合判定——与拆分前 Battle_PlayerControl 的语义一致。
-         if (roleIndex == State.SelectedRoleIndex)
+         if (roleIndex == State.SelectedRoleIndex.Value)
          {
             if (slotIndex == (int)BattleSkillSlot.Elemental)
             {
-               State.Hud.SkillERemain.Value = remainSeconds;
+               State.SkillERemain.Value = remainSeconds;
             }
             else
             {
-               State.Hud.SkillQRemain.Value = remainSeconds;
-               State.Hud.SkillQDeficit.Value = GetSlotEnergyDeficit((BattleSkillSlot)slotIndex);
+               State.SkillQRemain.Value = remainSeconds;
+               State.SkillQDeficit.Value = GetSlotEnergyDeficit((BattleSkillSlot)slotIndex);
             }
          }
       }
@@ -388,7 +385,7 @@ namespace TeaGame
             var element = GetRoleElement(roleIndex);
             var profile = BattleSkillCatalog.Get(element);
             var energyCost = profile?.Ultimate.EnergyCost ?? 0f;
-            if (energyCost > 0f && State.RoleEnergy < energyCost)
+            if (energyCost > 0f && State.RoleEnergy.Value < energyCost)
             {
                return false;
             }
