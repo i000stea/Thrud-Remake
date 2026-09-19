@@ -39,6 +39,26 @@ namespace TeaGame
    }
 
    /// <summary>
+   /// 战斗玩家目标接口（2026-09-19：取代已退役的 `BattleRuntimeBridge.PlayerTransform`）。
+   ///
+   /// **为什么是"目标"而不是"一个 Transform"**：敌人找玩家本质是**目标选择**（对称于
+   /// <see cref="IBattleEnemyTarget"/>），所以这里给出目标语义，注册表按接口持有——
+   /// 这样 `Core/` 不必知道 rig 的具体类型（旧桥接为了做 owner 守卫而硬引用 `Battle_PlayerControl`）。
+   ///
+   /// 实现者：场景 rig（<see cref="Battle_PlayerControl"/>）。
+   /// ⚠️ 判空纪律同敌人：接口持有的 `UnityEngine.Object` 必须走
+   /// <see cref="BattleCombatUtility.IsAlive(IBattlePlayerTarget)"/>（接口判空不触发 Unity 的 `==` 重载）。
+   /// </summary>
+   public interface IBattlePlayerTarget
+   {
+      /// <summary>
+      /// 玩家根节点。
+      /// 用于敌人朝向（`LookAt`）、追击与距离判定；取不到时返回 null。
+      /// </summary>
+      Transform RootTransform { get; }
+   }
+
+   /// <summary>
    /// 武器表现接口。
    /// 该接口统一了新武器组件与旧武器组件的访问方式，
    /// 使数据装配层可以通过适配器桥接旧 prefab，而无需强制一次性替换所有资源。
@@ -133,6 +153,68 @@ namespace TeaGame
          }
 
          return true;
+      }
+
+      /// <summary>
+      /// 对玩家目标做 UnityEngine.Object 安全判空。
+      /// 理由与 <see cref="IsAlive(IBattleEnemyTarget)"/> 完全相同：接口判空不触发 Unity 的 `==` 重载，
+      /// rig 被 Destroy 后 `!= null` 仍为 true，直接访问 `RootTransform` 会抛 MissingReferenceException
+      /// （重开本关 / 离场时最容易撞上）。
+      /// </summary>
+      public static bool IsAlive(this IBattlePlayerTarget target)
+      {
+         if (target == null) return false;
+
+         if (target is Object unityObject)
+         {
+            return unityObject != null;
+         }
+
+         return true;
+      }
+   }
+
+   /// <summary>
+   /// 战斗玩家目标注册表（2026-09-19：**取代 `BattleRuntimeBridge` 的最后一个成员**）。
+   ///
+   /// **关键差别**：由**玩家自己注册**（rig 的 `Awake` / `OnDestroy`），不再由宿主每帧 `SyncRuntimeBridge()` 喂——
+   /// 这正是桥接层"静态可变镜像 + 跨文件喂数据"的病根；改成自注册后宿主相位表里那 4 次同步彻底消失。
+   ///
+   /// 语义：同一时刻只有一个玩家目标；**后注册者胜**（与旧桥接行为一致）。
+   /// </summary>
+   public static class BattlePlayerRegistry
+   {
+      /// <summary>当前玩家目标（按接口持有，`Core/` 不依赖 rig 的具体类型）。</summary>
+      private static IBattlePlayerTarget sCurrent;
+
+      /// <summary>注册玩家目标（rig 在 `Awake` 调用；重复注册同一实例幂等）。</summary>
+      public static void Register(IBattlePlayerTarget target)
+      {
+         if (target == null) return;
+         sCurrent = target;
+      }
+
+      /// <summary>
+      /// 注销玩家目标（rig 在 `OnDestroy` 调用）。
+      /// **身份守卫**：只有当前注册者能清空，避免误清后来者（等价于旧桥接的 owner 守卫）。
+      /// </summary>
+      public static void UnRegister(IBattlePlayerTarget target)
+      {
+         if (ReferenceEquals(sCurrent, target)) sCurrent = null;
+      }
+
+      /// <summary>
+      /// 玩家根节点；**玩家不存在、或其 GameObject 已销毁时返回 null**（内部已做安全判空）。
+      /// 读者统一用本属性：写法与旧 `BattleRuntimeBridge.PlayerTransform` 相同，
+      /// 但不会拿到"伪非空"的已销毁对象。
+      /// </summary>
+      public static Transform CurrentTransform
+      {
+         get
+         {
+            var target = sCurrent;
+            return target.IsAlive() ? target.RootTransform : null;
+         }
       }
    }
 

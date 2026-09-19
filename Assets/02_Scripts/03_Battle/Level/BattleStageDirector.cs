@@ -383,7 +383,7 @@ namespace TeaGame
 
       private static bool IsPlayerWithin(Vector3 center, float radius)
       {
-         var player = BattleRuntimeBridge.PlayerTransform;
+         var player = BattlePlayerRegistry.CurrentTransform;
          if (!player) return false;
 
          var dx = center.x - player.position.x;

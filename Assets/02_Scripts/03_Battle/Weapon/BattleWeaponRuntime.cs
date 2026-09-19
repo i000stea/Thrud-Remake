@@ -126,7 +126,7 @@ namespace TeaGame
       /// <summary>
       /// 当前操控角色的元素，供子弹 prefab 与命中表现按元素取用。
       /// **由 <see cref="BattleWeaponSystem"/> 每帧写入**（同 <see cref="FreeAimRotation"/> 的写法），
-      /// 取代原先读静态的 `BattleRuntimeBridge.ActiveElement`——元素本来就能从
+      /// 取代原先的静态元素镜像——元素本来就能从
       /// `BattleStateModel.CurrentDamageElement` 推出，不需要再维护一份全局镜像。
       /// </summary>
       public DamageElement ActiveElement { get; set; } = DamageElement.none;

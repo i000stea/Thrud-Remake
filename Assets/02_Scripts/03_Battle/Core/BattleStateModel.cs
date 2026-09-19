@@ -175,7 +175,7 @@ namespace TeaGame
 
       /// <summary>
       /// 战斗相机。**派生只读**：由装配期写入的 <see cref="Controller"/>（rig 上的序列化引用）推出，
-      /// 取不到时返回 null。原先相机被镜像到静态的 `BattleRuntimeBridge.Camera`，本属性取代那条路径。
+      /// 取不到时返回 null。**派生只读**是这里唯一允许的取用方式（不要退回"静态镜像"写法）。
       /// </summary>
       public Camera BattleCamera => Controller ? Controller.Control_Camera : null;
 

@@ -673,7 +673,7 @@ namespace TeaGame
             : (Quaternion?)null;
 
          // 元素：子弹 prefab 与命中表现按"当前操控角色"的元素取用。
-         // 由本系统每帧从 Model 派生值写入（原先读静态 BattleRuntimeBridge.ActiveElement）。
+         // 由本系统每帧从 Model 派生值写入（武器模式自持这份运行期输入，不再经过任何全局镜像）。
          weaponMode.ActiveElement = State.CurrentDamageElement;
 
          // 推进换弹进度，计时结束补满弹匣并派发完成事件（占位：控制台日志）

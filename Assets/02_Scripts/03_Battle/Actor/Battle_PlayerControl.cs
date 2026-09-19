@@ -13,8 +13,11 @@ namespace TeaGame
    /// - **不再承担**：进入战斗的数据解析、系统初始化、每帧驱动（这些已上移
    ///   到 battle_runtime（<see cref="BattleSceneRuntimeHost"/>，场景初始化 + 驱动节点）。
    ///   Input/Aim/Camera 暂保留必要的配置与相机读取；移动只通过 MovementActor 执行。
+   /// - **对外身份**：实现 <see cref="IBattlePlayerTarget"/> 并**自己注册到
+   ///   <see cref="BattlePlayerRegistry"/>**（`Awake` 注册 / `OnDestroy` 注销）——
+   ///   敌人一侧的"找玩家"经注册表读，旧的 `BattleRuntimeBridge` + 每帧 `SyncRuntimeBridge()` 已退役（2026-09-19）。
    /// </summary>
-   public partial class Battle_PlayerControl : ViewController, IController, IUnRegisterList
+   public partial class Battle_PlayerControl : ViewController, IController, IUnRegisterList, IBattlePlayerTarget
    {
       #region 运行时
 
@@ -112,6 +115,10 @@ namespace TeaGame
          Architecture.RegisterEvent<BattleEvent_ControlTakeOverRequested>(OnControlTakeOverRequested)
             .UnRegisterWhenGameObjectDestroyed(gameObject);
 
+         // 2026-09-19 桥接层退役：玩家目标改为**自注册**（取代宿主的 SyncRuntimeBridge 每帧喂镜像）。
+         // 读者：BattleStageDirector.IsPlayerWithin + 4 个 IEnemyBehaviour + BattleEnemyEntity 的两处。
+         BattlePlayerRegistry.Register(this);
+
          // 已迁出的旧 HUD 不再参与运行；Editor 清理工具会从资产移除该节点。
          var oldHud = transform.Find("MainCanvas");
          if (oldHud) oldHud.gameObject.SetActive(false);
@@ -125,13 +132,18 @@ namespace TeaGame
 
       // 所有 HUD 字段已迁出；资产清理由 Thrud/Battle/Actor 菜单完成。
 
-      /// <summary>控制器销毁时清理桥接层与事件注册。</summary>
+      /// <summary>玩家根节点（<see cref="IBattlePlayerTarget"/> 实现）：敌人朝向/追击/距离判定用。</summary>
+      public Transform RootTransform => transform;
+
+      /// <summary>控制器销毁时注销玩家目标、清理池与事件注册。</summary>
       private void OnDestroy()
       {
+         // 身份守卫在注册表内部（只有当前注册者能清空）——等价于旧桥接的 owner 守卫
+         BattlePlayerRegistry.UnRegister(this);
+
          // 池根为 DontDestroyOnLoad：战斗离场/重开前把仍在场的子弹/弹道清回对象池，防弹幕滞留跨场景
          BattleObjectPool.DespawnAllActive();
 
-         BattleRuntimeBridge.Clear(this);
          BattleElementBulletLibrary.Clear();
          this.UnRegisterAll();
       }
@@ -146,16 +158,6 @@ namespace TeaGame
       public float GetCurrentLockSpeed(float multiplier)
       {
          return PlayerConfig.LockEnemySpeed * Mathf.Max(1f, multiplier);
-      }
-
-      /// <summary>
-      /// 把剩余上下文同步到桥接层（旧表现脚本兼容；由 battle_runtime 每帧调用）。
-      /// 2026-09-19：相机 / 元素 / 飘字控制器 / 锁敌量已不再经过此处——
-      /// 它们改从 <see cref="BattleStateModel"/> 的派生只读属性取，或由各自系统写入。
-      /// </summary>
-      public void SyncRuntimeBridge()
-      {
-         BattleRuntimeBridge.UpdateState(this, transform);
       }
    }
 }

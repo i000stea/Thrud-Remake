@@ -52,7 +52,7 @@ namespace TeaGame
 
       /// <summary>
       /// 每帧修正飘字朝向，使其始终面向战斗相机。
-      /// 相机取自 Model 的派生只读属性（原先读静态 `BattleRuntimeBridge.Camera`）。
+      /// 相机取自 Model 的派生只读属性 `BattleStateModel.BattleCamera`。
       /// </summary>
       private void LateUpdate()
       {

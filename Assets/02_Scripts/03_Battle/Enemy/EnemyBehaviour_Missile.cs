@@ -16,7 +16,7 @@ namespace TeaGame
 
       public void TickMove(BattleEnemyEntity enemy)
       {
-         var player = BattleRuntimeBridge.PlayerTransform;
+         var player = BattlePlayerRegistry.CurrentTransform;
          if (!player) return;
 
          // 生命周期计时
@@ -34,7 +34,7 @@ namespace TeaGame
 
       public void TickAttack(BattleEnemyEntity enemy)
       {
-         var player = BattleRuntimeBridge.PlayerTransform;
+         var player = BattlePlayerRegistry.CurrentTransform;
          if (player)
          {
             var distance = Vector3.Distance(enemy.transform.position, player.position);

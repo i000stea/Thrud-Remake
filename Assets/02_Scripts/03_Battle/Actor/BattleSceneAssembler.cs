@@ -114,8 +114,6 @@ namespace TeaGame
          //（2026-09-19：发布纪律见该类注释——离散量在变更点、装填进度仅在装填期间按帧）
          state.PublishAmmo(state.CurrentBattleData);
 
-         rig.SyncRuntimeBridge();
-
          // T2.3.1：注册元素子弹（开火按角色元素取弹）
          BattleElementBulletLibrary.Register(
             rig.BulletIcePrefab,

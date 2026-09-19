@@ -174,9 +174,9 @@ namespace TeaGame
             Architecture.SendEvent(new BattleEvent_PauseToggleRequested());
          }
 
+         // 暂停短路点：位于输入之后、其余系统之前（相位表里唯一的早退点）
          if (state.Paused)
          {
-            Rig.SyncRuntimeBridge();
             return;
          }
 
@@ -195,8 +195,6 @@ namespace TeaGame
 
          // T2.4：技能管道（输入快照已含 E/Q，冷却读秒 + 施放校验在本系统内收口）
          Architecture.GetSystem<BattleSkillSystem>().Tick();
-
-         Rig.SyncRuntimeBridge();
       }
 
       private void FixedUpdate()
@@ -213,7 +211,6 @@ namespace TeaGame
             : Vector3.zero;
          ApplyMovementForce(Architecture.GetSystem<BattleMovementSystem>().TickFixedUpdate(moveDirection));
          Architecture.GetSystem<BattleAimSystem>().TickFixedUpdate();
-         Rig.SyncRuntimeBridge();
       }
 
       private void LateUpdate()
@@ -223,7 +220,6 @@ namespace TeaGame
 
          Architecture.GetSystem<BattleAimSystem>().TickLateUpdate();
          Battle_MainPanel.TickForBattle(Time.deltaTime);
-         Rig.SyncRuntimeBridge();
       }
 
       /// <summary>

@@ -342,7 +342,7 @@ namespace TeaGame
 
       /// <summary>
       /// 判断敌人是否位于当前战斗相机的可视范围内。
-      /// 相机取自 Model 的派生只读属性（原先读静态 `BattleRuntimeBridge.Camera`）。
+      /// 相机取自 Model 的派生只读属性 `BattleStateModel.BattleCamera`。
       /// </summary>
       private bool IsVisibleInBattleCamera()
       {
@@ -361,7 +361,7 @@ namespace TeaGame
       /// </summary>
       public void FireBulletAt(float yawOffsetDeg)
       {
-         var player = BattleRuntimeBridge.PlayerTransform;
+         var player = BattlePlayerRegistry.CurrentTransform;
          if (!enemyBulletPrefab || !player) return;
 
          var bulletObject = BattleObjectPool.Spawn(enemyBulletPrefab, transform.position, Quaternion.identity);
@@ -385,7 +385,7 @@ namespace TeaGame
       /// </summary>
       public void DamagePlayerInRadius(float radius, float damage)
       {
-         var player = BattleRuntimeBridge.PlayerTransform;
+         var player = BattlePlayerRegistry.CurrentTransform;
          if (!player) return;
 
          var sqrDistance = (player.position - transform.position).sqrMagnitude;

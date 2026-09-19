@@ -51,7 +51,7 @@ namespace TeaGame
 
       public void TickAttack(BattleEnemyEntity enemy)
       {
-         var player = BattleRuntimeBridge.PlayerTransform;
+         var player = BattlePlayerRegistry.CurrentTransform;
          if (!player) return;
 
          // 弹幕指向玩家（游走方向与玩家无关）
