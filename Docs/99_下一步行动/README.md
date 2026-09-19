@@ -1,5 +1,7 @@
 # 下一步行动清单（Docs 整理日汇总）
 
+> **2026-09-19 宿主瘦身专项（步骤 1–4 已落地并提交，离线编译通过，Play 待验）**：`BattleSceneRuntimeHost.cs` **559 → 314 行**，"数据解析 → `Core/BattleSetupSystem.cs`、装配 → `Actor/BattleSceneAssembler.cs`、每帧中间量 → 各 Actor"三处职责搬出；System 注册 9 → 10。**下一位立刻要做的两件**：① Unity 刷新一次后**提交两个新 `.cs.meta`**；② 按 `../03_专项设计与重构/21_战斗场景装配与宿主瘦身_设计与落地指导.md` **§8.5（8 项）**做 Play 回归。**步骤 5 未做**（落地方式待用户决策，见 21 §8.4）。详细条目见本文 §3.3「P1A · 2026-09-19（宿主瘦身专项）」。
+
 > **2026-09-19 Actor 专项（用户已确认，代码落地，编译/Play 待验）**：移动含传送→MovementActor；模型显隐/动画→RoleActor；武器表现→WeaponActor；FOV→CameraActor。InputSystem 原样保留。BattleViewSystem / InitializeView / 注册已删除，UI 职责归 Battle_MainPanel；Aim → BindableProperty<Vector2> → View 映射/Lerp，吸附倍率独立于 UI。Host 统一装配和 Tick；敌人/子弹/资源加载不扩范围。详细验收与 Editor 清理菜单见 `../03_专项设计与重构/19_表现层分层_View与Actor_设计.md` 当前实施记录。未修改伤害规则，未运行 prefab 工具/重建 AB，不宣称资产或真机完成。
 
 当前 Actor 待办优先于下文旧“方案待确认/步骤迁移”条目：
@@ -120,8 +122,8 @@
 
 > 定位：Demo 已外发测试，热更线顺延。在下一个大阶段开发前，插入缓慢调整阶段，目标是"开发者本人能读懂并掌控代码结构"。**纪律：只做结构，不加功能/不改数值/不修 bug（发现的 bug 记入本清单）/不动第三方目录**。
 
-- [ ] **S1 · 先建立验证回路**（**2026-09-18 半达成**）：`unity` CLI 仍不在 PATH、工程无 `com.unity.pipeline`（`unity_status` 失败一次即止）。**但已找到更省事的路子**：用户开着 Editor 时，**编译结果可直接读 `%LOCALAPPDATA%\Unity\Editor\Editor.log`**（取新段、按行号排旧段；模板见 17 文档 §5）→ 建议把"**用户开着 Editor + 我读 Editor.log**"固化为默认验证回路，`unity pipeline install`（原方案 B）降为可选；**仍未解决的是**：无法主动触发编译、无法读 Console 面板、无法操作场景
-- [ ] **S2 · 现状地图（核心交付物）**（**2026-09-18 大部分完成**）：**已产出两份**——`Docs/03_专项设计与重构/17_代码现状地图.md`（域边界 / 实测跨程序集依赖边 / 契约层口径 / 搬迁回退映射表 / 遗留问题）+ `Docs/03_专项设计与重构/18_Battle调用链与阅读目录.md`（**`03_Battle` 规模已实测补齐**：63 文件 / 9366 行；含入口生命周期、**每帧驱动顺序表**、启动装配链、1 Model + 11 System 职责表、状态模型字段归属、**21 个事件发出/订阅全表**、9 条功能域调用链、**63 文件清单（可当目录）**、12 条阅读顺序、12 条"会困惑的地方"）
+- [ ] **S1 · 先建立验证回路**（**2026-09-19 重要补强**）：`unity` CLI 仍不在 PATH、工程无 `com.unity.pipeline`（`unity_status` 失败一次即止）。现有两条实用路子：① 用户开着 Editor 时，**编译结果可直接读 `%LOCALAPPDATA%\Unity\Editor\Editor.log`**（取新段、按行号排旧段；模板见 17 文档 §5）→ 建议把"**用户开着 Editor + 我读 Editor.log**"固化为默认验证回路，`unity pipeline install`（原方案 B）降为可选；⚠️ 但**编辑器空闲时不会自动刷新**——先比一比 `Editor.log` / `Library\ScriptAssemblies\*.dll` 的 mtime 与改动时间再决定能不能用；② **（2026-09-19 新增）离线整程序集编译**：用 Unity 自带 Roslyn + `Library\ScriptAssemblies` 的引用程序集，在无 UI 参与下对目标程序集做**真实编译**（脚本 `Build\_check\CheckBattle.ps1`，`-Player` 开关专测 player/热更编译面、能覆盖 `#else` 分支）。**仍未解决的是**：无法主动触发 Unity 导入（新脚本的 `.meta` 仍需用户刷新一次才生成）、无法读 Console 面板、无法操作场景
+- [ ] **S2 · 现状地图（核心交付物）**（**2026-09-18 大部分完成**）：**已产出两份**——`Docs/03_专项设计与重构/17_代码现状地图.md`（域边界 / 实测跨程序集依赖边 / 契约层口径 / 搬迁回退映射表 / 遗留问题）+ `Docs/03_专项设计与重构/18_Battle调用链与阅读目录.md`（**`03_Battle` 规模已实测补齐**：2026-09-18 快照为 63 文件 / 9366 行；**2026-09-19 实测为 `03_Battle` 共 86 个 `.cs`，其中运行时代码 71 个**（另 `Contracts/` 9 + `Editor/` 6）；含入口生命周期、**每帧驱动顺序表**、启动装配链、System 职责表、状态模型字段归属、**事件发出/订阅全表**、功能域调用链、文件清单（可当目录）、阅读顺序、"会困惑的地方"）
   - [ ] 仍缺（**其余三项已由 18 文档覆盖，只剩这一项**）：**24 个未挂载旧脚本的死代码判定表**——需逐个标注"确认删除 / 保留待迁移 / 失效路径（`PlayerControl.I`、`Bullet_Base`、`EnemyControl.enemys`）"。注意 `Before/` 目录已整体删除，**旧脚本文件本身已不存在**，该表退化为"确认已删干净 + 复核 `2MainScene` 的 Missing Script"
 - [x] **S3 · 定边界（唯一架构决策点）——完成（2026-09-18）**：`02_Scripts` 按**业务域**拆为 9 个程序集（`TeaGame.App`/`Menu`/`Gacha`/`Battle` + 共享层 `Data`/`Tools` + 契约层 `Battle.Contracts`），**已编译通过**；`menu ↔ battle` 收口为 0 处互相引用
   - [x] **AOT / 热更归属已定稿（用户 2026-09-18，两轮）**：**AOT 只有 `TeaGame.App`，其余全部热更**（`Data`/`Tools`/`Battle.Contracts`/`Battle`/`Menu`/`Gacha`）。第一版决策曾使 `TeaGame.Tools` 因 `App → Tools` 依赖被迫进 AOT；用户把 `TeaBaseButton`（含 `.meta`、GUID 不变、6 处资产引用未断）搬进 `00_App/Tools/` 后依赖消失 → **Tools 回到热更**。复核：App asmdef 无任何项目内引用、App 源码 0 处热更类型 → 满足「AOT 不得引用热更」。见 17 文档 §7 / §7.1
@@ -193,12 +195,20 @@
 
 **P1A · 2026-09-19（宿主瘦身专项）——详细方案见 `../03_专项设计与重构/21_战斗场景装配与宿主瘦身_设计与落地指导.md`**
 
-- [ ] **步骤 1 · 宿主不再持有 `playerControl` 副本（低风险，建议先做）**：`Awake` 首行发布 `StateModel.Controller = playerControl` 使其成为唯一运行期持有者；文件内用 `private Battle_PlayerControl Rig => StateModel.Controller;` 桥接；**删除 `BattleRoleSystem.cs:57` 的 `State.Controller = controller;`**。⚠️ 唯一行为差异：赋值时机从 Start 提前到 Awake（`battleReady` 之前无读者，但**必须 Play 复核**）。验收：宿主只剩声明 1 处 `playerControl`
-- [ ] **步骤 2 · 搬走数据管道 → 新建 `BattleSetupSystem`（收益最大，减约 200 行）**：搬 `TryResolveLevel`(100–130) / `ResolveBattleDatas`(241–299) / `DescribeCatalogState`(301–320) / `DescribeSessionIds`(322–343) / `ResolveTeamCatalog`(345–368) / `BuildDefaultFromCatalog`(370–390)。⚠️ **`ApplyLevelToScene` 必须拆开**：数据归 System，`stageDirector.Setup(...)`(149) 是 View 驱动、留宿主；`#if UNITY_EDITOR` 与失败回退 `BattleSceneGate` 原样保留；**日志文案一字不改**。注册后 System 数 9 → 10
-- [ ] **步骤 3 · Actor `Tick(dt)` 内聚中间量（中等风险）**：`BattleWeaponActor.Tick(...)` 内部算 `target`/`freePoint`；`BattleRoleActor.Tick(...)` 内含 `SetMovement` + `FollowView`；宿主 `TickActors()` 收敛到 ≤15 行。每帧**值**仍作参数传（正常），只下沉**派生中间量**。验收需对角逐条对拍（未锁定回正 / 锁定吸附 / 1·4·12 倍分级 / 模型朝向 / 暂停冻结）
-- [ ] **步骤 4 · 抽 `BattleSceneAssembler`（纯搬运）**：把 `host:84–90` 与 `196–225` 的 Actor 构造 + 7 处 System 调用搬进去，只跑一次、不 tick、不持生命周期。验收：`Select-String 'new Battle\w+Actor' BattleSceneRuntimeHost.cs` = 0，宿主 ≤ ~150 行
-- [ ] **步骤 5 · 最小引用注入（19 文档 §6 的"步骤 6"）**：`BattleRoleSystem.Initialize(Battle_PlayerControl, datas)` 收窄为 3 个引用，`BattleRoleSystem.Health` 不再经 `State.Controller.ControlTakeOff`。改动所有 System 装配签名，**放最后**
-- [ ] **两处顺带待定**：① `host:34` rig 手动拖拽 → 改为「序列化引用 → 场景注册组件 → `ResKit` 异步加载实例化 → 失败回退 `BattleSceneGate`」的显式解析链（**不要 `FindObjectOfType`**）；② `host:111/116` 关卡-美术场景匹配口径（会话关卡与场景不符时：回落同场景首关 vs 报错退回选关）需定论并写回 `BattleLevelSession` 注释
+> **状态（2026-09-19 晚）**：**步骤 1–4 已全部落地并各自提交**（`9b4e7e69` / `a77eb347` / `69f851ab` / `50e509b5`），宿主 **559 → 314 行**（非注释非空 175；第 4 步完成时 309，`248df6ca` 修复 +5），System 注册 9 → 10。
+> **验证口径**：离线整程序集编译通过（`Build\_check\CheckBattle.ps1`，编辑器/player 两配置各 0 error CS）——**Unity 导入编译与 Play 未验**。
+> 逐条记录、5 处偏差与 8 项 Play 清单见 21 文档 §4 各步"落地记录"与 §8。
+
+- [x] **步骤 1 · 宿主不再持有 `playerControl` 副本**（`9b4e7e69`）：`Awake` 发布 `StateModel.Controller = playerControl`（唯一运行期持有者）+ 只读桥接属性 `Rig`；删除 `BattleRoleSystem.Initialize` 里的 `State.Controller = controller;`。**偏差**：`OnDestroy` 判据由 `== Rig`（恒真死比较）改为"非空守卫"。
+- [x] **步骤 2 · 数据管道与诊断 → `Core/BattleSetupSystem.cs`**（`a77eb347`，247 行）：搬走 `TryResolveLevel` / `ResolveBattleDatas` / `DescribeCatalogState` / `DescribeSessionIds` / `ResolveTeamCatalog` / `BuildDefaultFromCatalog` / `EditorTeamCatalogPath`；System **无状态**（目录按次传参）。**偏差**：System 只返回 `BattleTeamResolution{Datas, RetreatToEntryScene}`，"清面板表 + 回入口"由调用方执行（守纪律 5）。**文案逐字核验**：44 条代码字面量集合比对，仅 2 条插值源改名、渲染文本一致。
+- [x] **步骤 3 · Actor `Tick` 内聚中间量**（`69f851ab`）：`BattleRoleActor.Tick(velocity, sprinting, dt)`、`BattleWeaponActor.Tick()`（无 dt——用不上）；宿主 `TickActors()` 22 → 7 行。**偏差**：注入配置**引用**而非快照值（保住 Play 中调参生效）。
+- [x] **步骤 4 · 抽 `Actor/BattleSceneAssembler.cs`**（`50e509b5`，140 行，组合根、不 tick）：宿主删除 `SetupBattleSystems()` 与 4 个 Actor 字段（改 `assembler.X`），成员剩 10 个。**偏差**：行数未达 100–150（口径差异：未计入类头文档与序列化字段；职责判据已达标）；**出生点传送由 Awake 推到 Start（Build）**——已静态核实 Awake→Start 无读者依赖 rig 位置，**Play 必须复核**。
+- [x] **收尾 · Actor 依赖收口**（`fcb43173`）：`BattleRoleActor` 的 Model 从运行期 `GetModel` 查找改为构造期注入（`03_Battle/Actor/` 内 `GetModel<` 命中 0 处），落实 21 纪律 4。
+- [x] **自查修一处搬运引入的缺陷**（`248df6ca`）：宿主曾忽略 `TryResolveLevel` 返回值 → False 分支的 `out` 值可能是"属于别的美术场景"的会话关卡，会被注入 `BattleStageDirector`；现 System 失败即置空 + 宿主显式丢弃。⚠️ **该路径需 Play/真机验**（会话关卡与本场景不符时的日志与行为）。
+- [ ] **步骤 5 · 最小引用注入（唯一未做项，待用户决策）**：⚠️ 落地前发现 21 文档原验收断言与现状不符——`BattleSystems.cs` 的 Input/Camera/Aim/Weapon **形参类型就是 `Battle_PlayerControl`**，只做步骤 5 无法达成"除 Model 字段与 Designer 外不出现该类型"。三条路：**A 窄接口**（`IBattleControlGate` + 只读引用包，推荐）/ **B 事件化**（System 只发接管请求，风险最高）/ **C 暂不做**。见 21 §8.4
+- [ ] **⚠️ 立刻要做的两件（下一位接手先做）**：① 让 Unity 导入一次 → **随即提交两个新 `.cs.meta`**（`Core/BattleSetupSystem.cs.meta`、`Actor/BattleSceneAssembler.cs.meta`，本轮尚未生成）；② 按 **21 §8.5（8 项）** 做 Play 回归
+- [ ] **两处顺带待定（未动）**：① `host:34` rig 手动拖拽 → 改为「序列化引用 → 场景注册组件 → `ResKit` 异步加载实例化 → 失败回退 `BattleSceneGate`」的显式解析链（**不要 `FindObjectOfType`**）；② 关卡-美术场景匹配口径（会话关卡与场景不符时：回落同场景首关 vs 报错退回选关）需定论并写回 `BattleLevelSession` 注释——**现已随数据管道搬进 `BattleSetupSystem`，两处原注释（"这个美术判断不应该放在这里？"）也一起搬了过去，改动集中在那一处**
+- [ ] **待决策：21 文档 §5 的 5 条新纪律是否升格进 `02_系统与玩法设计/01_技术架构设计.md` 与 19 文档**（宿主判据 / 宿主三职责 / 装配器不 tick / Actor 构造期注入 / System 不驱动 View；外加 19 的 `BindableProperty` 通道判据）。本轮**只写进 21 文档**，未动架构文档（属用户决策：架构文档是上位约束，改动应由用户确认）
 
 **P1A · 2026-09-18（域拆分会话）新增待办与待确认项（来源：`../03_专项设计与重构/17_代码现状地图.md`）**
 
