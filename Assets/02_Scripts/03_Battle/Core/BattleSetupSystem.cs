@@ -64,6 +64,9 @@ namespace TeaGame
          Debug.LogError(
             $"[battle_runtime] 场景「{artSceneName}」未解析到关卡数据" +
             "（关卡目录未登记本场景或目录缺失），battle 场景仅保底运行（无波次数据）。");
+         // 失败必须置空：走到这里 selected 可能仍是"属于别的美术场景"的会话关卡
+         //（catalog 为空 + 会话关卡与本场景不符时的路径），调用方照用会把错的关卡注入 Director。
+         selected = null;
          return false;
       }
 

@@ -93,8 +93,13 @@ namespace TeaGame
          StateModel.Controller = playerControl;
 
          // 关卡解析（会话缓存优先 / D12 直连默认）由 BattleSetupSystem 负责（2026-09-19 第 2 步搬出）。
-         // 解析失败（返回 false）时 level 为空，battle 场景保底运行（无波次数据），日志已由 System 给出。
-         Architecture.GetSystem<BattleSetupSystem>().TryResolveLevel(gameObject.scene.name, catalog, out level);
+         // 解析失败（返回 false）时**必须丢弃 out 值**：False 分支里 selected 可能仍是"属于别的美术场景"的会话关卡
+         // （catalog 为空、会话关卡与本场景不符时即如此），照用会把错的关卡注入 Director。
+         // 置空后 battle 场景保底运行（无波次数据），错误日志已由 System 给出——与搬运前 `return` 后不注入的行为一致。
+         if (!Architecture.GetSystem<BattleSetupSystem>().TryResolveLevel(gameObject.scene.name, catalog, out level))
+         {
+            level = null;
+         }
 
          ApplyLevelToScene(level);
       }
