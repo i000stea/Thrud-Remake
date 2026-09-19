@@ -85,7 +85,8 @@ namespace TeaGame
          {
             movementActor = new BattleMovementActor(playerControl.transform, playerControl.SelfRigidbody,
                playerControl.ControlXAxis, playerControl.Control_Camera);
-            Architecture.GetSystem<BattleMovementSystem>().Initialize(movementActor, playerControl.PlayerConfig);
+            // Actor 由宿主持有；System 只接配置（2026-09-19：System 不再持有 View）
+            Architecture.GetSystem<BattleMovementSystem>().Initialize(playerControl.PlayerConfig);
          }
 
          if (!TryResolveLevel(out var level)) { return; }
@@ -136,7 +137,8 @@ namespace TeaGame
       {
          if (applyPlayerSpawn && playerControl != null)
          {
-            Architecture.GetSystem<BattleMovementSystem>().Teleport(
+            // 传送是 View 操作 → 直接交给 Actor（原为 MovementSystem.Teleport 透传）
+            movementActor.Teleport(
                level.PlayerSpawnPosition,
                Quaternion.Euler(level.PlayerSpawnEuler));
          }
@@ -418,7 +420,8 @@ namespace TeaGame
             return;
          }
 
-         Architecture.GetSystem<BattleMovementSystem>().TickUpdate();
+         // 移动：System 只算，Actor 只执行（2026-09-19 第 1 步同批）
+         ApplyMovementForce(Architecture.GetSystem<BattleMovementSystem>().TickUpdate(movementActor.Forward));
          Architecture.GetSystem<BattleCameraSystem>().Tick();
          TickActors();
          StateModel.Hud.PublishAmmo(StateModel.CurrentBattleData);
@@ -435,7 +438,13 @@ namespace TeaGame
          if (!battleReady || playerControl == null) return;
          if (StateModel.Paused) return;
 
-         Architecture.GetSystem<BattleMovementSystem>().TickFixedUpdate();
+         // 世界方向由 Actor 的基向量解析（Actor 不可用时给零向量），力再交回 Actor 施加
+         var moveDirection = movementActor.IsAvailable
+            ? movementActor.ResolveDirection(StateModel.Input.MoveHorizontal, StateModel.Input.MoveDepth,
+               StateModel.Input.MoveVertical, playerControl.PlayerConfig.MoveForwardFollowView,
+               playerControl.PlayerConfig.DepthFromWorld)
+            : Vector3.zero;
+         ApplyMovementForce(Architecture.GetSystem<BattleMovementSystem>().TickFixedUpdate(moveDirection));
          Architecture.GetSystem<BattleAimSystem>().TickFixedUpdate();
          playerControl.SyncRuntimeBridge();
       }
@@ -448,6 +457,18 @@ namespace TeaGame
          Architecture.GetSystem<BattleAimSystem>().TickLateUpdate();
          Battle_MainPanel.TickForBattle(Time.deltaTime);
          playerControl.SyncRuntimeBridge();
+      }
+
+      /// <summary>
+      /// 把移动系统算出的力交给 Actor 施加（2026-09-19：System 只算、Actor 只执行）。
+      /// "Actor 不可用则跳过"原先写在 <see cref="BattleMovementSystem"/> 内部——那等于把 View 状态当逻辑门控，
+      /// 现移到持有 Actor 的宿主侧。
+      /// </summary>
+      private void ApplyMovementForce(Vector3 force)
+      {
+         if (!movementActor.IsAvailable) return;
+         if (force.sqrMagnitude <= 0f) return;
+         movementActor.ApplyForce(force);
       }
 
       // 保留原 Update 顺序：动画 → FOV → 模型 → 武器 → 武器开火。
@@ -479,7 +500,6 @@ namespace TeaGame
          battleReady = false;
          // Actor 自持：反注册其事件订阅（纯 C# 类无自动反注册）
          roleActor?.Dispose();
-         Architecture.GetSystem<BattleMovementSystem>().Detach(movementActor);
          if (StateModel.Controller == playerControl) StateModel.Controller = null;
          // [2026-09-18] 离场关闭战斗 UI 面板（主 HUD + 触屏层；均幂等）
          try

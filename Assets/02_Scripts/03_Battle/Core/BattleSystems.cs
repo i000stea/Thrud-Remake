@@ -184,27 +184,32 @@ namespace TeaGame
       private IArchitecture Architecture => BattleArchitecture.Interface;
       private BattleStateModel State => Architecture.GetModel<BattleStateModel>();
 
-      private BattleMovementActor actor;
+      /// <summary>
+      /// 本系统**不持有 View**（2026-09-19 与 Role 同批调整）：只做"翻滚/冲刺状态机 + 推力计算"，
+      /// 结果写入 <see cref="BattleMovementState"/> / 由 Tick 返回；
+      /// 世界方向解析与力的施加由宿主交给 <see cref="BattleMovementActor"/> 执行。
+      /// 此前本系统持有 `BattleMovementActor` 并直接 AddForce，属 System → View 的错误耦合。
+      /// </summary>
       private BattlePlayerConfig config;
       protected override void OnInit() { }
-      public void Initialize(BattleMovementActor actor, BattlePlayerConfig config)
-      { this.actor = actor; this.config = config; }
-      public void Detach(BattleMovementActor value) { if (actor == value) actor = null; }
-      public void Teleport(Vector3 position, Quaternion rotation, bool clearVelocity = false)
-      { actor?.Teleport(position, rotation, clearVelocity); }
+      public void Initialize(BattlePlayerConfig config) { this.config = config; }
 
       /// <summary>
       /// 每帧处理翻滚与冲刺状态机。
       /// </summary>
-      public void TickUpdate()
+      /// <param name="basisForward">无移动输入时翻滚的基准方向（宿主传入 Actor 的世界前方）。</param>
+      /// <returns>本次翻滚需施加的冲量；无需施力时为 <see cref="Vector3.zero"/>。</returns>
+      public Vector3 TickUpdate(Vector3 basisForward)
       {
-         if (actor == null || !actor.IsAvailable || State.ControlTakenOver) return;
+         if (State.ControlTakenOver) return Vector3.zero;
+
+         var pending = Vector3.zero;
 
          if (State.Input.SprintPressed && CanRoll())
          {
             State.Movement.ReadySprint = true;
             State.Movement.LastRollTime = Time.time;
-            PerformRoll();
+            pending = PerformRoll(basisForward);
          }
 
          if (!State.Input.SprintHeld || !(Mathf.Abs(State.Input.MoveHorizontal) > 0.01f || Mathf.Abs(State.Input.MoveVertical) > 0.01f))
@@ -217,20 +222,20 @@ namespace TeaGame
          {
             State.Movement.Sprinting = true;
          }
+
+         return pending;
       }
 
       /// <summary>
-      /// 在固定帧中计算推力并施加到刚体。
+      /// 在固定帧中计算推力（**不施力**；力由宿主交给 <see cref="BattleMovementActor"/> 施加）。
       /// </summary>
-      public void TickFixedUpdate()
+      /// <param name="moveDirection">输入解析出的世界空间方向（宿主经 Actor 的基向量解析）。</param>
+      /// <returns>本帧应施加的力；无需施力时为 <see cref="Vector3.zero"/>。</returns>
+      public Vector3 TickFixedUpdate(Vector3 moveDirection)
       {
-         if (actor == null || !actor.IsAvailable || State.ControlTakenOver) return;
+         if (State.ControlTakenOver) return Vector3.zero;
 
-         State.Movement.CachedForce = actor.ResolveDirection(
-            State.Input.MoveHorizontal,
-            State.Input.MoveDepth,
-            State.Input.MoveVertical, config.MoveForwardFollowView, config.DepthFromWorld);
-
+         State.Movement.CachedForce = moveDirection;
 
          var force = State.Movement.CachedForce * config.MoveForce;
          if (State.Movement.Sprinting)
@@ -238,7 +243,7 @@ namespace TeaGame
             force *= config.SprintMultiForce;
          }
 
-         actor.ApplyForce(force);
+         return force;
       }
 
       /// <summary>
@@ -249,16 +254,13 @@ namespace TeaGame
          return Time.time > State.Movement.LastRollTime + config.GetRollCooldown();
       }
 
-      /// <summary>
-      /// 执行翻滚。
-      /// </summary>
-      private void PerformRoll()
+      /// <summary>执行翻滚：返回需施加的冲量，并广播翻滚事件（表现层/Actor 自行订阅）。</summary>
+      private Vector3 PerformRoll(Vector3 basisForward)
       {
-
          var force = State.Movement.CachedForce;
          if (force.sqrMagnitude < 0.01f)
          {
-            force = actor.Forward;
+            force = basisForward;
          }
          else
          {
@@ -266,11 +268,12 @@ namespace TeaGame
          }
 
          force *= config.MoveForce * config.RollMultiForce;
-         actor.ApplyForce(force);
 
          var rollForce = new Vector2(State.Input.MoveHorizontal, State.Input.MoveVertical);
          State.Movement.RollForce = rollForce == Vector2.zero ? Vector2.up : rollForce.normalized;
          Architecture.SendEvent(new BattleEvent_RollTriggered { RollForce = State.Movement.RollForce });
+
+         return force;
       }
    }
 
