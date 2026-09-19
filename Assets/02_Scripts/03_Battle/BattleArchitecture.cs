@@ -22,6 +22,8 @@ namespace TeaGame
          // 状态
          this.RegisterModel(new BattleStateModel());
 
+         // 入场数据解析（关卡解析 / 出战编队解析；2026-09-19 宿主瘦身第 2 步自 battle_runtime 搬出）
+         this.RegisterSystem(new BattleSetupSystem());
          // 角色（含成员级血量与阵亡流程；2026-09-19 BattleHealthSystem 并入本系统）
          this.RegisterSystem(new BattleRoleSystem());
          // 输入
