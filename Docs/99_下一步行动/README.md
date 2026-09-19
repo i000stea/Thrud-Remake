@@ -1,6 +1,6 @@
 # 下一步行动清单（Docs 整理日汇总）
 
-> **2026-09-19 宿主瘦身专项（步骤 1–4 已落地并提交，离线编译通过，Play 待验）**：`BattleSceneRuntimeHost.cs` **559 → 314 行**，"数据解析 → `Core/BattleSetupSystem.cs`、装配 → `Actor/BattleSceneAssembler.cs`、每帧中间量 → 各 Actor"三处职责搬出；System 注册 9 → 10。**下一位立刻要做的两件**：① Unity 刷新一次后**提交两个新 `.cs.meta`**；② 按 `../03_专项设计与重构/21_战斗场景装配与宿主瘦身_设计与落地指导.md` **§8.5（8 项）**做 Play 回归。**步骤 5 未做**（落地方式待用户决策，见 21 §8.4）。详细条目见本文 §3.3「P1A · 2026-09-19（宿主瘦身专项）」。
+> **2026-09-19 宿主瘦身专项（五步已全部落地并提交，离线编译通过，Play 待验）**：`BattleSceneRuntimeHost.cs` **559 → 314 行**，"数据解析 → `Core/BattleSetupSystem.cs`、装配 → `Actor/BattleSceneAssembler.cs`、每帧中间量 → 各 Actor"三处职责搬出；System 注册 9 → 10。**下一位立刻要做的两件**：① Unity 刷新一次后**提交两个新 `.cs.meta`**；② 按 `../03_专项设计与重构/21_战斗场景装配与宿主瘦身_设计与落地指导.md` **§8.5（10 项）**做 Play 回归。**步骤 5 未做**（落地方式待用户决策，见 21 §8.4）。详细条目见本文 §3.3「P1A · 2026-09-19（宿主瘦身专项）」。
 
 > **2026-09-19 Actor 专项（用户已确认，代码落地，编译/Play 待验）**：移动含传送→MovementActor；模型显隐/动画→RoleActor；武器表现→WeaponActor；FOV→CameraActor。InputSystem 原样保留。BattleViewSystem / InitializeView / 注册已删除，UI 职责归 Battle_MainPanel；Aim → BindableProperty<Vector2> → View 映射/Lerp，吸附倍率独立于 UI。Host 统一装配和 Tick；敌人/子弹/资源加载不扩范围。详细验收与 Editor 清理菜单见 `../03_专项设计与重构/19_表现层分层_View与Actor_设计.md` 当前实施记录。未修改伤害规则，未运行 prefab 工具/重建 AB，不宣称资产或真机完成。
 
@@ -195,9 +195,10 @@
 
 **P1A · 2026-09-19（宿主瘦身专项）——详细方案见 `../03_专项设计与重构/21_战斗场景装配与宿主瘦身_设计与落地指导.md`**
 
-> **状态（2026-09-19 晚）**：**步骤 1–4 已全部落地并各自提交**（`9b4e7e69` / `a77eb347` / `69f851ab` / `50e509b5`），宿主 **559 → 314 行**（非注释非空 175；第 4 步完成时 309，`248df6ca` 修复 +5），System 注册 9 → 10。
+> **状态（2026-09-19 晚）**：**五步已全部落地**——步骤 1–4 各自提交（`9b4e7e69` / `a77eb347` / `69f851ab` / `50e509b5`），步骤 5 按用户决策以**事件化**形态落地（`821547ae`），另有收尾提交 `fcb43173`（Actor 依赖收口）与 `248df6ca`（搬运缺陷修复）；宿主 **559 → 314 行**（非注释非空 175；第 4 步完成时 309，`248df6ca` +5），System 注册 9 → 10。
 > **验证口径**：离线整程序集编译通过（`Build\_check\CheckBattle.ps1`，编辑器/player 两配置各 0 error CS）——**Unity 导入编译与 Play 未验**。
-> 逐条记录、5 处偏差与 8 项 Play 清单见 21 文档 §4 各步"落地记录"与 §8。
+> 逐条记录、5 处偏差与 **10 项** Play 清单见 21 文档 §4 各步"落地记录"与 §8。
+> **纪律已升格**：21 §5 的 5 条纪律 + 3 条附带口径已写进 `02_系统与玩法设计/01_技术架构设计.md`（新增「场景装配与宿主职责」一节），19 文档 §8 已加互引与落地说明。
 
 - [x] **步骤 1 · 宿主不再持有 `playerControl` 副本**（`9b4e7e69`）：`Awake` 发布 `StateModel.Controller = playerControl`（唯一运行期持有者）+ 只读桥接属性 `Rig`；删除 `BattleRoleSystem.Initialize` 里的 `State.Controller = controller;`。**偏差**：`OnDestroy` 判据由 `== Rig`（恒真死比较）改为"非空守卫"。
 - [x] **步骤 2 · 数据管道与诊断 → `Core/BattleSetupSystem.cs`**（`a77eb347`，247 行）：搬走 `TryResolveLevel` / `ResolveBattleDatas` / `DescribeCatalogState` / `DescribeSessionIds` / `ResolveTeamCatalog` / `BuildDefaultFromCatalog` / `EditorTeamCatalogPath`；System **无状态**（目录按次传参）。**偏差**：System 只返回 `BattleTeamResolution{Datas, RetreatToEntryScene}`，"清面板表 + 回入口"由调用方执行（守纪律 5）。**文案逐字核验**：44 条代码字面量集合比对，仅 2 条插值源改名、渲染文本一致。
@@ -205,10 +206,11 @@
 - [x] **步骤 4 · 抽 `Actor/BattleSceneAssembler.cs`**（`50e509b5`，140 行，组合根、不 tick）：宿主删除 `SetupBattleSystems()` 与 4 个 Actor 字段（改 `assembler.X`），成员剩 10 个。**偏差**：行数未达 100–150（口径差异：未计入类头文档与序列化字段；职责判据已达标）；**出生点传送由 Awake 推到 Start（Build）**——已静态核实 Awake→Start 无读者依赖 rig 位置，**Play 必须复核**。
 - [x] **收尾 · Actor 依赖收口**（`fcb43173`）：`BattleRoleActor` 的 Model 从运行期 `GetModel` 查找改为构造期注入（`03_Battle/Actor/` 内 `GetModel<` 命中 0 处），落实 21 纪律 4。
 - [x] **自查修一处搬运引入的缺陷**（`248df6ca`）：宿主曾忽略 `TryResolveLevel` 返回值 → False 分支的 `out` 值可能是"属于别的美术场景"的会话关卡，会被注入 `BattleStageDirector`；现 System 失败即置空 + 宿主显式丢弃。⚠️ **该路径需 Play/真机验**（会话关卡与本场景不符时的日志与行为）。
-- [ ] **步骤 5 · 最小引用注入（唯一未做项，待用户决策）**：⚠️ 落地前发现 21 文档原验收断言与现状不符——`BattleSystems.cs` 的 Input/Camera/Aim/Weapon **形参类型就是 `Battle_PlayerControl`**，只做步骤 5 无法达成"除 Model 字段与 Designer 外不出现该类型"。三条路：**A 窄接口**（`IBattleControlGate` + 只读引用包，推荐）/ **B 事件化**（System 只发接管请求，风险最高）/ **C 暂不做**。见 21 §8.4
-- [ ] **⚠️ 立刻要做的两件（下一位接手先做）**：① 让 Unity 导入一次 → **随即提交两个新 `.cs.meta`**（`Core/BattleSetupSystem.cs.meta`、`Actor/BattleSceneAssembler.cs.meta`，本轮尚未生成）；② 按 **21 §8.5（8 项）** 做 Play 回归
+- [x] **步骤 5 · 控制接管改事件化（`821547ae`，用户决策走 B 方案）**：新增 `BattleEvent_ControlTakeOverRequested`；发送方 = `BattleRoleSystem.Health`（全队阵亡）+ `BattleLevelFlow.TakeOverControl`（终局），接收方 = rig 自己（`Awake` 订阅，回调写 `ControlTakeOff`）。**静态结果：System 侧对 `State.Controller` / `ControlTakeOff` 的写入点归零**。**关键事实**：`Assets/06_Animator/Start-Player.playable` 的出生动画也直接驱动 `ControlTakeOff` → 字段必须留在 rig 上。**未采纳** A 方案：Input/Camera/Aim/Weapon 四个 System 的形参类型仍是 `Battle_PlayerControl`（若要继续收口是独立一件事）。⚠️ **必须 Play 验全队阵亡 + 终局两条接管路径**（09 关键坑 3 的老坑）
+- [ ] **⚠️ 立刻要做的两件（下一位接手先做）**：① 让 Unity 导入一次 → **随即提交两个新 `.cs.meta`**（`Core/BattleSetupSystem.cs.meta`、`Actor/BattleSceneAssembler.cs.meta`，本轮尚未生成）；② 按 **21 §8.5（10 项）** 做 Play 回归
 - [ ] **两处顺带待定（未动）**：① `host:34` rig 手动拖拽 → 改为「序列化引用 → 场景注册组件 → `ResKit` 异步加载实例化 → 失败回退 `BattleSceneGate`」的显式解析链（**不要 `FindObjectOfType`**）；② 关卡-美术场景匹配口径（会话关卡与场景不符时：回落同场景首关 vs 报错退回选关）需定论并写回 `BattleLevelSession` 注释——**现已随数据管道搬进 `BattleSetupSystem`，两处原注释（"这个美术判断不应该放在这里？"）也一起搬了过去，改动集中在那一处**
-- [ ] **待决策：21 文档 §5 的 5 条新纪律是否升格进 `02_系统与玩法设计/01_技术架构设计.md` 与 19 文档**（宿主判据 / 宿主三职责 / 装配器不 tick / Actor 构造期注入 / System 不驱动 View；外加 19 的 `BindableProperty` 通道判据）。本轮**只写进 21 文档**，未动架构文档（属用户决策：架构文档是上位约束，改动应由用户确认）
+- [x] **21 §5 的纪律已升格进 `01_技术架构设计.md` 与 19 文档**（2026-09-19 用户决策）：01 新增「场景装配与宿主职责」一节（宿主判据 + 5 条纪律表 + 参数vs依赖 / 命令vs状态 / 场景对象字段自写 三条附带口径）；19 §8 加互引，并注明"最小引用注入已以事件形式部分落地"`
+- [ ] **仍未决（21 §7 未决 2）**：面板开启协程是否抽独立 `BattleUiLauncher` MB——建议排在 Play 回归之后（改它就是改时序）
 
 **P1A · 2026-09-18（域拆分会话）新增待办与待确认项（来源：`../03_专项设计与重构/17_代码现状地图.md`）**
 
