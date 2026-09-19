@@ -51,10 +51,12 @@ namespace TeaGame
       /// 入参是具体类型 <see cref="Battle_PlayerControl"/>，而本方法只用到它的
       /// `InitialRoleIndex` / `ControlTakeOff` / `PlayerConfig` 等少量引用。
       /// 目标形态是注入最小引用（或一个只读 `BattleRigRefs`）而非整台 rig。
+      ///
+      /// **本方法不再写 <see cref="BattleStateModel.Controller"/>**（2026-09-19 第 1 步）：
+      /// 该字段的唯一写入者是 battle_runtime 的 Awake，System 里原本那份是同一引用的第二份拷贝。
       /// </summary>
       public void Initialize(Battle_PlayerControl controller, BattleRoleRuntimeData[] battleDatas)
       {
-         State.Controller = controller;
          State.ControlTakenOver = controller != null && controller.ControlTakeOff;
          State.BattleDatas = battleDatas ?? System.Array.Empty<BattleRoleRuntimeData>();
          State.SelectedRoleIndex.Value = Mathf.Clamp(controller != null ? controller.InitialRoleIndex : 0,

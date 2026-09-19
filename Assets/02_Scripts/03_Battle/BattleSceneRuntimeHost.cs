@@ -32,7 +32,7 @@ namespace TeaGame
       [SerializeField] private BattleTeamCatalog teamCatalog;
 
       // 这个地方有点问题，他为什么是手动拖拽的？我希望应该是通过某种方式查找当前场景中存在的该脚本，没有的话去呼叫热更新模块把相应的预制件创建然后进行获取
-      [Tooltip("场景固定 rig（Battle_PlayerControl.prefab 实例，提供 Actor 装配引用；HUD 在独立面板）。")]
+      [Tooltip("场景固定 rig（Battle_Rig.prefab 实例，提供 Actor 装配引用；HUD 在独立面板）。")]
       [SerializeField] private Battle_PlayerControl playerControl;
 
       [Tooltip("场景固定敌人管理（波次/目标点/刷怪 Director，数据由本宿主注入）。")]
@@ -70,6 +70,15 @@ namespace TeaGame
 
       private IArchitecture Architecture => BattleArchitecture.Interface;
 
+      /// <summary>
+      /// 场景 rig 的**只读桥接属性**（2026-09-19 第 1 步）。
+      ///
+      /// 运行期唯一持有者是 <see cref="BattleStateModel.Controller"/>——序列化字段 `playerControl`
+      /// 只作为**场景绑定输入**（装配前提供引用），<see cref="Awake"/> 首段把它发布进 Model。
+      /// 此后本文件一律走本属性，避免"装配期用字段、运行期用 Model"的双路径。
+      /// </summary>
+      private Battle_PlayerControl Rig => StateModel.Controller;
+
       #endregion
 
       #region Awake：关卡数据 → 场景固件
@@ -81,12 +90,16 @@ namespace TeaGame
          // 框架初始化：确保战斗架构创建（幂等）
          _ = BattleArchitecture.Interface;
 
-         if (playerControl)
+         // 2026-09-19 第 1 步：rig 在 Awake 就发布进 Model——Model 成为唯一运行期持有者
+         //（此前由 BattleRoleSystem.Initialize 在 Start 写入，等于同一引用的第二份拷贝）。
+         StateModel.Controller = playerControl;
+
+         if (Rig)
          {
-            movementActor = new BattleMovementActor(playerControl.transform, playerControl.SelfRigidbody,
-               playerControl.ControlXAxis, playerControl.Control_Camera);
+            movementActor = new BattleMovementActor(Rig.transform, Rig.SelfRigidbody,
+               Rig.ControlXAxis, Rig.Control_Camera);
             // Actor 由宿主持有；System 只接配置（2026-09-19：System 不再持有 View）
-            Architecture.GetSystem<BattleMovementSystem>().Initialize(playerControl.PlayerConfig);
+            Architecture.GetSystem<BattleMovementSystem>().Initialize(Rig.PlayerConfig);
          }
 
          if (!TryResolveLevel(out var level)) { return; }
@@ -135,7 +148,7 @@ namespace TeaGame
       /// <param name="level"></param>
       private void ApplyLevelToScene(BattleLevelData level)
       {
-         if (applyPlayerSpawn && playerControl != null)
+         if (applyPlayerSpawn && Rig != null)
          {
             // 传送是 View 操作 → 直接交给 Actor（原为 MovementSystem.Teleport 透传）
             movementActor.Teleport(
@@ -175,7 +188,7 @@ namespace TeaGame
       private void SetupBattleSystems()
       {
          // 玩家控制器存续状态检测
-         if (playerControl == null)
+         if (Rig == null)
          {
             Debug.LogError("[battle_runtime] 未配置 rig（Battle_PlayerControl），无法装配战斗。");
             return;
@@ -190,14 +203,14 @@ namespace TeaGame
          // 各系统初始化
 
          // 角色系统（含成员级血量复位——2026-09-19 BattleHealthSystem 已并入本系统）
-         Architecture.GetSystem<BattleRoleSystem>().Initialize(playerControl, datas);
+         Architecture.GetSystem<BattleRoleSystem>().Initialize(Rig, datas);
          
          // 角色显示
-         roleActor = new BattleRoleActor(playerControl.Roles, playerControl.GetWeaponParent(), playerControl.ViewRotateAxis);
+         roleActor = new BattleRoleActor(Rig.Roles, Rig.GetWeaponParent(), Rig.ViewRotateAxis);
          // 武器显示
-         weaponActor = new BattleWeaponActor(playerControl.WepLookatTarget);
+         weaponActor = new BattleWeaponActor(Rig.WepLookatTarget);
          // 相机显示
-         cameraActor = new BattleCameraActor(playerControl.Control_Camera, playerControl.PlayerConfig.MainFov);
+         cameraActor = new BattleCameraActor(Rig.Control_Camera, Rig.PlayerConfig.MainFov);
          
          // Actor 自持（2026-09-19 第 1 步）：装配挂点 + 自己订阅切人/阵亡/翻滚事件 + 播出生动画。
          // 原为 `GetSystem<BattleRoleSystem>().AttachActor(roleActor)`——System 不再持有 View。
@@ -208,15 +221,15 @@ namespace TeaGame
 
          StateModel.PublishAmmo(StateModel.CurrentBattleData);
 
-         playerControl.SyncRuntimeBridge();
+         Rig.SyncRuntimeBridge();
 
          // 弹药后面要更新
          // T2.3.1：注册元素子弹（开火按角色元素取弹）
          BattleElementBulletLibrary.Register(
-            playerControl.BulletIcePrefab,
-            playerControl.BulletFirePrefab,
-            playerControl.BulletWindPrefab,
-            playerControl.BulletElectricPrefab);
+            Rig.BulletIcePrefab,
+            Rig.BulletFirePrefab,
+            Rig.BulletWindPrefab,
+            Rig.BulletElectricPrefab);
 
          // T2.4：技能系统按本场角色数量重建冷却表、清零能量并广播首帧状态
          Architecture.GetSystem<BattleSkillSystem>().ResetForBattle();
@@ -400,10 +413,10 @@ namespace TeaGame
          var state = StateModel;
 
          // 状态检测
-         if (!battleReady || playerControl == null) return;
+         if (!battleReady || Rig == null) return;
 
          // 接管状态？
-         Architecture.GetSystem<BattleRoleSystem>().SetControlTakenOver(playerControl.ControlTakeOff);
+         Architecture.GetSystem<BattleRoleSystem>().SetControlTakenOver(Rig.ControlTakeOff);
          
          // 监控输入
          Architecture.GetSystem<BattleInputSystem>().Tick();
@@ -418,7 +431,7 @@ namespace TeaGame
 
          if (state.Paused)
          {
-            playerControl.SyncRuntimeBridge();
+            Rig.SyncRuntimeBridge();
             return;
          }
 
@@ -438,33 +451,33 @@ namespace TeaGame
          // T2.4：技能管道（输入快照已含 E/Q，冷却读秒 + 施放校验在本系统内收口）
          Architecture.GetSystem<BattleSkillSystem>().Tick();
 
-         playerControl.SyncRuntimeBridge();
+         Rig.SyncRuntimeBridge();
       }
 
       private void FixedUpdate()
       {
-         if (!battleReady || playerControl == null) return;
+         if (!battleReady || Rig == null) return;
          if (StateModel.Paused) return;
 
          // 世界方向由 Actor 的基向量解析（Actor 不可用时给零向量），力再交回 Actor 施加
          var moveDirection = movementActor.IsAvailable
             ? movementActor.ResolveDirection(StateModel.Input.MoveHorizontal, StateModel.Input.MoveDepth,
-               StateModel.Input.MoveVertical, playerControl.PlayerConfig.MoveForwardFollowView,
-               playerControl.PlayerConfig.DepthFromWorld)
+               StateModel.Input.MoveVertical, Rig.PlayerConfig.MoveForwardFollowView,
+               Rig.PlayerConfig.DepthFromWorld)
             : Vector3.zero;
          ApplyMovementForce(Architecture.GetSystem<BattleMovementSystem>().TickFixedUpdate(moveDirection));
          Architecture.GetSystem<BattleAimSystem>().TickFixedUpdate();
-         playerControl.SyncRuntimeBridge();
+         Rig.SyncRuntimeBridge();
       }
 
       private void LateUpdate()
       {
-         if (!battleReady || playerControl == null) return;
+         if (!battleReady || Rig == null) return;
          if (StateModel.Paused) return;
 
          Architecture.GetSystem<BattleAimSystem>().TickLateUpdate();
          Battle_MainPanel.TickForBattle(Time.deltaTime);
-         playerControl.SyncRuntimeBridge();
+         Rig.SyncRuntimeBridge();
       }
 
       /// <summary>
@@ -486,12 +499,12 @@ namespace TeaGame
          // 数据
          var state = StateModel;
          // 配置
-         var config = playerControl.PlayerConfig;
+         var config = Rig.PlayerConfig;
          roleActor.SetMovement(movementActor.AnimationVelocity, state.Movement.Sprinting);
          cameraActor.BlendFov(state.Movement.Sprinting ? config.SprintFov : config.MainFov,
             config.FovLerpSpeed, Time.deltaTime);
-         var camera = playerControl.Control_Camera;
-         var axis = playerControl.ControlXAxis;
+         var camera = Rig.Control_Camera;
+         var axis = Rig.ControlXAxis;
          if (camera || axis)
          {
             var rotation = camera ? BattleRoleActor.ClampLookRotation(camera.transform.forward) : axis.rotation;
@@ -499,8 +512,8 @@ namespace TeaGame
          }
          var target = state.LockEnemy.IsAlive() ? state.LockEnemy.LockPoint : null;
          var freePoint = camera ? camera.transform.position + camera.transform.forward * 10f
-            : axis ? axis.position + axis.forward * 10f : playerControl.transform.position;
-         weaponActor.Aim(state.CurrentBattleData, target, freePoint, playerControl.GetCurrentLockSpeed(state.LockSpeedMultiplier));
+            : axis ? axis.position + axis.forward * 10f : Rig.transform.position;
+         weaponActor.Aim(state.CurrentBattleData, target, freePoint, Rig.GetCurrentLockSpeed(state.LockSpeedMultiplier));
       }
 
       #endregion
@@ -511,7 +524,9 @@ namespace TeaGame
          battleReady = false;
          // Actor 自持：反注册其事件订阅（纯 C# 类无自动反注册）
          roleActor?.Dispose();
-         if (StateModel.Controller == playerControl) StateModel.Controller = null;
+         // 2026-09-19 第 1 步：Controller 由本宿主在 Awake 发布（Model 是唯一运行期持有者），
+         // 判据随之从"是否等于字段"退化为"是否已被本宿主发布过"。
+         if (StateModel.Controller) StateModel.Controller = null;
          // [2026-09-18] 离场关闭战斗 UI 面板（主 HUD + 触屏层；均幂等）
          try
          {

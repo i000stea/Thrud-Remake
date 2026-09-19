@@ -37,7 +37,11 @@ namespace TeaGame
    {
       #region 装配期引用（战斗开始时写一次）
 
-      /// <summary>当前战斗 rig（场景装配入口）。写入：battle_runtime 装配。</summary>
+      /// <summary>
+      /// 当前战斗 rig（场景装配入口）。**唯一写入者：battle_runtime 的 Awake**（2026-09-19 第 1 步；
+      /// 此前 <c>BattleRoleSystem.Initialize</c> 也写过一次，属同一引用的第二份拷贝，已删）。
+      /// 场景上的序列化字段只作为装配输入，运行期一律读本字段。
+      /// </summary>
       public Battle_PlayerControl Controller;
 
       /// <summary>出战成员运行时数据（槽位序 = 切人序）。写入：BattleRoleSystem.Initialize。</summary>
