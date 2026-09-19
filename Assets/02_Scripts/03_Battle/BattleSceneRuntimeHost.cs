@@ -186,11 +186,11 @@ namespace TeaGame
          // 相机tick
          Architecture.GetSystem<BattleCameraSystem>().Tick();
 
+         // 3d表现层tick
          TickActors();
 
-         StateModel.PublishAmmo(StateModel.CurrentBattleData);
-
-         // 武器 tick
+         // 武器 tick（弹药/装填读数由它在**变更点**发布：开火、开始换弹、换弹完成、切人；
+         // 唯一连续量"装填进度"仅在装填期间按帧发布 —— 2026-09-19 用户评审后从宿主相位表移除）
          Architecture.GetSystem<BattleWeaponSystem>().Tick();
 
          // T2.4：技能管道（输入快照已含 E/Q，冷却读秒 + 施放校验在本系统内收口）

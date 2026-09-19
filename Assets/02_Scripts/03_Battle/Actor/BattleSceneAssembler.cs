@@ -110,11 +110,12 @@ namespace TeaGame
          // 重置瞄准
          Architecture.GetSystem<BattleAimSystem>().ResetForBattle();
 
+         // 弹药读数给首帧一个初值；此后的刷新由 BattleWeaponSystem 在**变更点**发布
+         //（2026-09-19：发布纪律见该类注释——离散量在变更点、装填进度仅在装填期间按帧）
          state.PublishAmmo(state.CurrentBattleData);
 
          rig.SyncRuntimeBridge();
 
-         // 弹药后面要更新
          // T2.3.1：注册元素子弹（开火按角色元素取弹）
          BattleElementBulletLibrary.Register(
             rig.BulletIcePrefab,

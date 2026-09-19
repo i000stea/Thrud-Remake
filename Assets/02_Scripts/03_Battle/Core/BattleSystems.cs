@@ -612,6 +612,12 @@ namespace TeaGame
    /// 武器系统。
    /// 每帧驱动当前角色的武器开火与换弹进度；
    /// 角色切换时取消旧角色换弹、为新角色补满弹匣。
+   ///
+   /// **弹药读数的发布纪律（2026-09-19 用户评审后收口）**：
+   /// 弹匣余弹 / 弹匣容量 / 是否装填是**离散量**，变更点全部在本类内（开火、开始换弹、换弹完成、切人），
+   /// 因此**只在变更点发布**（<see cref="PublishAmmo"/>），不再由宿主每帧无脑刷一遍；
+   /// 唯一连续量是**装填进度**（由武器模式从 `Time.time` 派生，没有"变更点"可挂），故仅在装填期间按帧发布。
+   /// ⚠️ 由此得到一处修复：原先宿主在 <c>WeaponSystem.Tick()</c> **之前**发布，开火/换弹结果要等下一帧才进 Model（HUD 慢一帧）；现在发布紧跟变更点，同帧可见。
    /// </summary>
    public sealed class BattleWeaponSystem : AbstractSystem
    {
@@ -629,6 +635,15 @@ namespace TeaGame
       {
          mRoleSwitchedUnregister?.UnRegister();
          mRoleSwitchedUnregister = null;
+      }
+
+      /// <summary>
+      /// 把当前武器的弹药读数发布给 Model（HUD 经 `BindableProperty` 消费）。
+      /// 重复调用零副作用：`BindableProperty` 的 setter 对"值未变"直接 return（`QFramework.cs:717`）。
+      /// </summary>
+      private void PublishAmmo()
+      {
+         State.PublishAmmo(State.CurrentBattleData);
       }
 
       /// <summary>
@@ -666,18 +681,28 @@ namespace TeaGame
          {
             Architecture.SendEvent(new BattleEvent_ReloadCompleted());
             Debug.Log($"[T1.2] {State.CurrentBattleData?.RoleName} 换弹完成，弹匣补满。");
+            PublishAmmo(); // 变更点：换弹完成 → 装填态结束 + 弹匣补满
          }
 
          // 手动换弹
          if (State.Input.ReloadPressed)
          {
             weaponMode.StartReload();
+            PublishAmmo(); // 变更点：可能进入装填（弹匣已满时 StartReload 内部直接返回，无变更则 setter 早退）
          }
 
          // 开火（换弹期间或空仓时由 PressTrigger 内部处理）
          if (State.Input.FireHeld)
          {
             weaponMode.PressTrigger();
+            PublishAmmo(); // 变更点：消耗一发；空仓时 PressTrigger 内部会自动进入装填
+         }
+
+         // 连续量单独处理：装填进度由 Time.time 派生、没有"变更点"可挂，
+         // 故只在装填期间按帧发布（约 1.5s 窗口；View 侧另有 1% 节流防字符串分配）
+         if (weaponMode.IsReloading)
+         {
+            PublishAmmo();
          }
 
          // T1.3 调试：F8 打印对象池回收统计（验证无 Instantiate/Destroy 分配用，后续可移除）
@@ -700,6 +725,9 @@ namespace TeaGame
          }
 
          State.CurrentBattleData?.WeaponMode?.OnRoleSwitched();
+
+         // 变更点：切人补满弹匣 + 取消换弹 → 当场发布（切人用的是新成员的武器，读数必须同帧跟上）
+         PublishAmmo();
       }
    }
 }
