@@ -4,141 +4,6 @@ using UnityEngine;
 namespace TeaGame
 {
    /// <summary>
-   /// 角色系统。
-   /// 负责初始化战斗角色、管理当前选角以及处理控制权接管等全局角色状态。
-   /// </summary>
-   public sealed class BattleRoleSystem : AbstractSystem
-   {
-      /// <summary>
-      /// 当前战斗架构实例。
-      /// 使用显式架构调用可以规避部分 IDE 对扩展方法识别不稳定的问题。
-      /// </summary>
-      private IArchitecture Architecture => BattleArchitecture.Interface;
-
-      private BattleStateModel State => Architecture.GetModel<BattleStateModel>();
-
-      private BattleRoleActor actor;
-      private IUnRegister downed, roll, health;
-
-      protected override void OnInit()
-      {
-         downed = Architecture.RegisterEvent<BattleEvent_RoleDowned>(_ => RefreshRole());
-         roll = Architecture.RegisterEvent<BattleEvent_RollTriggered>(e => actor?.PlayRoll(e.RollForce));
-         health = Architecture.RegisterEvent<BattleEvent_RoleHealthChanged>(_ => State.Hud.PublishHealth(State.CurrentBattleData));
-      }
-
-      protected override void OnDeinit()
-      { downed?.UnRegister(); roll?.UnRegister(); health?.UnRegister(); actor = null; }
-
-      public void AttachActor(BattleRoleActor value)
-      {
-         actor = value;
-         actor.Attach(State.BattleDatas);
-         RefreshRole();
-         actor.PlaySpawn();
-      }
-
-      public void DetachActor(BattleRoleActor value) { if (actor == value) actor = null; }
-
-      private void RefreshRole()
-      {
-         actor?.ShowMember(State.SelectedRoleIndex, State.CurrentBattleData != null && !State.CurrentBattleData.IsDowned);
-         State.Hud.PublishHealth(State.CurrentBattleData);
-      }
-
-      /// <summary>
-      /// 初始化角色系统（2026-09-08 架构调整：由 battle_runtime 装配时注入角色数据，
-      /// Battle_PlayerControl 不再承担"数据解析"——它只作为 View 提供引用）。
-      /// </summary>
-      public void Initialize(Battle_PlayerControl controller, BattleRoleRuntimeData[] battleDatas)
-      {
-         State.Controller = controller;
-         State.ControlTakenOver = controller != null && controller.ControlTakeOff;
-         State.BattleDatas = battleDatas ?? System.Array.Empty<BattleRoleRuntimeData>();
-         State.SelectedRoleIndex = Mathf.Clamp(controller != null ? controller.InitialRoleIndex : 0,
-            0, Mathf.Max(0, State.BattleDatas.Length - 1));
-         State.CameraPitch = 0f;
-         State.LockEnemy = null;
-         State.Hud.AimPosition.Value = Vector2.zero;
-         State.LockSpeedMultiplier = 1f;
-         State.Movement.LastRollTime = -Mathf.Max(0.01f, controller != null ? controller.PlayerConfig.GetRollCooldown() : 1f);
-         State.Movement.ReadySprint = false;
-         State.Movement.Sprinting = false;
-         State.Movement.CachedForce = Vector3.zero;
-         State.Movement.RollForce = Vector2.up;
-      }
-
-      /// <summary>
-      /// 设置是否接管控制权。
-      /// 若控制被接管，则会强制打断冲刺。
-      /// </summary>
-      public void SetControlTakenOver(bool controlTakenOver)
-      {
-         State.ControlTakenOver = controlTakenOver;
-         if (controlTakenOver)
-         {
-            StopSprint();
-         }
-      }
-
-      /// <summary>
-      /// 切换当前角色。
-      /// T3.1B：阵亡槽不可切（数字键/自动切人跳过）。
-      /// </summary>
-      public void SelectRole(int index)
-      {
-         if (State.BattleDatas == null || State.BattleDatas.Length == 0) return;
-         if (index < 0 || index >= State.BattleDatas.Length) return;
-         if (State.SelectedRoleIndex == index) return;
-
-         var target = State.BattleDatas[index];
-         if (target == null || target.IsDowned) return;
-
-         State.SelectedRoleIndex = index;
-         RefreshRole();
-         // 主 HUD 视图状态（反向绑定数据源，见 BattleHudState）
-         State.Hud.SelectedRoleIndex.Value = index;
-         Architecture.SendEvent(new BattleEvent_RoleSwitched { Index = index });
-      }
-
-      /// <summary>
-      /// 处理成员阵亡后的自动切人（T3.1B）：从 <paramref name="fromIndex"/> 起按槽位序向后
-      /// 找到下一个存活成员并切过去；无存活成员返回 false（由健康系统触发全灭判定）。
-      /// </summary>
-      public bool HandleRoleDowned(int fromIndex)
-      {
-         if (State.BattleDatas == null || State.BattleDatas.Length == 0) return false;
-
-         var count = State.BattleDatas.Length;
-         for (var step = 1; step <= count; step++)
-         {
-            var index = (fromIndex + step) % count;
-            var candidate = State.BattleDatas[index];
-            if (candidate == null || candidate.IsDowned) continue;
-
-            State.SelectedRoleIndex = index;
-            RefreshRole();
-            // 主 HUD 视图状态（反向绑定数据源，见 BattleHudState）
-            State.Hud.SelectedRoleIndex.Value = index;
-            Debug.Log($"[T3.1B] 自动切至存活成员：{candidate.RoleName}（槽 {index + 1}）。");
-            Architecture.SendEvent(new BattleEvent_RoleSwitched { Index = index });
-            return true;
-         }
-
-         return false;
-      }
-
-      /// <summary>
-      /// 停止当前冲刺状态。
-      /// </summary>
-      public void StopSprint()
-      {
-         State.Movement.ReadySprint = false;
-         State.Movement.Sprinting = false;
-      }
-   }
-
-   /// <summary>
    /// 输入系统。
    /// 负责把 Unity 输入采样写入共享输入快照。
    /// </summary>
@@ -648,6 +513,8 @@ namespace TeaGame
 
       // 吸附倍率属于武器规则，使用独立逻辑游标，不读取 View 的 RectTransform。
       private Vector2 trackingPosition;
+      
+      /// <summary> 重置瞄准 </summary>
       public void ResetForBattle()
       {
          mManualLocked = false;

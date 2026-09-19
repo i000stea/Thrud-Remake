@@ -44,15 +44,15 @@ namespace TeaGame
       public Transform EnemyTransform;
    }
 
+   // 先受攻击，提供后续数值计算，然后再血量变化
+
    /// <summary>
    /// 玩家受击事件。
    /// 敌方伤害经此事件送入健康系统；T3.1B 起由健康系统结算到「当前出战角色」的成员级血量。
    /// </summary>
    public struct BattleEvent_PlayerDamaged
    {
-      /// <summary>
-      /// 本次受击造成的伤害值。
-      /// </summary>
+      /// <summary> 本次受击造成的伤害值。 </summary>
       public int Damage;
    }
 
@@ -62,9 +62,7 @@ namespace TeaGame
    /// </summary>
    public struct BattleEvent_RoleHealthChanged
    {
-      /// <summary>
-      /// 血量发生变化的成员索引（槽位序=切人序）。
-      /// </summary>
+      /// <summary> 血量发生变化的成员索引（槽位序=切人序）。 </summary>
       public int RoleIndex;
    }
 

@@ -6,7 +6,7 @@ const { randomUUID } = require("node:crypto");
 const { generateProgressData } = require("./sync-doc-tasks");
 
 const HOST = "127.0.0.1";
-const PORT = 3210;
+const PORT = Number(process.env.PROGRESS_PORT || 3210);
 // 排序拖拽条范围：0 表示「特别紧急」，数值越小越靠前
 const SORT_ORDER_MIN = 0;
 const SORT_ORDER_MAX = 10;
@@ -16,6 +16,13 @@ const PUBLIC_DIR = path.join(ROOT_DIR, "public");
 const DATA_DIR = path.join(ROOT_DIR, "data");
 const BACKUP_DIR = path.join(DATA_DIR, "backups");
 const DATA_FILE = path.join(DATA_DIR, "progress.json");
+const PROJECT_DIR = path.resolve(ROOT_DIR, "..", "..");
+const SCRIPT_DIR = path.join(PROJECT_DIR, "Assets", "02_Scripts");
+const ATLAS_DIR = path.join(ROOT_DIR, "data");
+const ATLAS_GENERATED_FILE = path.join(ATLAS_DIR, "code-atlas.generated.json");
+const ATLAS_LAYOUT_FILE = path.join(ATLAS_DIR, "code-atlas.layout.json");
+const ATLAS_MANUAL_FILE = path.join(ATLAS_DIR, "code-atlas.manual.json");
+const atlas = require('./atlas-core');
 
 let browserOpened = false;
 
@@ -132,7 +139,10 @@ function getContentType(filePath) {
 
 async function parseBody(request) {
   const chunks = [];
+  let size = 0;
   for await (const chunk of request) {
+    size += chunk.length;
+    if (size > 4 * 1024 * 1024) throw new Error('请求体超过 4 MB');
     chunks.push(chunk);
   }
   const raw = Buffer.concat(chunks).toString("utf8");
@@ -167,6 +177,27 @@ function normalizeTask(input, oldTask = null) {
 }
 
 async function handleApi(request, response, url) {
+  if (url.pathname.startsWith('/api/code-atlas') && !['GET','HEAD'].includes(request.method)) {
+    if (request.headers.origin && request.headers.origin !== `http://${request.headers.host}`) return sendJson(response, 403, { message: '拒绝跨站写入' });
+  }
+  if (url.pathname === '/api/code-atlas/source' && request.method === 'GET') {
+    const bundle = await atlas.readBundle(PROJECT_DIR, ATLAS_DIR);
+    const file = url.searchParams.get('file');
+    const allowed = [...bundle.generated.files.map(f=>f.path), ...bundle.generated.assemblies.map(a=>a.path)];
+    if (!file || !allowed.includes(file) || !/^(Assets|Packages)\//.test(file) || file.split(/[\\/]/).includes('..')) return sendJson(response, 403, { message:'路径不在源码索引中' });
+    return sendJson(response, 200, { file, source: await fs.readFile(path.join(PROJECT_DIR,file),'utf8') });
+  }
+  if (url.pathname === "/api/code-atlas" && request.method === "GET") {
+    return sendJson(response, 200, await atlas.readBundle(PROJECT_DIR, ATLAS_DIR));
+  }
+  if (url.pathname === "/api/code-atlas/scan" && request.method === "POST") {
+    await atlas.scanAndSave(PROJECT_DIR, ATLAS_DIR);
+    return sendJson(response, 200, await atlas.readBundle(PROJECT_DIR, ATLAS_DIR));
+  }
+  if (url.pathname === "/api/code-atlas/layout" && request.method === "PUT") {
+    const body = await parseBody(request);
+    return sendJson(response, 200, await atlas.saveLayout(ATLAS_DIR, body));
+  }
   if (request.method === "GET" && url.pathname === "/api/progress") {
     const data = await readData();
     return sendJson(response, 200, data);
@@ -221,7 +252,7 @@ async function serveStatic(response, requestPath) {
     : path.join(PUBLIC_DIR, requestPath.replace(/^\/+/, ""));
 
   const normalized = path.normalize(safePath);
-  if (!normalized.startsWith(PUBLIC_DIR)) {
+  if (!normalized.startsWith(PUBLIC_DIR + path.sep)) {
     sendText(response, 403, "禁止访问");
     return;
   }
@@ -273,7 +304,7 @@ async function start() {
     const url = `http://${HOST}:${PORT}`;
     console.log(`[progress-web] 服务已启动: ${url}`);
     console.log("[progress-web] 关闭此命令行窗口即可停止服务");
-    openBrowser(url);
+    if (!process.argv.includes('--no-open')) openBrowser(url);
   });
 }
 
@@ -286,7 +317,9 @@ process.on("SIGTERM", () => {
   server.close(() => process.exit(0));
 });
 
+server.on('error', error => { console.error('[progress-web]', error.message); process.exitCode = 1; });
 start().catch((error) => {
   console.error("[progress-web] 启动失败:", error);
   process.exit(1);
 });
+

@@ -18,9 +18,7 @@ namespace TeaGame
       private IArchitecture Architecture => BattleArchitecture.Interface;
       private BattleStateModel State => Architecture.GetModel<BattleStateModel>();
 
-      /// <summary>
-      /// 受击事件反注册句柄。
-      /// </summary>
+      /// <summary> 受击事件反注册句柄。 </summary>
       private IUnRegister mDamagedUnregister;
 
       protected override void OnInit()
@@ -34,9 +32,7 @@ namespace TeaGame
          mDamagedUnregister = null;
       }
 
-      /// <summary>
-      /// 初始化成员级血量：全体成员回满并清除阵亡态。
-      /// </summary>
+      /// <summary> 初始化成员级血量：全体成员回满并清除阵亡态。 </summary>
       public void Initialize()
       {
          if (State.BattleDatas == null) return;

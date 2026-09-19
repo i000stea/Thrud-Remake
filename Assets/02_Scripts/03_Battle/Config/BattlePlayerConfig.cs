@@ -24,29 +24,19 @@ namespace TeaGame
       /// </summary>
       public bool MoveForwardFollowView = true;
 
-      /// <summary>
-      /// 基础移动力。
-      /// </summary>
+      /// <summary> 基础移动力。 </summary>
       public float MoveForce = 10f;
 
-      /// <summary>
-      /// 翻滚附加倍率。
-      /// </summary>
+      /// <summary> 翻滚附加倍率。 </summary>
       public float RollMultiForce = 10f;
 
-      /// <summary>
-      /// 冲刺附加倍率。
-      /// </summary>
+      /// <summary> 冲刺附加倍率。 </summary>
       public float SprintMultiForce = 10f;
 
-      /// <summary>
-      /// 翻滚冷却时间。
-      /// </summary>
+      /// <summary> 翻滚冷却时间。 </summary>
       [SerializeField] private float RollCooldown = 2f;
 
-      /// <summary>
-      /// 翻滚结束后进入冲刺状态前的缓冲时间。
-      /// </summary>
+      /// <summary> 翻滚结束后进入冲刺状态前的缓冲时间。 </summary>
       [Range(0.0001f, 1f)] public float RollAfterSprintDelay = 0.7f;
 
       /// <summary>
@@ -55,31 +45,21 @@ namespace TeaGame
       /// </summary>
       public float GetRollCooldown() => Mathf.Max(0.01f, RollCooldown);
 
+      /// <summary> 鼠标灵敏度。 </summary>
       [Header("旋转参数")]
-      /// <summary>
-      /// 鼠标灵敏度。
-      /// </summary>
       public float MouseSensitivity = 100f;
 
+      /// <summary> 默认视场角。 </summary>
       [Header("视场角与显示对象")]
-      /// <summary>
-      /// 默认视场角。
-      /// </summary>
       public float MainFov = 60f;
 
-      /// <summary>
-      /// 冲刺时的目标视场角。
-      /// </summary>
+      /// <summary> 冲刺时的目标视场角。  </summary>
       public float SprintFov = 90f;
 
-      /// <summary>
-      /// 视场角插值速度。
-      /// </summary>
+      /// <summary> 视场角插值速度。 </summary>
       public float FovLerpSpeed = 10f;
 
-      /// <summary>
-      /// 展示模型跟随旋转的平滑速度。
-      /// </summary>
+      /// <summary> 展示模型跟随旋转的平滑速度。 </summary>
       public float RotationSpeed = 5f;
 
       [Header("武器与换弹参数")]
@@ -89,9 +69,7 @@ namespace TeaGame
       /// </summary>
       public float WeaponReloadTime = 1.5f;
 
-      /// <summary>
-      /// 手动换弹键。
-      /// </summary>
+      /// <summary> 手动换弹键。 </summary>
       public KeyCode ReloadKey = KeyCode.R;
 
       [Header("锁敌参数")]
@@ -106,19 +84,13 @@ namespace TeaGame
       /// </summary>
       public float LockSwitchCooldown = 0.3f;
 
-      /// <summary>
-      /// PC 端锁定切换键（半自动：在可见目标间循环切换/取消）。
-      /// </summary>
+      /// <summary> PC 端锁定切换键（半自动：在可见目标间循环切换/取消）。 </summary>
       public KeyCode LockSwitchKey = KeyCode.Tab;
 
-      /// <summary>
-      /// 锁敌准星与武器朝向的基础追踪速度。
-      /// </summary>
+      /// <summary> 锁敌准星与武器朝向的基础追踪速度。 </summary>
       public float LockEnemySpeed = 10f;
 
-      /// <summary>
-      /// UI 空间下允许锁敌的最大距离（保留，旧版/兼容参考；新版吸附距离见 LockAssistDistance）。
-      /// </summary>
+      /// <summary> UI 空间下允许锁敌的最大距离（保留，旧版/兼容参考；新版吸附距离见 LockAssistDistance）。 </summary>
       public float EnemyLockDistance = 175f;
    }
 }

@@ -9,6 +9,17 @@
 5. 数据会写回 `data/progress.json`
 6. 关闭命令行窗口后，Node 服务会随之停止
 
+## 代码地图（第一版）
+
+启动同一个服务后访问 `http://127.0.0.1:3210/code-atlas.html`，即可查看 `Assets/02_Scripts` 的自动扫描结果：
+
+- 程序集依赖：从各 `.asmdef` 的 `references` 生成方向关系
+- 文件目录：按路径、程序集、namespace、类型和行数筛选
+- 文件详情：点击文件查看元信息，沿程序集和 namespace 回到 IDE 阅读
+- 重新扫描：每次请求实时读取磁盘，不产生缓存文件，也不修改 Unity 资产
+
+接口：`GET /api/code-atlas`。当前扫描器刻意只分析项目自己的 `Assets/02_Scripts`；QFramework 等第三方源码作为外部依赖保留，后续可按阅读需要增加“展开依赖”扫描。
+
 ## 目录说明
 
 - `server.js`: 本地 Node 服务，负责读取与写入 `json`

@@ -21,6 +21,8 @@ namespace TeaGame
    [DisallowMultipleComponent]
    public sealed class BattleSceneRuntimeHost : MonoBehaviour
    {
+      #region 参数变量
+
       [Header("装配资产（编辑器工具检查并放置时回填）")]
       [Tooltip("关卡目录：提供 EnemyCatalog 与 D12 直连默认关解析。")]
       [SerializeField] private BattleLevelCatalog catalog;
@@ -39,6 +41,9 @@ namespace TeaGame
       [Tooltip("启动后按关卡数据应用玩家出生点/朝向（D9：数据定义出生点，场景不硬编）。")]
       [SerializeField] private bool applyPlayerSpawn = true;
 
+      /// <summary>
+      /// 战斗中的总数据中心
+      /// </summary>
       BattleStateModel StateModel
       {
          get
@@ -48,10 +53,16 @@ namespace TeaGame
          }
       }
       BattleStateModel _sModel;
+      
+      /// <summary> 移动表现 </summary>
       private BattleMovementActor movementActor;
+      /// <summary> 角色表现 </summary>
       private BattleRoleActor roleActor;
+      /// <summary> 武器表现 </summary>
       private BattleWeaponActor weaponActor;
+      /// <summary> 相机表现 </summary>
       private BattleCameraActor cameraActor;
+      /// <summary> 准备就绪 </summary>
       private bool battleReady;
 
       /// <summary>编辑器直连默认编队目录路径（无出战会话时的兜底数据源）。</summary>
@@ -59,8 +70,10 @@ namespace TeaGame
 
       private IArchitecture Architecture => BattleArchitecture.Interface;
 
-      #region unity生命周期
+      #endregion
 
+      #region Awake：关卡数据 → 场景固件
+      // ==================== Awake：关卡数据 → 场景固件 ====================
       private void Awake()
       {
          // P0：ResKit 初始化收口（已初始化则只校验 AB 清单；正常路径由 AppBootstrapper 异步初始化）
@@ -79,42 +92,6 @@ namespace TeaGame
 
          ApplyLevelToScene(level);
       }
-
-      private void Start()
-      {
-         // 1. 整场战斗装配（系统初始化 + 角色数据注入）——顺序依赖：所有对象 Awake 已完成
-         SetupBattleSystems();
-
-         // 2. 触摸层（跨场景进入须等 UIRoot 归属稳定，见 OpenTouchUiWhenSceneReady）
-         if (battleReady) StartCoroutine(OpenBattleUiWhenSceneReady());
-      }
-
-      private void OnDestroy()
-      {
-         battleReady = false;
-         Architecture.GetSystem<BattleRoleSystem>().DetachActor(roleActor);
-         Architecture.GetSystem<BattleMovementSystem>().Detach(movementActor);
-         if (StateModel.Controller == playerControl) StateModel.Controller = null;
-         // [2026-09-18] 离场关闭战斗 UI 面板（主 HUD + 触屏层；均幂等）
-         try
-         {
-            Battle_MainPanel.CloseForBattle();
-            Battle_TouchInputPanel.CloseForBattle();
-         }
-         catch (System.Exception e)
-         {
-            Debug.LogWarning($"[battle_runtime] 离场关闭战斗 UI 面板异常（可忽略）：{e.Message}");
-         }
-
-         // P1：面板 GameObject 随本场景销毁时 IPanel.Close 不会被调用 → UIKit 表会残留已销毁条目，
-         // 若不摘除，下次进战斗 OpenPanel 会复用已销毁实例并抛 MissingReferenceException（面板打不开）。
-         UiPanelFlow.SanitizeRegistry();
-      }
-
-      #endregion
-
-      #region Awake：关卡数据 → 场景固件
-      // ==================== Awake：关卡数据 → 场景固件 ====================
 
       /// <summary>
       /// 解析本场关卡：BattleLevelSession 选关缓存（须指向本场景）优先；否则 D12 直连默认。
@@ -185,18 +162,23 @@ namespace TeaGame
       #region Start：整场战斗装配
 
       // ==================== Start：整场战斗装配 ====================
+      private void Start()
+      {
+         // 1. 整场战斗装配（系统初始化 + 角色数据注入）——顺序依赖：所有对象 Awake 已完成
+         SetupBattleSystems();
 
+         // 2. 触摸层（跨场景进入须等 UIRoot 归属稳定，见 OpenTouchUiWhenSceneReady）
+         if (battleReady) StartCoroutine(OpenBattleUiWhenSceneReady());
+      }
       private void SetupBattleSystems()
       {
          // 玩家控制器存续状态检测
          if (playerControl == null)
          {
-            Debug.LogError("[battle_runtime] 未配置 rig（Battle_PlayerControl），无法装配战斗。" +
-                           "请用 Thrud/Battle/T3.1C/1. 检查并放置战斗固定固件。");
+            Debug.LogError("[battle_runtime] 未配置 rig（Battle_PlayerControl），无法装配战斗。");
             return;
          }
 
-         // 获取数据（能否改为参数获取，后续不再重复获取？）
          //var model = Architecture.GetModel<BattleStateModel>();
          StateModel.Paused = false; // 复位暂停态（架构常驻跨场景）
 
@@ -204,18 +186,32 @@ namespace TeaGame
          var datas = ResolveBattleDatas();
 
          // 各系统初始化
+
+         // 角色和生命为什么要分开？
+         // 角色系统
          Architecture.GetSystem<BattleRoleSystem>().Initialize(playerControl, datas);
+         // 生命系统
          Architecture.GetSystem<BattleHealthSystem>().Initialize();
          
+         // 角色显示
          roleActor = new BattleRoleActor(playerControl.Roles, playerControl.GetWeaponParent(), playerControl.ViewRotateAxis);
+         // 武器显示
          weaponActor = new BattleWeaponActor(playerControl.WepLookatTarget);
+         // 相机显示
          cameraActor = new BattleCameraActor(playerControl.Control_Camera, playerControl.PlayerConfig.MainFov);
-         Architecture.GetSystem<BattleRoleSystem>().AttachActor(roleActor);
+         
+         // Actor 自持（2026-09-19 第 1 步）：装配挂点 + 自己订阅切人/阵亡/翻滚事件 + 播出生动画。
+         // 原为 `GetSystem<BattleRoleSystem>().AttachActor(roleActor)`——System 不再持有 View。
+         roleActor.Initialize(datas);
+
+         // 重置瞄准
          Architecture.GetSystem<BattleAimSystem>().ResetForBattle();
+
          StateModel.Hud.PublishAmmo(StateModel.CurrentBattleData);
 
          playerControl.SyncRuntimeBridge();
 
+         // 弹药后面要更新
          // T2.3.1：注册元素子弹（开火按角色元素取弹）
          BattleElementBulletLibrary.Register(
             playerControl.BulletIcePrefab,
@@ -475,6 +471,31 @@ namespace TeaGame
          weaponActor.Aim(state.CurrentBattleData, target, freePoint, playerControl.GetCurrentLockSpeed(state.LockSpeedMultiplier));
       }
 
+      #endregion
+
+      #region 销毁周期
+      private void OnDestroy()
+      {
+         battleReady = false;
+         // Actor 自持：反注册其事件订阅（纯 C# 类无自动反注册）
+         roleActor?.Dispose();
+         Architecture.GetSystem<BattleMovementSystem>().Detach(movementActor);
+         if (StateModel.Controller == playerControl) StateModel.Controller = null;
+         // [2026-09-18] 离场关闭战斗 UI 面板（主 HUD + 触屏层；均幂等）
+         try
+         {
+            Battle_MainPanel.CloseForBattle();
+            Battle_TouchInputPanel.CloseForBattle();
+         }
+         catch (System.Exception e)
+         {
+            Debug.LogWarning($"[battle_runtime] 离场关闭战斗 UI 面板异常（可忽略）：{e.Message}");
+         }
+
+         // P1：面板 GameObject 随本场景销毁时 IPanel.Close 不会被调用 → UIKit 表会残留已销毁条目，
+         // 若不摘除，下次进战斗 OpenPanel 会复用已销毁实例并抛 MissingReferenceException（面板打不开）。
+         UiPanelFlow.SanitizeRegistry();
+      }
       #endregion
 
       #region 战斗 UI 面板 

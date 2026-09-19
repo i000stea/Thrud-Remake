@@ -17,6 +17,7 @@ namespace TeaGame
       public BattleRoleRuntimeData[] BattleDatas = System.Array.Empty<BattleRoleRuntimeData>();
 
       /// <summary>
+      /// ！ 模型中不需要为hud单独考虑，而是将数据平铺，让hud自行进行绑定，view显示内容由view层自己负责
       /// 主 HUD 的可绑定视图状态（反向绑定数据源，见 <see cref="BattleHudState"/>）。
       /// 由角色系统 / 技能系统在原有写入口同步写入，只有 UI（<see cref="Battle_MainPanel"/>）读取。
       /// </summary>
