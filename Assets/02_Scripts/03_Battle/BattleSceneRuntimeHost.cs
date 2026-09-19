@@ -69,7 +69,7 @@ namespace TeaGame
       private IArchitecture Architecture => BattleArchitecture.Interface;
 
       /// <summary>
-      /// 场景 rig 的**只读桥接属性**（2026-09-19 第 1 步）。
+      /// 场景 rig 的**只读取用属性**（2026-09-19 第 1 步；"桥接"一词仅指本属性本身，与已删除的 BattleRuntimeBridge 无关）。
       ///
       /// 运行期唯一持有者是 <see cref="BattleStateModel.Controller"/>——序列化字段 `playerControl`
       /// 只作为**场景绑定输入**（装配前提供引用），<see cref="Awake"/> 首段把它发布进 Model。
