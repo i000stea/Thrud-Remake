@@ -74,11 +74,10 @@ namespace TeaGame
          if (HandleRoleDowned(index)) return;
 
          // 无存活成员 → 全灭：接管控制并触发 Defeat（BattleLevelFlow 消费）
-         // 先同步控制器序列化字段，避免 PlayerControl.Update 每帧把接管状态写回 false
-         if (State.Controller)
-         {
-            State.Controller.ControlTakeOff = true;
-         }
+         // 2026-09-19 步骤 5（事件化）：不再直接写 `State.Controller.ControlTakeOff`——
+         // 本类只发接管请求，rig 在自己的回调里写字段（同步派发，触发 PlayerDied 前已生效）。
+         // 历史坑（原注释保留其意）：接管状态必须真正落到 rig 字段，否则宿主每帧同步回来会把它写回 false。
+         Architecture.SendEvent(new BattleEvent_ControlTakeOverRequested { TakeOver = true });
 
          Debug.Log("[T3.1B] 全队阵亡 → 失败判定。");
          Architecture.SendEvent(new BattleEvent_PlayerDied());

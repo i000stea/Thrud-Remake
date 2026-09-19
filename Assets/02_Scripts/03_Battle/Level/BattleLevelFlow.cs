@@ -218,11 +218,9 @@ namespace TeaGame
       /// <summary>终局接管控制：停止移动/开火/技能（HealthSystem 已忽略后续伤害）。</summary>
       private void TakeOverControl()
       {
-         var controller = State.Controller;
-         if (controller)
-         {
-            controller.ControlTakeOff = true;
-         }
+         // 2026-09-19 步骤 5（事件化）：只发接管请求，rig 自己写 `ControlTakeOff`
+         //（原为直接写 `State.Controller.ControlTakeOff` —— System 不该写场景 rig 的字段）
+         Architecture.SendEvent(new BattleEvent_ControlTakeOverRequested { TakeOver = true });
 
          Architecture.GetSystem<BattleRoleSystem>().SetControlTakenOver(true);
       }

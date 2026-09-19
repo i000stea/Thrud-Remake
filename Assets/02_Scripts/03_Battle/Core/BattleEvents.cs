@@ -102,6 +102,24 @@ namespace TeaGame
    }
 
    /// <summary>
+   /// 控制接管请求事件（2026-09-19「宿主瘦身」步骤 5：**System 只发请求，rig 自己写自己的字段**）。
+   ///
+   /// **为什么是事件**：`ControlTakeOff` 是 rig（<see cref="Battle_PlayerControl"/>）上的**序列化字段**，
+   /// 同时还有第三方写入者——`Assets/06_Animator/Start-Player.playable` 的出生动画也直接驱动该属性。
+   /// 让 System 隔着 Model 去写这个字段，等于把"场景引用总仓库"当成可写服务；改为：
+   /// **发送方**（<see cref="BattleRoleSystem"/> 全队阵亡 / <see cref="BattleLevelFlow"/> 终局接管）只发本请求，
+   /// **接收方**（rig）在自己的事件回调里写字段 → 字段仍是唯一状态、写入者归属清晰。
+   ///
+   /// ⚠️ 时序等价：QFramework 的 `SendEvent` 是**同步**派发，rig 在本事件返回前就已写好字段，
+   /// 与原先"直接赋值再发后续事件"的时序一致。
+   /// </summary>
+   public struct BattleEvent_ControlTakeOverRequested
+   {
+      /// <summary>true = 接管（禁止玩家操作）；false = 交还控制。</summary>
+      public bool TakeOver;
+   }
+
+   /// <summary>
    /// 玩家命中敌人事件（T2.4 技能能量来源之一）。
    /// 仅当玩家子弹真正命中新版敌人实体（<see cref="BattleEnemyEntity"/>）时派发；
    /// 擦弹、命中场景物、命中旧版敌人均不派发。

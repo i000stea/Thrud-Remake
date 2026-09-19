@@ -105,9 +105,22 @@ namespace TeaGame
       private void Awake()
       {
          Time.timeScale = scale;
+
+         // 2026-09-19「宿主瘦身」步骤 5（事件化）：控制接管改为**订阅请求事件**——
+         // System 不再隔着 Model 写本组件的序列化字段，字段的唯一运行期写入者回到本组件自己
+         //（另一个写入者是出生动画 `Start-Player.playable`，它直接驱动本属性）。
+         Architecture.RegisterEvent<BattleEvent_ControlTakeOverRequested>(OnControlTakeOverRequested)
+            .UnRegisterWhenGameObjectDestroyed(gameObject);
+
          // 已迁出的旧 HUD 不再参与运行；Editor 清理工具会从资产移除该节点。
          var oldHud = transform.Find("MainCanvas");
          if (oldHud) oldHud.gameObject.SetActive(false);
+      }
+
+      /// <summary>接管请求的落地：写自己的字段（同步派发，事件返回前已生效）。</summary>
+      private void OnControlTakeOverRequested(BattleEvent_ControlTakeOverRequested e)
+      {
+         ControlTakeOff = e.TakeOver;
       }
 
       // 所有 HUD 字段已迁出；资产清理由 Thrud/Battle/Actor 菜单完成。
