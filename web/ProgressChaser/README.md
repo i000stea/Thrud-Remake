@@ -28,7 +28,7 @@
 - **类图**：当前程序集的类型 + 实际指向的外部类型/程序集，点击类高亮一跳邻居（可切两跳），点击连线在右侧查看方法、事件、读写证据与源码片段；
 - **关系类型**：`assembly` / `class` / `call` / `event` / `data`，同一方向聚合为一条边，边上的数字是明细数量；
 - **交互**：滚轮围绕鼠标缩放（10%–400%）、拖拽空白平移、拖拽节点保存坐标、自动布局（ELK Worker）、撤销、重置、适应画布、搜索定位；
-- **滚轮力度**：左栏「视图」滑块实时调节 `wheelSensitivity`（0.05–1，默认 0.18，越小越细腻），设置存 `localStorage`，刷新后保留；
+- **滚轮力度**：左栏「视图」滑块实时调节 `wheelSensitivity`（**0.05 ~ 10，对数刻度**，默认 0.18，往右越猛），设置存 `localStorage`，刷新后保留；
 - **性能模式**：缩放级别自动分级显示（LOD）；布局计算在 Web Worker，超过 3 秒出现「取消布局」，取消或失败时保留上次位置。
 
 ### 依赖与渲染
@@ -36,10 +36,12 @@
 | 依赖 | 作用 | 版本（`package-lock.json` 锁定） |
 |---|---|---|
 | `cytoscape` | Canvas 渲染、缩放/平移/拖拽/筛选 | 3.34.3 |
-| `cytoscape-elk` | ELK 布局扩展（Worker 不可用时的回退） | 2.3.0 |
-| `elkjs` | 分层布局计算，经 `public/elk-worker.js` 在 Worker 中执行 | 0.12.0 |
+| `elkjs` | 分层布局计算；浏览器端用官方 `elk-api.js` + `elk-worker.min.js`，**ELK 在真正的 Web Worker 中运行** | 0.12.0 |
+| `cytoscape-elk` | 仅用于 Node 端 headless 布局测试（`atlas-view.test.js`），**不在浏览器运行** | 2.3.0 |
 
 浏览器端依赖全部由本地服务通过 `/vendor/*` 白名单提供，**不使用 CDN**，离线启动不依赖网络。
+
+> ⚠️ 浏览器端**不要**加载 `elk.bundled.js`：它的 `ELKNode` 一旦检测到全局 `Worker` 就会执行 `new Worker(undefined)`（无效的内层嵌套 Worker），必然报错并导致布局失败。运行时统一走 `elk-api.js` + `elk-worker.min.js` 这套官方组合。
 
 ### 数据契约
 
@@ -102,6 +104,7 @@ npm test                        # 自动测试（node --test）
 npm run scan                    # 重建 generated.json
 npm run baseline                # K0 基准：备份三份 JSON 并统计图规模
 node scripts/perf-atlas.js      # 合成大图性能取证（默认 500 节点 / 2000 边）
+node scripts/check-elk.js        # 用真实 JSON 跑通全部视图的 ELK 布局（定位坏图）
 node scripts/smoke-server.js    # 启动冒烟（health / vendor / code-atlas）
 node scripts/smoke-cmd.js       # 一键启动脚本端到端冒烟（真实调用 .cmd 后关闭）
 node scripts/verify-layout-roundtrip.js   # 布局读写与冲突拒绝闭环

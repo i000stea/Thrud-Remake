@@ -36,14 +36,14 @@ async function main() {
     if (!health.ok) throw new Error('/api/health 未返回 ok');
     console.log('health:', JSON.stringify(health));
 
-    for (const file of ['cytoscape.min.js', 'cytoscape-elk.js', 'elk.bundled.js', 'elk-worker.min.js']) {
+    for (const file of ['cytoscape.min.js', 'cytoscape-elk.js', 'elk-api.js', 'elk.bundled.js', 'elk-worker.min.js']) {
       const response = await fetch(`${BASE}/vendor/${file}`);
       const body = await response.arrayBuffer();
       if (!response.ok) throw new Error(`/vendor/${file} -> ${response.status}`);
       console.log(`vendor ${file}: ${response.status} ${response.headers.get('content-type')} ${body.byteLength} bytes`);
     }
 
-    for (const file of ['code-atlas.html', 'code-atlas.js', 'code-atlas.css', 'atlas-view.js', 'atlas-model.js', 'elk-worker.js']) {
+    for (const file of ['code-atlas.html', 'code-atlas.js', 'code-atlas.css', 'atlas-view.js', 'atlas-model.js']) {
       const response = await fetch(`${BASE}/${file}`);
       const body = await response.text();
       if (!response.ok) throw new Error(`/${file} -> ${response.status}`);

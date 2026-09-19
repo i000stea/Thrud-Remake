@@ -1,12 +1,12 @@
 {
   "schemaVersion": 2,
-  "revision": 76,
+  "revision": 105,
   "views": {
     "assembly": {
-      "zoom": 1.6036672916224093,
+      "zoom": 0.7621842871852985,
       "pan": {
-        "x": 24.916550205061164,
-        "y": 396.2484483256852
+        "x": 135.00000000000017,
+        "y": 603
       },
       "nodes": {
         "TeaGame.App": {
@@ -113,615 +113,615 @@
       }
     },
     "class:TeaGame.Battle": {
-      "zoom": 1.261579193386316,
+      "zoom": 0.43859127845727397,
       "pan": {
-        "x": -495.30898970217083,
-        "y": 170.41456590373667
+        "x": -969.9087773342221,
+        "y": -2215.31171331704
       },
       "nodes": {
         "TeaGame.Battle::TeaGame.BattleCameraActor": {
-          "x": 740,
-          "y": 370
+          "x": 1922,
+          "y": 933.2380952380945
         },
         "TeaGame.Battle::TeaGame.BattleMovementActor": {
-          "x": 740,
-          "y": 1270
+          "x": 3172,
+          "y": 604.6666666666661
         },
         "TeaGame.Battle::TeaGame.BattleRoleActor": {
-          "x": 740,
-          "y": 1570
+          "x": 3512,
+          "y": 2203.3630952380945
         },
         "TeaGame.Battle::TeaGame.BattleWeaponActor": {
-          "x": 740,
-          "y": 2170
+          "x": 2292,
+          "y": 5482.321001221
         },
         "TeaGame.Battle::TeaGame.Battle_PlayerControl": {
-          "x": 740,
-          "y": 170
+          "x": 3972,
+          "y": 5431.846001221001
         },
         "TeaGame.Battle::TeaGame.BattleArchitecture": {
-          "x": 1070,
-          "y": 370
+          "x": 5122,
+          "y": 2719.9015567765564
         },
         "TeaGame.Battle::TeaGame.BattlePlayerConfig": {
-          "x": 740,
-          "y": 1470
+          "x": 5122,
+          "y": 2172.140873015872
         },
         "TeaGame.Battle::TeaGame.IBattleEnemyTarget": {
-          "x": 410,
-          "y": 370
+          "x": 6012,
+          "y": 4804.012667887668
         },
         "TeaGame.Battle::TeaGame.IBattleWeaponView": {
-          "x": 80,
-          "y": 7170
+          "x": 5592,
+          "y": 4900.012667887668
         },
         "TeaGame.Battle::TeaGame.BattleCombatUtility": {
-          "x": 80,
-          "y": 570
+          "x": 5592,
+          "y": 4804.012667887668
         },
         "TeaGame.Battle::TeaGame.BattleEnemyRegistry": {
-          "x": 80,
-          "y": 870
+          "x": 4482,
+          "y": 5805.321001221
         },
         "TeaGame.Battle::TeaGame.BattleEvent_RoleSwitched": {
-          "x": 80,
-          "y": 1970
+          "x": 3512,
+          "y": 5096.012667887668
         },
         "TeaGame.Battle::TeaGame.BattleEvent_RollTriggered": {
-          "x": 80,
-          "y": 2070
+          "x": 3512,
+          "y": 1484.2380952380945
         },
         "TeaGame.Battle::TeaGame.BattleEvent_LockEnemyChanged": {
-          "x": 80,
-          "y": 1270
+          "x": 3972,
+          "y": 4737.012667887668
         },
         "TeaGame.Battle::TeaGame.BattleEvent_PlayerDamaged": {
-          "x": 80,
-          "y": 1470
+          "x": 4482,
+          "y": 5252.012667887668
         },
         "TeaGame.Battle::TeaGame.BattleEvent_RoleHealthChanged": {
-          "x": 80,
-          "y": 1870
+          "x": 3512,
+          "y": 1933.3630952380945
         },
         "TeaGame.Battle::TeaGame.BattleEvent_RoleDowned": {
-          "x": 80,
-          "y": 1770
+          "x": 3512,
+          "y": 2029.3630952380945
         },
         "TeaGame.Battle::TeaGame.BattleEvent_PlayerDied": {
-          "x": 80,
-          "y": 1570
+          "x": 5122,
+          "y": 1766.3630952380945
         },
         "TeaGame.Battle::TeaGame.BattleEvent_ReloadCompleted": {
-          "x": 80,
-          "y": 1670
+          "x": 3512,
+          "y": 5000.012667887668
         },
         "TeaGame.Battle::TeaGame.BattleEvent_EnemyHit": {
-          "x": 80,
-          "y": 970
+          "x": 5122,
+          "y": 6839.771001221001
         },
         "TeaGame.Battle::TeaGame.BattleEvent_EnemyKilled": {
-          "x": 80,
-          "y": 1070
+          "x": 4482,
+          "y": 6906.771001221
         },
         "TeaGame.Battle::TeaGame.BattleEvent_SkillEnergyChanged": {
-          "x": 80,
-          "y": 2270
+          "x": 2292,
+          "y": 7001.342429792429
         },
         "TeaGame.Battle::TeaGame.BattleEvent_SkillCooldownChanged": {
-          "x": 80,
-          "y": 2170
+          "x": 2292,
+          "y": 6827.342429792429
         },
         "TeaGame.Battle::TeaGame.BattleStateModel": {
-          "x": 740,
-          "y": 1970
+          "x": 5592,
+          "y": 4097.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleInputSnapshot": {
-          "x": 80,
-          "y": 2370
+          "x": 6012,
+          "y": 4009.5682234432225
         },
         "TeaGame.Battle::TeaGame.BattleMovementState": {
-          "x": 80,
-          "y": 2570
+          "x": 6012,
+          "y": 1528.2380952380945
         },
         "TeaGame.Battle::TeaGame.BattleInputSystem": {
-          "x": 740,
-          "y": 970
+          "x": 4482,
+          "y": 2619.9015567765564
         },
         "TeaGame.Battle::TeaGame.BattleMovementSystem": {
-          "x": 740,
-          "y": 1370
+          "x": 2852,
+          "y": 1321.2380952380945
         },
         "TeaGame.Battle::TeaGame.BattleCameraSystem": {
-          "x": 740,
-          "y": 470
+          "x": 4482,
+          "y": 470.66666666666606
         },
         "TeaGame.Battle::TeaGame.BattleAimSystem": {
-          "x": 740,
-          "y": 270
+          "x": 3512,
+          "y": 4900.012667887668
         },
         "TeaGame.Battle::TeaGame.BattleWeaponSystem": {
-          "x": 740,
-          "y": 2270
+          "x": 3172,
+          "y": 5111.123778998778
         },
         "TeaGame.Battle::TeaGame.BattleRuntimeBridge": {
-          "x": 1070,
-          "y": 970
+          "x": 6012,
+          "y": 6134.771001221001
         },
         "TeaGame.Battle::TeaGame.BattleRoleRuntimeData": {
-          "x": 1070,
-          "y": 870
+          "x": 3972,
+          "y": 4541.012667887668
         },
         "TeaGame.Battle::TeaGame.BattleEnvironmentEffectController": {
-          "x": 410,
-          "y": 70
+          "x": 5122,
+          "y": 6312.771001221001
         },
         "TeaGame.Battle::TeaGame.BattleElementBalance": {
-          "x": 80,
-          "y": 670
+          "x": 5122,
+          "y": 6513.771001221001
         },
         "TeaGame.Battle::TeaGame.ElementStateEffect": {
-          "x": 80,
-          "y": 6370
+          "x": 4482,
+          "y": 6379.771001221001
         },
         "TeaGame.Battle::TeaGame.BattleEnemyBullet": {
-          "x": 80,
-          "y": 770
+          "x": 3512,
+          "y": 5891.521001221001
         },
         "TeaGame.Battle::TeaGame.BattleEnemyEntity": {
-          "x": 1070,
-          "y": 470
+          "x": 3972,
+          "y": 6366.354334554334
         },
         "TeaGame.Battle::TeaGame.Battle_EnemyUI": {
-          "x": 80,
-          "y": 70
+          "x": 3512,
+          "y": 7001.342429792429
         },
         "TeaGame.Battle::TeaGame.EnemyBehaviour_GunTurret": {
-          "x": 80,
-          "y": 6470
+          "x": 3512,
+          "y": 6606.104334554334
         },
         "TeaGame.Battle::TeaGame.EnemyBehaviour_Mine": {
-          "x": 80,
-          "y": 6570
+          "x": 3512,
+          "y": 6769.104334554334
         },
         "TeaGame.Battle::TeaGame.EnemyBehaviour_Missile": {
-          "x": 80,
-          "y": 6670
+          "x": 3512,
+          "y": 6673.104334554334
         },
         "TeaGame.Battle::TeaGame.EnemyBehaviour_Patrol": {
-          "x": 80,
-          "y": 6770
+          "x": 3512,
+          "y": 6865.104334554334
         },
         "TeaGame.Battle::TeaGame.EnemyKind": {
-          "x": 80,
-          "y": 6970
+          "x": 4482,
+          "y": 6580.771001221001
         },
         "TeaGame.Battle::TeaGame.IEnemyBehaviour": {
-          "x": 80,
-          "y": 7270
+          "x": 4482,
+          "y": 6446.771001221001
         },
         "TeaGame.Battle::TeaGame.EnemyBehaviourFactory": {
-          "x": 80,
-          "y": 6870
+          "x": 3172,
+          "y": 6885.271001221
         },
         "TeaGame.Battle::TeaGame.BattleVirtualInput": {
-          "x": 1400,
-          "y": 170
+          "x": 5122,
+          "y": 1033.2380952380945
         },
         "TeaGame.Battle::TeaGame.TouchDragLookZone": {
-          "x": 410,
-          "y": 470
+          "x": 3972,
+          "y": 156.33333333333303
         },
         "TeaGame.Battle::TeaGame.TouchHoldKind": {
-          "x": 740,
-          "y": 2370
+          "x": 4482,
+          "y": 374.66666666666606
         },
         "TeaGame.Battle::TeaGame.TouchHoldButton": {
-          "x": 410,
-          "y": 570
+          "x": 3972,
+          "y": 348.33333333333303
         },
         "TeaGame.Battle::TeaGame.TouchJoystick": {
-          "x": 410,
-          "y": 670
+          "x": 3972,
+          "y": 252.33333333333303
         },
         "TeaGame.Battle::TeaGame.TouchTapKind": {
-          "x": 740,
-          "y": 2470
+          "x": 4482,
+          "y": 34
         },
         "TeaGame.Battle::TeaGame.TouchTapButton": {
-          "x": 410,
-          "y": 770
+          "x": 3972,
+          "y": 60.33333333333303
         },
         "TeaGame.Battle::TeaGame.BattleLevelConfig": {
-          "x": 80,
-          "y": 2470
+          "x": 5122,
+          "y": 1573.2380952380945
         },
         "TeaGame.Battle::TeaGame.BattleEvent_LevelStateChanged": {
-          "x": 80,
-          "y": 1170
+          "x": 5122,
+          "y": 4130.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleEvent_Stage_WaveStarted": {
-          "x": 1070,
-          "y": 670
+          "x": 5122,
+          "y": 1225.2380952380945
         },
         "TeaGame.Battle::TeaGame.BattleEvent_Stage_Cleared": {
-          "x": 1070,
-          "y": 570
+          "x": 5122,
+          "y": 1129.2380952380945
         },
         "TeaGame.Battle::TeaGame.BattleEvent_StageTimedOut": {
-          "x": 1070,
-          "y": 770
+          "x": 5122,
+          "y": 1321.2380952380945
         },
         "TeaGame.Battle::TeaGame.BattleEvent_PauseToggleRequested": {
-          "x": 740,
-          "y": 670
+          "x": 5122,
+          "y": 5509.846001221001
         },
         "TeaGame.Battle::TeaGame.BattleEvent_PauseResumeRequested": {
-          "x": 80,
-          "y": 1370
+          "x": 4482,
+          "y": 5174.012667887668
         },
         "TeaGame.Battle::TeaGame.BattleLevelState": {
-          "x": 740,
-          "y": 1170
+          "x": 6012,
+          "y": 2606.3460012210007
         },
         "TeaGame.Battle::TeaGame.BattleLevelFlow": {
-          "x": 740,
-          "y": 1070
+          "x": 4482,
+          "y": 1603.3630952380945
         },
         "TeaGame.Battle::TeaGame.BattleSceneRuntimeHost": {
-          "x": 410,
-          "y": 270
+          "x": 1344.359167173424,
+          "y": 6971.43510510074
         },
         "TeaGame.Battle::TeaGame.BattleStageDirector": {
-          "x": 740,
-          "y": 1870
+          "x": 3512,
+          "y": 933.2380952380945
         },
         "TeaGame.Battle::TeaGame.BattleStageDirector+SiteRuntime": {
-          "x": 1070,
-          "y": 1070
+          "x": 3972,
+          "y": 838.6666666666661
         },
         "TeaGame.Battle::TeaGame.IBattlePoolable": {
-          "x": 80,
-          "y": 7070
+          "x": 6012,
+          "y": 6038.771001221001
         },
         "TeaGame.Battle::TeaGame.BattleObjectPool": {
-          "x": 410,
-          "y": 170
+          "x": 5592,
+          "y": 6038.771001221001
         },
         "TeaGame.Battle::TeaGame.BattlePoolAutoReturn": {
-          "x": 80,
-          "y": 2670
+          "x": 5122,
+          "y": 6234.771001221001
         },
         "TeaGame.Battle::TeaGame.BattleHealthSystem": {
-          "x": 740,
-          "y": 770
+          "x": 2852,
+          "y": 2238.9015567765564
         },
         "TeaGame.Battle::TeaGame.BattleRoleSystem": {
-          "x": 740,
-          "y": 1670
+          "x": 3172,
+          "y": 1822.3630952380945
         },
         "TeaGame.Battle::TeaGame.BattleTeamRuntimeBuilder": {
-          "x": 740,
-          "y": 2070
+          "x": 1922,
+          "y": 5415.321001221
         },
         "TeaGame.Battle::TeaGame.BattleRoleSkillExecutor": {
-          "x": 80,
-          "y": 2770
+          "x": 2572,
+          "y": 6714.771001221001
         },
         "TeaGame.Battle::TeaGame.BattleSkillExecutorFactory": {
-          "x": 80,
-          "y": 3270
+          "x": 2292,
+          "y": 6923.342429792429
         },
         "TeaGame.Battle::TeaGame.BattleSkillSystem": {
-          "x": 740,
-          "y": 1770
+          "x": 1931.4643601672028,
+          "y": 7123.109321106112
         },
         "TeaGame.Battle::TeaGame.SkillEffect_AoEBurst": {
-          "x": 80,
-          "y": 7470
+          "x": 2852,
+          "y": 6627.971001221001
         },
         "TeaGame.Battle::TeaGame.SkillEffect_ClearEnemyBullets": {
-          "x": 80,
-          "y": 7570
+          "x": 3172,
+          "y": 5899.187667887667
         },
         "TeaGame.Battle::TeaGame.SkillEffect_ElementalBarrage": {
-          "x": 80,
-          "y": 7670
+          "x": 2852,
+          "y": 6822.271001221001
         },
         "TeaGame.Battle::TeaGame.SkillEffect_PullEnemies": {
-          "x": 80,
-          "y": 7770
+          "x": 2852,
+          "y": 5866.187667887667
         },
         "TeaGame.Battle::TeaGame.SkillExecutor_Electric": {
-          "x": 80,
-          "y": 7870
+          "x": 2572,
+          "y": 6906.771001221
         },
         "TeaGame.Battle::TeaGame.SkillExecutor_Fire": {
-          "x": 80,
-          "y": 7970
+          "x": 2572,
+          "y": 6810.771001221001
         },
         "TeaGame.Battle::TeaGame.SkillExecutor_Ice": {
-          "x": 80,
-          "y": 8070
+          "x": 2572,
+          "y": 5866.187667887667
         },
         "TeaGame.Battle::TeaGame.SkillExecutor_Wind": {
-          "x": 80,
-          "y": 8170
+          "x": 2572,
+          "y": 6618.771001221001
         },
         "TeaGame.Battle::TeaGame.BattleSkillSlot": {
-          "x": 80,
-          "y": 3370
+          "x": 4482,
+          "y": 5738.321001221
         },
         "TeaGame.Battle::TeaGame.BattleSkillSlotData": {
-          "x": 80,
-          "y": 3470
+          "x": 4482,
+          "y": 5872.321001221
         },
         "TeaGame.Battle::TeaGame.BattleRoleSkillProfile": {
-          "x": 80,
-          "y": 2870
+          "x": 3972,
+          "y": 5771.321001221
         },
         "TeaGame.Battle::TeaGame.BattleSkillCatalog": {
-          "x": 80,
-          "y": 2970
+          "x": 3512,
+          "y": 5671.321001221
         },
         "TeaGame.Battle::TeaGame.BattleSkillContext": {
-          "x": 80,
-          "y": 3070
+          "x": 3512,
+          "y": 5987.521001221001
         },
         "TeaGame.Battle::TeaGame.BattleSkillEffect": {
-          "x": 80,
-          "y": 3170
+          "x": 3172,
+          "y": 6528.371001221
         },
         "TeaGame.Battle::TeaGame.BattleHudState": {
-          "x": 740,
-          "y": 870
+          "x": 6012,
+          "y": 4105.568223443222
         },
         "TeaGame.Battle::TeaGame.BattleTeamHudView": {
-          "x": 80,
-          "y": 3570
+          "x": 3512,
+          "y": 2541.9015567765564
         },
         "TeaGame.Battle::TeaGame.BattleTeamHudView+Row": {
-          "x": 1400,
-          "y": 270
+          "x": 4482,
+          "y": 1484.2380952380945
         },
         "TeaGame.Battle::TeaGame.BattleUiSystem": {
-          "x": 80,
-          "y": 3870
+          "x": 3512,
+          "y": 5516.321001221
         },
         "TeaGame.Battle::TeaGame.Battle_LevelResultPanel": {
-          "x": 1121.522726706936,
-          "y": 16.099301291205364
+          "x": 3972,
+          "y": 2107.3630952380945
         },
         "TeaGame.Battle::TeaGame.Battle_LevelResultPanelData": {
-          "x": 80,
-          "y": 170
+          "x": 4482,
+          "y": 4641.012667887668
         },
         "TeaGame.Battle::TeaGame.Battle_MainPanel": {
-          "x": 740,
-          "y": 70
+          "x": 3172,
+          "y": 2564.168223443223
         },
         "TeaGame.Battle::TeaGame.Battle_MainPanelData": {
-          "x": 80,
-          "y": 270
+          "x": 3512,
+          "y": 2445.9015567765564
         },
         "TeaGame.Battle::TeaGame.Battle_PauseMenuPanel": {
-          "x": 1070,
-          "y": 170
+          "x": 3972,
+          "y": 2203.3630952380945
         },
         "TeaGame.Battle::TeaGame.Battle_PauseMenuPanelData": {
-          "x": 80,
-          "y": 370
+          "x": 4482,
+          "y": 2172.140873015872
         },
         "TeaGame.Battle::TeaGame.Battle_TouchInputPanel": {
-          "x": 1070,
-          "y": 270
+          "x": 3972,
+          "y": 604.6666666666661
         },
         "TeaGame.Battle::TeaGame.Battle_TouchInputPanelData": {
-          "x": 1400,
-          "y": 70
+          "x": 4482,
+          "y": 604.6666666666661
         },
         "TeaGame.Battle::TeaGame.BattleBullet": {
-          "x": 80,
-          "y": 470
+          "x": 4482,
+          "y": 6193.104334554334
         },
         "TeaGame.Battle::TeaGame.BattleElementBulletLibrary": {
-          "x": 740,
-          "y": 570
+          "x": 5592,
+          "y": 6167.771001221001
         },
         "TeaGame.Battle::TeaGame.BattleWeaponObjectComponent": {
-          "x": 80,
-          "y": 6070
+          "x": 5592,
+          "y": 2779.2348901098894
         },
         "TeaGame.Battle::TeaGame.BattleWeaponViewFactory": {
-          "x": 80,
-          "y": 6270
+          "x": 4482,
+          "y": 2867.5682234432225
         },
         "TeaGame.Battle::TeaGame.BattleWeaponViewAdapter": {
-          "x": 80,
-          "y": 6170
+          "x": 5122,
+          "y": 2786.9015567765564
         },
         "TeaGame.Battle::TeaGame.LegacyBattleWeaponViewAdapter": {
-          "x": 80,
-          "y": 7370
+          "x": 5122,
+          "y": 2882.9015567765555
         },
         "TeaGame.Battle::TeaGame.BattleWeaponModeFactory": {
-          "x": 80,
-          "y": 5970
+          "x": 4482,
+          "y": 4497.012667887668
         },
         "TeaGame.Battle::TeaGame.BattleWeaponModeBase": {
-          "x": 80,
-          "y": 5870
+          "x": 5122,
+          "y": 5185.012667887668
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_Assault": {
-          "x": 80,
-          "y": 3970
+          "x": 12,
+          "y": 12
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_AssaultPreciseFrame": {
-          "x": 80,
-          "y": 4270
+          "x": 5122,
+          "y": 3650.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_AssaultEnergyFrame": {
-          "x": 80,
-          "y": 4070
+          "x": 5122,
+          "y": 4034.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_AssaultRapidFireFrame": {
-          "x": 80,
-          "y": 4370
+          "x": 5122,
+          "y": 4514.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_AssaultFocusFrame": {
-          "x": 80,
-          "y": 4170
+          "x": 5122,
+          "y": 3746.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_AssaultStormFrame": {
-          "x": 80,
-          "y": 4470
+          "x": 5122,
+          "y": 3362.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_Heavy": {
-          "x": 80,
-          "y": 4570
+          "x": 222,
+          "y": 12
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_HeavyTrackingMissile": {
-          "x": 80,
-          "y": 4970
+          "x": 5122,
+          "y": 4418.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_HeavyPowerfulMissile": {
-          "x": 80,
-          "y": 4870
+          "x": 5122,
+          "y": 3074.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_HeavyLightweightMissile": {
-          "x": 80,
-          "y": 4670
+          "x": 5122,
+          "y": 4322.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_HeavyMultiLoadedMissile": {
-          "x": 80,
-          "y": 4770
+          "x": 5122,
+          "y": 4226.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_Scatter": {
-          "x": 80,
-          "y": 5070
+          "x": 432,
+          "y": 12
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_ScatterSmashShot": {
-          "x": 80,
-          "y": 5270
+          "x": 5122,
+          "y": 3266.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_ScatterPrecisionShot": {
-          "x": 80,
-          "y": 5170
+          "x": 5122,
+          "y": 3458.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_Sniper": {
-          "x": 80,
-          "y": 5370
+          "x": 5122,
+          "y": 6647.771001221001
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_SniperPenetrating": {
-          "x": 80,
-          "y": 5570
+          "x": 5122,
+          "y": 3842.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_SniperTandem": {
-          "x": 80,
-          "y": 5770
+          "x": 5122,
+          "y": 3938.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_SniperSwift": {
-          "x": 80,
-          "y": 5670
+          "x": 5122,
+          "y": 3170.901556776556
         },
         "TeaGame.Battle::TeaGame.BattleWeaponMode_SniperCharged": {
-          "x": 80,
-          "y": 5470
+          "x": 5122,
+          "y": 3554.901556776556
         },
         "TeaGame.Battle::TeaGame.Weapon_ObjectComponent": {
-          "x": 80,
-          "y": 8270
+          "x": 5592,
+          "y": 2875.2348901098894
         },
         "TeaGame.Battle::TeaGame.BattleUiFlowNames": {
-          "x": 80,
-          "y": 3670
+          "x": 642,
+          "y": 12
         },
         "TeaGame.Battle::TeaGame.BattleUiFlowPanelOpener": {
-          "x": 80,
-          "y": 3770
+          "x": 852,
+          "y": 12
         },
         "TeaGame.App::TeaGame.App.ResKitBootstrap": {
-          "x": 1730,
-          "y": 1570
+          "x": 3512,
+          "y": 1388.2380952380945
         },
         "TeaGame.Data::TeaGame.DamageElement": {
-          "x": 1730,
-          "y": 1370
+          "x": 6302,
+          "y": 6200.771001221001
         },
         "TeaGame.Data::TeaGame.RoleItem_Data": {
-          "x": 1730,
-          "y": 1670
+          "x": 4482,
+          "y": 1302.0380952380947
         },
         "TeaGame.Data::TeaGame.WeaponItem_Data": {
-          "x": 1730,
-          "y": 1970
+          "x": 5592,
+          "y": 5374.012667887668
         },
         "TeaGame.Battle.Editor::TeaGame.BattleEditor.BattleActorMigrationSetup": {
-          "x": 1730,
-          "y": 70
+          "x": 2852,
+          "y": 2334.9015567765564
         },
         "TeaGame.Battle.Editor::TeaGame.Battle.Editor.BattleArenaSceneThinner": {
-          "x": 1730,
-          "y": 170
+          "x": 1173.1530197458176,
+          "y": 7160.465793762589
         },
         "TeaGame.Battle.Editor::TeaGame.Battle.Editor.BattleTouchInputPanelBuilder": {
-          "x": 1730,
-          "y": 1270
+          "x": 3512,
+          "y": 370.83333333333303
         },
         "TeaGame.Battle.Editor::TeaGame.Battle.Editor.TouchInputDebugMenu": {
-          "x": 1730,
-          "y": 1770
+          "x": 4482,
+          "y": 4737.012667887668
         },
         "TeaGame.Battle.Contracts::TeaGame.BattleSceneGate": {
-          "x": 1730,
-          "y": 670
+          "x": 5122,
+          "y": 1670.3630952380945
         },
         "TeaGame.Battle.Contracts::TeaGame.BattleLevelCatalog": {
-          "x": 1730,
-          "y": 370
+          "x": 1922,
+          "y": 1755.3630952380945
         },
         "TeaGame.Battle.Contracts::TeaGame.BattleTeamCatalog": {
-          "x": 1730,
-          "y": 970
+          "x": 2292,
+          "y": 5078.123778998778
         },
         "TeaGame.Battle.Contracts::TeaGame.BattleLevelData": {
-          "x": 1730,
-          "y": 470
+          "x": 3972,
+          "y": 504.66666666666606
         },
         "TeaGame.Battle.Contracts::TeaGame.BattleLevelSession": {
-          "x": 1730,
-          "y": 570
+          "x": 1922,
+          "y": 415.66666666666606
         },
         "TeaGame.Battle.Contracts::TeaGame.EnemyCatalog": {
-          "x": 1730,
-          "y": 1470
+          "x": 3972,
+          "y": 671.6666666666661
         },
         "TeaGame.Battle.Contracts::TeaGame.BattleTeamSession": {
-          "x": 1730,
-          "y": 1170
+          "x": 4482,
+          "y": 1766.3630952380945
         },
         "TeaGame.App::TeaGame.UiPanelFlow": {
-          "x": 1730,
-          "y": 1870
+          "x": 4482,
+          "y": 1833.3630952380945
         },
         "TeaGame.Battle.Contracts::TeaGame.BattleAssetService": {
-          "x": 1730,
-          "y": 270
+          "x": 1922,
+          "y": 4856.012667887668
         },
         "TeaGame.Battle.Contracts::TeaGame.BattleSiteRow": {
-          "x": 1730,
-          "y": 770
+          "x": 4482,
+          "y": 760.6666666666661
         },
         "TeaGame.Battle.Contracts::TeaGame.BattleSpawnRow": {
-          "x": 1730,
-          "y": 870
+          "x": 3972,
+          "y": 905.6666666666661
         },
         "TeaGame.Battle.Contracts::TeaGame.BattleTeamMemberDraft": {
-          "x": 1730,
-          "y": 1070
+          "x": 2292,
+          "y": 5393.821001221
         },
         "TeaGame.Data::TeaGame.WeaponSubType": {
-          "x": 1730,
-          "y": 2070
+          "x": 5122,
+          "y": 2978.9015567765555
         }
       }
     },
@@ -1016,6 +1016,179 @@
         "TeaGame.App::TeaGame.TeaBaseButton": {
           "x": 1730,
           "y": 570
+        }
+      }
+    },
+    "class:TeaGame.Battle.Contracts": {
+      "zoom": 0.6224870051298353,
+      "pan": {
+        "x": -583.632016187403,
+        "y": -156.4318893873292
+      },
+      "nodes": {
+        "TeaGame.Battle.Contracts::TeaGame.BattleLevelCatalog": {
+          "x": 410,
+          "y": 170
+        },
+        "TeaGame.Battle.Contracts::TeaGame.BattleLevelMode": {
+          "x": 1070,
+          "y": 70
+        },
+        "TeaGame.Battle.Contracts::TeaGame.BattleLevelData": {
+          "x": 740,
+          "y": 70
+        },
+        "TeaGame.Battle.Contracts::TeaGame.BattleSiteRow": {
+          "x": 1070,
+          "y": 170
+        },
+        "TeaGame.Battle.Contracts::TeaGame.BattleBatchRow": {
+          "x": 1400,
+          "y": 70
+        },
+        "TeaGame.Battle.Contracts::TeaGame.BattleSpawnRow": {
+          "x": 1400,
+          "y": 170
+        },
+        "TeaGame.Battle.Contracts::TeaGame.BattleLevelSession": {
+          "x": 410,
+          "y": 270
+        },
+        "TeaGame.Battle.Contracts::TeaGame.EnemyCatalog": {
+          "x": 740,
+          "y": 370
+        },
+        "TeaGame.Battle.Contracts::TeaGame.EnemyCatalogEntry": {
+          "x": 1070,
+          "y": 270
+        },
+        "TeaGame.Battle.Contracts::TeaGame.EnemyIdAttribute": {
+          "x": 80,
+          "y": 70
+        },
+        "TeaGame.Battle.Contracts::TeaGame.BattleAssetService": {
+          "x": 410,
+          "y": 70
+        },
+        "TeaGame.Battle.Contracts::TeaGame.BattleSceneGate": {
+          "x": 410,
+          "y": 370
+        },
+        "TeaGame.Battle.Contracts::TeaGame.BattleTeamCatalog": {
+          "x": 740,
+          "y": 170
+        },
+        "TeaGame.Battle.Contracts::TeaGame.BattleTeamMemberDraft": {
+          "x": 740,
+          "y": 270
+        },
+        "TeaGame.Battle.Contracts::TeaGame.BattleTeamSession": {
+          "x": 410,
+          "y": 470
+        },
+        "TeaGame.Menu::TeaGame.MemoryBattlePlayerDataService": {
+          "x": 1730,
+          "y": 1770
+        },
+        "TeaGame.Menu::TeaGame.BattlePlayerDataServiceLocator": {
+          "x": 1730,
+          "y": 570
+        },
+        "TeaGame.Menu::TeaGame.Main_FormationController": {
+          "x": 1730,
+          "y": 1370
+        },
+        "TeaGame.Menu::TeaGame.Main_FormationModel": {
+          "x": 1730,
+          "y": 1470
+        },
+        "TeaGame.Menu::TeaGame.Main_FormationPanelData": {
+          "x": 1730,
+          "y": 1670
+        },
+        "TeaGame.Menu::TeaGame.Main_FormationPanel": {
+          "x": 1730,
+          "y": 1570
+        },
+        "TeaGame.Menu::TeaGame.LevelSelectPanelData": {
+          "x": 1730,
+          "y": 1270
+        },
+        "TeaGame.Menu::TeaGame.LevelSelectPanel": {
+          "x": 1730,
+          "y": 1170
+        },
+        "TeaGame.Data::TeaGame.DamageElement": {
+          "x": 1730,
+          "y": 970
+        },
+        "TeaGame.App::TeaGame.App.ResKitBootstrap": {
+          "x": 1730,
+          "y": 1970
+        },
+        "TeaGame.App::TeaGame.UiPanelFlow": {
+          "x": 1730,
+          "y": 2470
+        },
+        "TeaGame.App::TeaGame.App.SceneFlow": {
+          "x": 1730,
+          "y": 2170
+        },
+        "TeaGame.App::TeaGame.App.SceneRequest": {
+          "x": 1730,
+          "y": 2270
+        },
+        "TeaGame.Data::TeaGame.RoleItem_Data": {
+          "x": 1730,
+          "y": 2070
+        },
+        "TeaGame.Data::TeaGame.WeaponItem_Data": {
+          "x": 1730,
+          "y": 2570
+        },
+        "TeaGame.Battle.Editor::TeaGame.Battle.Editor.BattleArenaSceneThinner": {
+          "x": 1730,
+          "y": 270
+        },
+        "TeaGame.Battle.Editor::TeaGame.Battle.Editor.BattleLevelDataSetup": {
+          "x": 1730,
+          "y": 370
+        },
+        "TeaGame.Battle.Editor::TeaGame.Battle.Editor.BattleLevelDataSetup+PresetDef": {
+          "x": 1730,
+          "y": 1870
+        },
+        "TeaGame.Battle.Editor::TeaGame.Battle.Editor.EnemyIdDrawer": {
+          "x": 1730,
+          "y": 1070
+        },
+        "TeaGame.Battle::TeaGame.BattleLevelFlow": {
+          "x": 1730,
+          "y": 470
+        },
+        "TeaGame.Battle::TeaGame.BattleSceneRuntimeHost": {
+          "x": 1730,
+          "y": 670
+        },
+        "TeaGame.Battle::TeaGame.BattleStageDirector": {
+          "x": 1730,
+          "y": 770
+        },
+        "TeaGame.Battle::TeaGame.BattleStageDirector+SiteRuntime": {
+          "x": 1730,
+          "y": 2370
+        },
+        "TeaGame.Battle::TeaGame.BattleTeamRuntimeBuilder": {
+          "x": 1730,
+          "y": 870
+        },
+        "TeaGame.Battle::TeaGame.Battle_LevelResultPanel": {
+          "x": 1730,
+          "y": 70
+        },
+        "TeaGame.Battle::TeaGame.Battle_PauseMenuPanel": {
+          "x": 1730,
+          "y": 170
         }
       }
     }

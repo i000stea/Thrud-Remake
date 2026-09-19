@@ -29,6 +29,7 @@ const VENDOR_FILES = {
   "/vendor/cytoscape.min.js": path.join(ROOT_DIR, "node_modules", "cytoscape", "dist", "cytoscape.min.js"),
   "/vendor/cytoscape-elk.js": path.join(ROOT_DIR, "node_modules", "cytoscape-elk", "dist", "cytoscape-elk.js"),
   "/vendor/elk.bundled.js": path.join(ROOT_DIR, "node_modules", "elkjs", "lib", "elk.bundled.js"),
+  "/vendor/elk-api.js": path.join(ROOT_DIR, "node_modules", "elkjs", "lib", "elk-api.js"),
   "/vendor/elk-worker.min.js": path.join(ROOT_DIR, "node_modules", "elkjs", "lib", "elk-worker.min.js"),
 };
 

@@ -38,7 +38,17 @@ const status = (text) => { $('#status').textContent = text; };
 const WHEEL_KEY = 'atlas.wheelSensitivity';
 const WHEEL_DEFAULT = 0.18;
 const WHEEL_MIN = 0.05;
-const WHEEL_MAX = 1;
+const WHEEL_MAX = 10;
+// 滑块用对数刻度：低区（0.05~1）精细可调，高区能一路推到 10。
+const SLIDER_STEPS = 100;
+
+function sliderToWheel(position) {
+  return WHEEL_MIN * Math.pow(WHEEL_MAX / WHEEL_MIN, position / SLIDER_STEPS);
+}
+function wheelToSlider(value) {
+  const ratio = Math.log(value / WHEEL_MIN) / Math.log(WHEEL_MAX / WHEEL_MIN);
+  return Math.round(Math.min(SLIDER_STEPS, Math.max(0, ratio * SLIDER_STEPS)));
+}
 
 function readWheelSensitivity() {
   try {
@@ -54,7 +64,10 @@ function applyWheelSensitivity(value) {
   const label = $('#wheelValue');
   if (label) label.textContent = value.toFixed(2);
   const slider = $('#wheelSensitivity');
-  if (slider && Number(slider.value) !== value) slider.value = String(value);
+  if (slider) {
+    const position = String(wheelToSlider(value));
+    if (slider.value !== position) slider.value = position;
+  }
 }
 
 function setWheelSensitivity(value) {
@@ -505,79 +518,93 @@ function fit() {
   applyLod();
 }
 
-function hasElkExtension() {
-  return typeof cytoscape === 'function' && !!cytoscape('layout', 'elk');
+// —— 按需加载脚本（本地 vendor，无 CDN）——
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    let script = document.querySelector(`script[data-atlas-src="${src}"]`);
+    if (script) {
+      if (script.dataset.loaded) { resolve(); return; }
+      script.addEventListener('load', () => resolve(), { once: true });
+      script.addEventListener('error', () => reject(new Error('脚本加载失败：' + src)), { once: true });
+      return;
+    }
+    script = document.createElement('script');
+    script.src = src;
+    script.dataset.atlasSrc = src;
+    script.onload = () => { script.dataset.loaded = '1'; resolve(); };
+    script.onerror = () => reject(new Error('脚本加载失败：' + src));
+    document.head.append(script);
+  });
 }
 
-function syncPositionsFromCy() {
-  const v = view();
-  for (const node of state.cy.nodes()) {
-    v.nodes[node.id()] = { ...(v.nodes[node.id()] || {}), x: node.position('x'), y: node.position('y') };
+let elkApiPromise = null;
+// ELK 在真正的 Web Worker 中运行：官方 elk-api.js + elk-worker.min.js（engine worker）。
+// 不能用 elk.bundled.js —— 它的 ELKNode 检测到全局 Worker 时会 new Worker(undefined)，在浏览器必然失败。
+function ensureElkApi() {
+  if (typeof ELK !== 'undefined') return Promise.resolve(ELK);
+  if (!elkApiPromise) {
+    elkApiPromise = loadScript('./vendor/elk-api.js').then(() => {
+      if (typeof ELK === 'undefined') throw new Error('elk-api.js 未暴露全局 ELK');
+      return ELK;
+    }).catch((error) => { elkApiPromise = null; throw error; });
+  }
+  return elkApiPromise;
+}
+
+// —— ELK Worker 客户端：官方 elk-api + engine worker，支持取消（terminate）与失败降级 ——
+let elkSession = null;
+let elkProgressTimer = null;
+let elkCancel = null;
+let elkWorkerBroken = false;
+let elkWorkerError = '';
+
+async function getElkSession() {
+  if (elkSession) return elkSession;
+  const Api = await ensureElkApi();
+  const worker = new Worker('./vendor/elk-worker.min.js');
+  const elk = new Api({ workerFactory: () => worker });
+  worker.addEventListener('error', (event) => {
+    const detail = [event.message, event.filename, event.lineno ? ('line ' + event.lineno) : ''].filter(Boolean).join(' @ ');
+    elkWorkerError = 'ELK Worker 加载/执行失败：' + (detail || '未知错误');
+    disposeElkSession();
+    if (elkCancel) elkCancel(new Error(elkWorkerError));
+  });
+  elkSession = { elk, worker };
+  return elkSession;
+}
+
+function disposeElkSession() {
+  if (elkSession) {
+    try { elkSession.worker.terminate(); } catch { /* 忽略 */ }
+    elkSession = null;
   }
 }
 
-// —— ELK Worker 客户端：支持取消、过期结果丢弃、异常回退 ——
-let elkWorker = null;
-let elkSeq = 0;
-let elkPending = null;
-let elkProgressTimer = null;
-
-function getElkWorker() {
-  if (!elkWorker) elkWorker = new Worker('./elk-worker.js');
-  return elkWorker;
-}
-
-function disposeElkWorker() {
-  if (elkWorker) { elkWorker.terminate(); elkWorker = null; }
-}
-
-function settleElk(kind, payload, requestId) {
-  const pending = elkPending;
-  if (!pending || (requestId !== undefined && pending.requestId !== requestId)) return;
-  elkPending = null;
-  clearTimeout(elkProgressTimer);
+async function requestElkLayout(graph) {
+  if (typeof Worker === 'undefined') throw new Error('当前浏览器不支持 Web Worker');
+  const session = await getElkSession();
   const button = $('#cancelLayoutButton');
   if (button) button.hidden = true;
-  if (kind === 'error') pending.reject(payload); else pending.resolve(payload);
+  clearTimeout(elkProgressTimer);
+  elkProgressTimer = setTimeout(() => { if (button && elkCancel) button.hidden = false; }, 3000);
+
+  let rejectCancel;
+  const canceled = new Promise((resolve, reject) => { rejectCancel = reject; });
+  const mine = (error) => rejectCancel(error || new Error('布局已取消'));
+  elkCancel = mine;
+  try {
+    return await Promise.race([session.elk.layout(graph), canceled]);
+  } finally {
+    clearTimeout(elkProgressTimer);
+    if (elkCancel === mine) elkCancel = null;
+    if (button) button.hidden = true;
+  }
 }
 
 function cancelElkLayout(reason) {
-  if (!elkPending) return;
-  disposeElkWorker();
-  settleElk('error', new Error(reason || '布局已取消'));
-}
-
-function requestElkLayout(graph) {
-  // 新请求取代旧请求：终止旧 Worker 并让旧 Promise 以取消结束，避免回调误结算。
-  if (elkPending) cancelElkLayout('被新的布局请求取代');
-  return new Promise((resolve, reject) => {
-    if (typeof Worker === 'undefined') { reject(new Error('当前浏览器不支持 Web Worker')); return; }
-    const worker = getElkWorker();
-    const requestId = ++elkSeq;
-    const onMessage = (event) => {
-      const data = event.data || {};
-      if (data.requestId !== requestId) return; // 过期结果直接丢弃
-      worker.removeEventListener('message', onMessage);
-      worker.removeEventListener('error', onError);
-      if (data.type === 'error') settleElk('error', new Error(data.error || 'ELK 布局失败'), requestId);
-      else settleElk('resolve', data.result, requestId);
-    };
-    const onError = (event) => {
-      worker.removeEventListener('message', onMessage);
-      worker.removeEventListener('error', onError);
-      disposeElkWorker();
-      settleElk('error', new Error(event.message || 'ELK Worker 异常'), requestId);
-    };
-    worker.addEventListener('message', onMessage);
-    worker.addEventListener('error', onError);
-    elkPending = { requestId, resolve, reject };
-    const button = $('#cancelLayoutButton');
-    if (button) button.hidden = true;
-    elkProgressTimer = setTimeout(() => {
-      if (elkPending && elkPending.requestId === requestId && button) button.hidden = false;
-    }, 3000);
-    worker.postMessage({ type: 'layout', requestId, graph });
-  });
+  const cancel = elkCancel;
+  disposeElkSession();
+  if (cancel) cancel(new Error(reason || '布局已取消'));
 }
 
 function applyElkPositions(positions) {
@@ -602,30 +629,35 @@ function fallbackGridLayout() {
 async function runAutoLayout() {
   if (!state.cy) return;
   checkpoint();
+
+  if (elkWorkerBroken) {
+    fallbackGridLayout();
+    fit();
+    changed();
+    status('ELK 不可用，已用网格布局（' + elkWorkerError + '）');
+    return;
+  }
+
   status('ELK 布局中…');
+  const layoutView = state.view;
   try {
     const graph = AtlasView.buildElkGraph(state.graph);
     const result = await requestElkLayout(graph);
+    if (state.view !== layoutView) { status('视图已切换，丢弃本次布局结果'); return; }
     applyElkPositions(AtlasView.elkPositions(result));
     fit();
     changed();
-    status('ELK 布局完成');
+    status('ELK 布局完成（Worker）');
   } catch (error) {
     if (error.message === '布局已取消') { status('已取消布局，保留上次位置'); return; }
-    console.warn('[code-atlas] ELK Worker 失败，回退布局：', error);
-    if (hasElkExtension()) {
-      await new Promise((resolve) => {
-        const layout = state.cy.layout({ name: 'elk', fit: true, padding: 40, elk: AtlasView.ELK_LAYERED_OPTIONS });
-        layout.one('layoutstop', resolve);
-        layout.run();
-      });
-      syncPositionsFromCy();
-    } else {
-      fallbackGridLayout();
-    }
+    elkWorkerBroken = true;
+    elkWorkerError = error.message;
+    disposeElkSession();
+    console.warn('[code-atlas] ELK Worker 布局失败，改用网格布局：', error);
+    fallbackGridLayout();
     fit();
     changed();
-    status('已回退布局：' + error.message);
+    status('ELK 不可用，已用网格布局（' + error.message + '）');
   }
 }
 
@@ -691,10 +723,8 @@ function bindControls() {
   if (depthSelect) depthSelect.onchange = () => applySelection();
   const wheelSlider = $('#wheelSensitivity');
   if (wheelSlider) {
-    const initial = readWheelSensitivity();
-    wheelSlider.value = String(initial);
-    applyWheelSensitivity(initial);
-    wheelSlider.oninput = () => setWheelSensitivity(Number(wheelSlider.value));
+    applyWheelSensitivity(readWheelSensitivity());
+    wheelSlider.oninput = () => setWheelSensitivity(sliderToWheel(Number(wheelSlider.value)));
   }
   $('#resetButton').onclick = () => resetLayout();
   $('#fitButton').onclick = () => { checkpoint(); fit(); changed(); };
