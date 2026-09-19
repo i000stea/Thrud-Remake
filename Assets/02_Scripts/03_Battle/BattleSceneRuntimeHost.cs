@@ -7,11 +7,16 @@ namespace TeaGame
    /// <summary>
    /// T3.1C battle 场景固定引导（对象名约定：battle_runtime）。
    ///
-   /// **架构定位（2026-09-08 调整）：战斗场景唯一的「装配初始化 + 每帧驱动」节点**——
-   /// 1. Awake：确保战斗架构创建（幂等）、解析本场关卡、应用出生点、注入波次 Director；
-   /// 2. Start：整场战斗装配（角色数据解析与注入、健康/视图/技能/关卡流程初始化、元素子弹注册、
-   ///    View 侧 HUD 事件绑定），随后按条件打开触摸操作层；
-   /// 3. Update/FixedUpdate/LateUpdate：每帧驱动各 System（含 ESC 暂停请求）。
+   /// **架构定位（2026-09-19「宿主瘦身」后的定稿）：战斗场景唯一的「场景生命周期 + 装配调用 + 相位表」节点**
+   /// （21 文档 §2.2 的正确命名：本类的 Update/FixedUpdate/LateUpdate 是这套架构的 SystemGroup / PlayerLoop 集成点）：
+   /// 1. <see cref="Awake"/>：确保战斗架构创建（幂等）、把 rig 发布进 Model、解析本场关卡并把数据交给场景固件（Director）；
+   /// 2. <see cref="Start"/>：调一次装配器 <see cref="BattleSceneAssembler.Build"/>（组合根在装配器里），随后按条件打开战斗 UI；
+   /// 3. Update/FixedUpdate/LateUpdate：**相位表**——每帧按固定顺序驱动各 System 与各 Actor（顺序即逻辑，见各方法注释）；
+   /// 4. <see cref="OnDestroy"/>：场景级释放（Actor 反注册、Model 清 rig、关面板、摘 UIKit 表）。
+   ///
+   /// **宿主判据**（21 文档纪律 1）：「这段代码是否只在场景装配/卸载时才需要存在？」是 → 留；否 → 搬走。
+   /// 因此**数据解析**在 <see cref="BattleSetupSystem"/>、**装配**在 <see cref="BattleSceneAssembler"/>、
+   /// **每帧中间量**在各 Actor 内，本类不残留其中任何一项。
    ///
    /// Battle_PlayerControl（rig）只作为 **View** 提供表现引用与工具，不再承担初始化/数据解析/驱动
    /// （历史职责已上移至本宿主；详见 Docs/09 关键坑与 Battle_PlayerControl 类注释）。
@@ -53,15 +58,11 @@ namespace TeaGame
          }
       }
       BattleStateModel _sModel;
-      
-      /// <summary> 移动表现 </summary>
-      private BattleMovementActor movementActor;
-      /// <summary> 角色表现 </summary>
-      private BattleRoleActor roleActor;
-      /// <summary> 武器表现 </summary>
-      private BattleWeaponActor weaponActor;
-      /// <summary> 相机表现 </summary>
-      private BattleCameraActor cameraActor;
+
+      /// <summary>本场战斗的装配器（组合根；只装配一次，之后只读它的 Actor）。</summary>
+      private BattleSceneAssembler assembler;
+      /// <summary>本场关卡数据（Awake 解析、Start 交给装配器做出生点传送）。</summary>
+      private BattleLevelData level;
       /// <summary> 准备就绪 </summary>
       private bool battleReady;
 
@@ -91,19 +92,9 @@ namespace TeaGame
          //（此前由 BattleRoleSystem.Initialize 在 Start 写入，等于同一引用的第二份拷贝）。
          StateModel.Controller = playerControl;
 
-         if (Rig)
-         {
-            movementActor = new BattleMovementActor(Rig.transform, Rig.SelfRigidbody,
-               Rig.ControlXAxis, Rig.Control_Camera);
-            // Actor 由宿主持有；System 只接配置（2026-09-19：System 不再持有 View）
-            Architecture.GetSystem<BattleMovementSystem>().Initialize(Rig.PlayerConfig);
-         }
-
-         // 关卡解析（会话缓存优先 / D12 直连默认）由 BattleSetupSystem 负责（2026-09-19 第 2 步搬出）
-         if (!Architecture.GetSystem<BattleSetupSystem>().TryResolveLevel(gameObject.scene.name, catalog, out var level))
-         {
-            return;
-         }
+         // 关卡解析（会话缓存优先 / D12 直连默认）由 BattleSetupSystem 负责（2026-09-19 第 2 步搬出）。
+         // 解析失败（返回 false）时 level 为空，battle 场景保底运行（无波次数据），日志已由 System 给出。
+         Architecture.GetSystem<BattleSetupSystem>().TryResolveLevel(gameObject.scene.name, catalog, out level);
 
          ApplyLevelToScene(level);
       }
@@ -111,23 +102,17 @@ namespace TeaGame
       /// <summary>
       /// 把已解析的关卡数据应用到场景固件（**宿主职责：把数据交给 View**）。
       /// 数据解析本身在 <see cref="BattleSetupSystem"/>（2026-09-19 第 2 步搬出）；
-      /// 本方法只做两件场景级的事：出生点传送（交给 Actor）+ Director 注入（交给场景组件）。
+      /// 本方法只做场景级注入 + 装配日志。出生点传送随装配在 Start 由装配器执行。
       /// </summary>
-      /// <param name="level">已解析出的本场关卡数据。</param>
-      private void ApplyLevelToScene(BattleLevelData level)
+      /// <param name="selected">已解析出的本场关卡数据；为空表示未解析到（保底运行）。</param>
+      private void ApplyLevelToScene(BattleLevelData selected)
       {
-         if (applyPlayerSpawn && Rig != null)
-         {
-            // 传送是 View 操作 → 直接交给 Actor（原为 MovementSystem.Teleport 透传）
-            movementActor.Teleport(
-               level.PlayerSpawnPosition,
-               Quaternion.Euler(level.PlayerSpawnEuler));
-         }
+         if (selected == null) return; // 未解析到关卡：既有路径不打 Director 警告、不做注入（与搬运前一致）
 
          // 敌人系统等到真正更新时再阅读
          if (stageDirector != null)
          {
-            stageDirector.Setup(level, catalog != null ? catalog.EnemyCatalog : null);
+            stageDirector.Setup(selected, catalog != null ? catalog.EnemyCatalog : null);
          }
          else
          {
@@ -135,9 +120,9 @@ namespace TeaGame
                              "请用编辑器菜单 Thrud/Battle/T3.1C/1. 检查并放置战斗固定固件。");
          }
 
-         var siteCount = level.Sites == null ? 0 : level.Sites.Length;
-         Debug.Log($"[battle_runtime] 关卡 {level.LevelId}「{level.DisplayName}」装配完成：" +
-                   $"出生 {level.PlayerSpawnPosition}（朝向 {level.PlayerSpawnEuler}），站点 {siteCount} 个，限时 {level.TimeLimitSeconds}s。");
+         var siteCount = selected.Sites == null ? 0 : selected.Sites.Length;
+         Debug.Log($"[battle_runtime] 关卡 {selected.LevelId}「{selected.DisplayName}」装配完成：" +
+                   $"出生 {selected.PlayerSpawnPosition}（朝向 {selected.PlayerSpawnEuler}），站点 {siteCount} 个，限时 {selected.TimeLimitSeconds}s。");
       }
 
       #endregion
@@ -147,82 +132,15 @@ namespace TeaGame
       // ==================== Start：整场战斗装配 ====================
       private void Start()
       {
-         // 1. 整场战斗装配（系统初始化 + 角色数据注入）——顺序依赖：所有对象 Awake 已完成
-         SetupBattleSystems();
+         // 1. 整场战斗装配——组合根在 BattleSceneAssembler（2026-09-19 第 4 步）。
+         //    顺序依赖（必须在所有对象 Awake 之后）由此处的"在 Start 里调用"表达，不在装配器内用协程掩盖。
+         assembler = new BattleSceneAssembler(Rig, StateModel,
+            Architecture.GetSystem<BattleSetupSystem>(), teamCatalog, applyPlayerSpawn);
+         battleReady = assembler.Build(level);
 
-         // 2. 触摸层（跨场景进入须等 UIRoot 归属稳定，见 OpenTouchUiWhenSceneReady）
+         // 2. 触摸层（跨场景进入须等 UIRoot 归属稳定，见 OpenBattleUiWhenSceneReady）
          if (battleReady) StartCoroutine(OpenBattleUiWhenSceneReady());
       }
-      private void SetupBattleSystems()
-      {
-         // 玩家控制器存续状态检测
-         if (Rig == null)
-         {
-            Debug.LogError("[battle_runtime] 未配置 rig（Battle_PlayerControl），无法装配战斗。");
-            return;
-         }
-
-         //var model = Architecture.GetModel<BattleStateModel>();
-         StateModel.Paused = false; // 复位暂停态（架构常驻跨场景）
-
-         // 角色数据解析（会话优先 / Editor 目录默认 / 正式无会话退回）→ 注入角色系统
-         // 解析逻辑在 BattleSetupSystem（2026-09-19 第 2 步搬出）；它只返回数据 + 失败标志，
-         // "退回入口场景"这个流程动作仍由宿主执行（System 不驱动 View/流程）。
-         var resolution = Architecture.GetSystem<BattleSetupSystem>().ResolveBattleDatas(teamCatalog);
-         if (resolution.RetreatToEntryScene)
-         {
-            UiPanelFlow.CloseAllSafely(); // 清面板表防跨场景残留已销毁面板（CloseAllPanel 对已销毁条目会抛异常）
-            BattleSceneGate.TransitionTo(BattleTeamSession.ReturnSceneName);
-         }
-
-         var datas = resolution.Datas;
-
-         // 各系统初始化
-
-         // 角色系统（含成员级血量复位——2026-09-19 BattleHealthSystem 已并入本系统）
-         Architecture.GetSystem<BattleRoleSystem>().Initialize(Rig, datas);
-         
-         // 角色显示（依赖集合由各 Actor 构造函数一眼看全；每帧中间量在 Actor 内派生——第 3 步）
-         roleActor = new BattleRoleActor(Rig.Roles, Rig.GetWeaponParent(), Rig.ViewRotateAxis,
-            Rig.Control_Camera, Rig.ControlXAxis, Rig.PlayerConfig);
-         // 武器显示（锁敌目标 / 回正点 / 吸附速度在 Actor 内派生，只读 Model）
-         weaponActor = new BattleWeaponActor(Rig.WepLookatTarget, Rig.Control_Camera, Rig.ControlXAxis,
-            Rig.transform, StateModel, Rig.PlayerConfig);
-         // 相机显示
-         cameraActor = new BattleCameraActor(Rig.Control_Camera, Rig.PlayerConfig.MainFov);
-         
-         // Actor 自持（2026-09-19 第 1 步）：装配挂点 + 自己订阅切人/阵亡/翻滚事件 + 播出生动画。
-         // 原为 `GetSystem<BattleRoleSystem>().AttachActor(roleActor)`——System 不再持有 View。
-         roleActor.Initialize(datas);
-
-         // 重置瞄准
-         Architecture.GetSystem<BattleAimSystem>().ResetForBattle();
-
-         StateModel.PublishAmmo(StateModel.CurrentBattleData);
-
-         Rig.SyncRuntimeBridge();
-
-         // 弹药后面要更新
-         // T2.3.1：注册元素子弹（开火按角色元素取弹）
-         BattleElementBulletLibrary.Register(
-            Rig.BulletIcePrefab,
-            Rig.BulletFirePrefab,
-            Rig.BulletWindPrefab,
-            Rig.BulletElectricPrefab);
-
-         // T2.4：技能系统按本场角色数量重建冷却表、清零能量并广播首帧状态
-         Architecture.GetSystem<BattleSkillSystem>().ResetForBattle();
-
-         // T3.1：关卡流程复位进入 Prepare（终局去向由结算弹窗按钮触发）
-         Architecture.GetSystem<BattleLevelFlow>().StartLevel();
-
-         // [2026-09-18] 技能 HUD 的 View 侧绑定已迁至 Battle_MainPanel（BindableProperty 反向绑定），
-         // 面板在等 UIRoot 归属稳定后由 OpenBattleUiWhenSceneReady 打开——见本类底部。
-
-         battleReady = true;
-         Debug.Log($"[battle_runtime] 战斗系统装配完成：出战 {datas.Length} 人。");
-      }
-
 
       #endregion
 
@@ -239,7 +157,7 @@ namespace TeaGame
 
          // 接管状态？
          Architecture.GetSystem<BattleRoleSystem>().SetControlTakenOver(Rig.ControlTakeOff);
-         
+
          // 监控输入
          Architecture.GetSystem<BattleInputSystem>().Tick();
 
@@ -258,15 +176,15 @@ namespace TeaGame
          }
 
          // 移动：System 只算，Actor 只执行（2026-09-19 第 1 步同批）
-         ApplyMovementForce(Architecture.GetSystem<BattleMovementSystem>().TickUpdate(movementActor.Forward));
+         ApplyMovementForce(Architecture.GetSystem<BattleMovementSystem>().TickUpdate(assembler.MovementActor.Forward));
 
          // 相机tick
          Architecture.GetSystem<BattleCameraSystem>().Tick();
-         
+
          TickActors();
-         
+
          StateModel.PublishAmmo(StateModel.CurrentBattleData);
-         
+
          // 武器 tick
          Architecture.GetSystem<BattleWeaponSystem>().Tick();
 
@@ -282,6 +200,7 @@ namespace TeaGame
          if (StateModel.Paused) return;
 
          // 世界方向由 Actor 的基向量解析（Actor 不可用时给零向量），力再交回 Actor 施加
+         var movementActor = assembler.MovementActor;
          var moveDirection = movementActor.IsAvailable
             ? movementActor.ResolveDirection(StateModel.Input.MoveHorizontal, StateModel.Input.MoveDepth,
                StateModel.Input.MoveVertical, Rig.PlayerConfig.MoveForwardFollowView,
@@ -309,7 +228,7 @@ namespace TeaGame
       /// </summary>
       private void ApplyMovementForce(Vector3 force)
       {
-         
+         var movementActor = assembler.MovementActor;
          if (!movementActor.IsAvailable) return;
          if (force.sqrMagnitude <= 0f) return;
          movementActor.ApplyForce(force);
@@ -326,10 +245,10 @@ namespace TeaGame
       {
          var state = StateModel;
          var config = Rig.PlayerConfig;
-         roleActor.Tick(movementActor.AnimationVelocity, state.Movement.Sprinting, Time.deltaTime);
-         cameraActor.BlendFov(state.Movement.Sprinting ? config.SprintFov : config.MainFov,
+         assembler.RoleActor.Tick(assembler.MovementActor.AnimationVelocity, state.Movement.Sprinting, Time.deltaTime);
+         assembler.CameraActor.BlendFov(state.Movement.Sprinting ? config.SprintFov : config.MainFov,
             config.FovLerpSpeed, Time.deltaTime);
-         weaponActor.Tick();
+         assembler.WeaponActor.Tick();
       }
 
       #endregion
@@ -339,7 +258,7 @@ namespace TeaGame
       {
          battleReady = false;
          // Actor 自持：反注册其事件订阅（纯 C# 类无自动反注册）
-         roleActor?.Dispose();
+         assembler?.RoleActor?.Dispose();
          // 2026-09-19 第 1 步：Controller 由本宿主在 Awake 发布（Model 是唯一运行期持有者），
          // 判据随之从"是否等于字段"退化为"是否已被本宿主发布过"。
          if (StateModel.Controller) StateModel.Controller = null;
