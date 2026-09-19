@@ -72,7 +72,7 @@ namespace TeaGame
          mWaveStartedUnregister = Architecture.RegisterEvent<BattleEvent_Stage_WaveStarted>(_ => OnWaveStarted());
          mClearedUnregister = Architecture.RegisterEvent<BattleEvent_Stage_Cleared>(_ => OnStageCleared());
          mTimedOutUnregister = Architecture.RegisterEvent<BattleEvent_StageTimedOut>(_ => OnStageTimedOut());
-         mPlayerDiedUnregister = Architecture.RegisterEvent<BattlePlayerDiedEvent>(_ => OnPlayerDied());
+         mPlayerDiedUnregister = Architecture.RegisterEvent<BattleEvent_PlayerDied>(_ => OnPlayerDied());
       }
 
       protected override void OnDeinit()

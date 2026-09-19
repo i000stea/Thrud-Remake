@@ -6,7 +6,7 @@ namespace TeaGame
    /// <summary>
    /// T2.4 技能槽位。
    /// Elemental = 元素战技（E 键），Ultimate = 极奏（Q 键，消耗能量）。
-   /// 槽位数值与 <see cref="BattleSkillCooldownChangedEvent.Slot"/>（0/1）保持一致。
+   /// 槽位数值与 <see cref="BattleEvent_SkillCooldownChanged.Slot"/>（0/1）保持一致。
    /// </summary>
    public enum BattleSkillSlot
    {

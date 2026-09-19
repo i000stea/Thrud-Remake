@@ -390,7 +390,7 @@ namespace TeaGame
          var sqrDistance = (player.position - transform.position).sqrMagnitude;
          if (sqrDistance > radius * radius) return;
 
-         BattleArchitecture.Interface.SendEvent(new BattlePlayerDamagedEvent
+         BattleArchitecture.Interface.SendEvent(new BattleEvent_PlayerDamaged
          {
             Damage = Mathf.Max(1, Mathf.RoundToInt(damage))
          });
@@ -485,7 +485,7 @@ namespace TeaGame
          // 仅玩家击杀派发能量事件（T2.4）：行为自爆/超时自毁路径不置位该标记。
          if (mKilledByPlayer)
          {
-            BattleArchitecture.Interface.SendEvent(new BattleEnemyKilledEvent
+            BattleArchitecture.Interface.SendEvent(new BattleEvent_EnemyKilled
             {
                Position = transform.position,
                Element = element

@@ -11,34 +11,6 @@ namespace TeaGame
 		
 		public Camera Control_Camera;
 		
-		public Canvas MainCanvas;
-		
-		public RectTransform Cross_LockEnemy;
-		
-		public UnityEngine.UI.Image Health_Main;
-		
-		public TMPro.TextMeshProUGUI Health_Value;
-		
-		/// <summary>
-		/// 当前角色名 · 元素
-		/// </summary>
-		public UnityEngine.UI.Text SkillHudRoleLine;
-		
-		/// <summary>
-		/// 序曲 E 技能
-		/// </summary>
-		public UnityEngine.UI.Text SkillHudELine;
-		
-		/// <summary>
-		/// 极奏 Q 技能 · 能量
-		/// </summary>
-		public UnityEngine.UI.Text SkillHudQLine;
-		
-		/// <summary>
-		/// 切人提示
-		/// </summary>
-		public UnityEngine.UI.Text SkillHudSwitchLine;
-		
 		public Transform ViewRotateAxis;
 		
 		public Transform Roles;

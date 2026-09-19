@@ -108,7 +108,7 @@ namespace TeaGame
          if (!player) return;
 
          mCanHit = false;
-         BattleArchitecture.Interface.SendEvent(new BattlePlayerDamagedEvent
+         BattleArchitecture.Interface.SendEvent(new BattleEvent_PlayerDamaged
          {
             Damage = Random.Range(damageRangeMin, damageRangeMax)
          });

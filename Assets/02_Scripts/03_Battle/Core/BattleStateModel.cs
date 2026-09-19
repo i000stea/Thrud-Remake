@@ -72,16 +72,8 @@ namespace TeaGame
       /// </summary>
       public float CameraPitch;
 
-      /// <summary>
-      /// 当前实际使用的视场角。
-      /// </summary>
-      public float CurrentFov;
-
       /// <summary> 当前锁定的敌人目标。 </summary>
       public IBattleEnemyTarget LockEnemy;
-
-      /// <summary> 锁敌目标在 UI 中的目标位置。 </summary>
-      public Vector2 ScreenTarget;
 
       /// <summary>
       /// 锁敌插值速度倍率。

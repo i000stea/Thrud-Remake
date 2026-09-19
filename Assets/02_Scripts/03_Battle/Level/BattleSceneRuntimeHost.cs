@@ -30,7 +30,7 @@ namespace TeaGame
       [SerializeField] private BattleTeamCatalog teamCatalog;
 
       // 这个地方有点问题，他为什么是手动拖拽的？我希望应该是通过某种方式查找当前场景中存在的该脚本，没有的话去呼叫热更新模块把相应的预制件创建然后进行获取
-      [Tooltip("场景固定 rig（Battle_PlayerControl.prefab 实例，角色控制 + 战斗 HUD，仅作 View）。")]
+      [Tooltip("场景固定 rig（Battle_PlayerControl.prefab 实例，提供 Actor 装配引用；HUD 在独立面板）。")]
       [SerializeField] private Battle_PlayerControl playerControl;
 
       [Tooltip("场景固定敌人管理（波次/目标点/刷怪 Director，数据由本宿主注入）。")]
@@ -48,6 +48,11 @@ namespace TeaGame
          }
       }
       BattleStateModel _sModel;
+      private BattleMovementActor movementActor;
+      private BattleRoleActor roleActor;
+      private BattleWeaponActor weaponActor;
+      private BattleCameraActor cameraActor;
+      private bool battleReady;
 
       /// <summary>编辑器直连默认编队目录路径（无出战会话时的兜底数据源）。</summary>
       private const string EditorTeamCatalogPath = "Assets/Data/BattleTeamCatalog.asset";
@@ -63,6 +68,13 @@ namespace TeaGame
          // 框架初始化：确保战斗架构创建（幂等）
          _ = BattleArchitecture.Interface;
 
+         if (playerControl)
+         {
+            movementActor = new BattleMovementActor(playerControl.transform, playerControl.SelfRigidbody,
+               playerControl.ControlXAxis, playerControl.Control_Camera);
+            Architecture.GetSystem<BattleMovementSystem>().Initialize(movementActor, playerControl.PlayerConfig);
+         }
+
          if (!TryResolveLevel(out var level)) { return; }
 
          ApplyLevelToScene(level);
@@ -74,11 +86,15 @@ namespace TeaGame
          SetupBattleSystems();
 
          // 2. 触摸层（跨场景进入须等 UIRoot 归属稳定，见 OpenTouchUiWhenSceneReady）
-         StartCoroutine(OpenBattleUiWhenSceneReady());
+         if (battleReady) StartCoroutine(OpenBattleUiWhenSceneReady());
       }
 
       private void OnDestroy()
       {
+         battleReady = false;
+         Architecture.GetSystem<BattleRoleSystem>().DetachActor(roleActor);
+         Architecture.GetSystem<BattleMovementSystem>().Detach(movementActor);
+         if (StateModel.Controller == playerControl) StateModel.Controller = null;
          // [2026-09-18] 离场关闭战斗 UI 面板（主 HUD + 触屏层；均幂等）
          try
          {
@@ -141,10 +157,9 @@ namespace TeaGame
       /// <param name="level"></param>
       private void ApplyLevelToScene(BattleLevelData level)
       {
-         // 应该是在 玩家系统 内部 有一个事件进行位置更新，通过事件输入值后，再使用 BindableProperty 让view层进行更新 而不是直接驱动位置
          if (applyPlayerSpawn && playerControl != null)
          {
-            playerControl.transform.SetPositionAndRotation(
+            Architecture.GetSystem<BattleMovementSystem>().Teleport(
                level.PlayerSpawnPosition,
                Quaternion.Euler(level.PlayerSpawnEuler));
          }
@@ -192,8 +207,12 @@ namespace TeaGame
          Architecture.GetSystem<BattleRoleSystem>().Initialize(playerControl, datas);
          Architecture.GetSystem<BattleHealthSystem>().Initialize();
          
-         // view系统应该“不存在”？ 各自的view由各自的viewcontroller处理？
-         Architecture.GetSystem<BattleViewSystem>().InitializeView();
+         roleActor = new BattleRoleActor(playerControl.Roles, playerControl.GetWeaponParent(), playerControl.ViewRotateAxis);
+         weaponActor = new BattleWeaponActor(playerControl.WepLookatTarget);
+         cameraActor = new BattleCameraActor(playerControl.Control_Camera, playerControl.PlayerConfig.MainFov);
+         Architecture.GetSystem<BattleRoleSystem>().AttachActor(roleActor);
+         Architecture.GetSystem<BattleAimSystem>().ResetForBattle();
+         StateModel.Hud.PublishAmmo(StateModel.CurrentBattleData);
 
          playerControl.SyncRuntimeBridge();
 
@@ -213,6 +232,7 @@ namespace TeaGame
          // [2026-09-18] 技能 HUD 的 View 侧绑定已迁至 Battle_MainPanel（BindableProperty 反向绑定），
          // 面板在等 UIRoot 归属稳定后由 OpenBattleUiWhenSceneReady 打开——见本类底部。
 
+         battleReady = true;
          Debug.Log($"[battle_runtime] 战斗系统装配完成：出战 {datas.Length} 人。");
       }
 
@@ -383,7 +403,7 @@ namespace TeaGame
       private void Update()
       {
          var state = StateModel;
-         if (playerControl == null) return;
+         if (!battleReady || playerControl == null) return;
 
          Architecture.GetSystem<BattleRoleSystem>().SetControlTakenOver(playerControl.ControlTakeOff);
          Architecture.GetSystem<BattleInputSystem>().Tick();
@@ -404,7 +424,8 @@ namespace TeaGame
 
          Architecture.GetSystem<BattleMovementSystem>().TickUpdate();
          Architecture.GetSystem<BattleCameraSystem>().Tick();
-         Architecture.GetSystem<BattleViewSystem>().TickUpdate();
+         TickActors();
+         StateModel.Hud.PublishAmmo(StateModel.CurrentBattleData);
          Architecture.GetSystem<BattleWeaponSystem>().Tick();
 
          // T2.4：技能管道（输入快照已含 E/Q，冷却读秒 + 施放校验在本系统内收口）
@@ -415,7 +436,7 @@ namespace TeaGame
 
       private void FixedUpdate()
       {
-         if (playerControl == null) return;
+         if (!battleReady || playerControl == null) return;
          if (StateModel.Paused) return;
 
          Architecture.GetSystem<BattleMovementSystem>().TickFixedUpdate();
@@ -425,11 +446,33 @@ namespace TeaGame
 
       private void LateUpdate()
       {
-         if (playerControl == null) return;
+         if (!battleReady || playerControl == null) return;
          if (StateModel.Paused) return;
 
          Architecture.GetSystem<BattleAimSystem>().TickLateUpdate();
+         Battle_MainPanel.TickForBattle(Time.deltaTime);
          playerControl.SyncRuntimeBridge();
+      }
+
+      // 保留原 Update 顺序：动画 → FOV → 模型 → 武器 → 武器开火。
+      private void TickActors()
+      {
+         var state = StateModel;
+         var config = playerControl.PlayerConfig;
+         roleActor.SetMovement(movementActor.AnimationVelocity, state.Movement.Sprinting);
+         cameraActor.BlendFov(state.Movement.Sprinting ? config.SprintFov : config.MainFov,
+            config.FovLerpSpeed, Time.deltaTime);
+         var camera = playerControl.Control_Camera;
+         var axis = playerControl.ControlXAxis;
+         if (camera || axis)
+         {
+            var rotation = camera ? BattleRoleActor.ClampLookRotation(camera.transform.forward) : axis.rotation;
+            roleActor.FollowView(rotation, config.RotationSpeed, Time.deltaTime);
+         }
+         var target = state.LockEnemy.IsAlive() ? state.LockEnemy.LockPoint : null;
+         var freePoint = camera ? camera.transform.position + camera.transform.forward * 10f
+            : axis ? axis.position + axis.forward * 10f : playerControl.transform.position;
+         weaponActor.Aim(state.CurrentBattleData, target, freePoint, playerControl.GetCurrentLockSpeed(state.LockSpeedMultiplier));
       }
 
       #endregion

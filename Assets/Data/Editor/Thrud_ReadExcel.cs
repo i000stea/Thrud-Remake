@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace TeaGame.editor
 {
-   public class Thrud_ReadExcel : Editor
+   public class Thrud_ReadExcel : UnityEditor.Editor
    {
       public const string resPath = "Assets/Data";
       public const string file = "/斯露德重制计划-数据留存.xlsx";

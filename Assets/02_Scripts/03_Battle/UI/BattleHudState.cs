@@ -1,4 +1,5 @@
 using QFramework;
+using UnityEngine;
 
 namespace TeaGame
 {
@@ -14,7 +15,7 @@ namespace TeaGame
    /// 没有第二条赋值路径。仿真真值仍在 `BattleStateModel.SelectedRoleIndex` / `RoleEnergy` /
    /// `BattleSkillSystem` 的冷却表里，本类只做"推给 UI 的那一份快照"。
    ///
-   /// **类型纪律**：只能用 `int` / `float` / `string` 等基础类型。
+   /// **类型纪律**：使用基础类型及框架已有快速比较器的 Vector2，避免自定义 struct。
    /// 原因（实测 QFramework 源码）：`BindableProperty&lt;T&gt;.Comparer` 是**按 T 共享的 static 字段**，
    /// 默认比较器是 `(a, b) =&gt; a.Equals(b)`；对未约束泛型 T 这会退化为 `object.Equals`（值类型装箱）。
    /// 而 `ComparerAutoRegister` 只为 int/float/string/Vector2~4/Color 等注册了快速比较器，
@@ -24,6 +25,32 @@ namespace TeaGame
    /// </summary>
    public sealed class BattleHudState
    {
+      // 与旧 rig CanvasScaler（1920 宽、MatchWidth=0）一致的参考坐标。
+      public const float AimReferenceWidth = 1920f;
+      public readonly BindableProperty<Vector2> AimPosition = new(Vector2.zero);
+      public readonly BindableProperty<float> AimLerpSpeed = new(10f);
+      public readonly BindableProperty<float> Health = new(0f);
+      public readonly BindableProperty<float> MaxHealth = new(1f);
+      public readonly BindableProperty<int> Magazine = new(-1);
+      public readonly BindableProperty<int> MaxMagazine = new(0);
+      public readonly BindableProperty<int> Reloading = new(0);
+      public readonly BindableProperty<int> ReloadStep = new(0);
+
+      public void PublishHealth(BattleRoleRuntimeData member)
+      {
+         MaxHealth.Value = member != null ? Mathf.Max(1f, member.MaxHealth) : 1f;
+         Health.Value = member != null && !member.IsDowned ? member.CurrentHealth : 0f;
+      }
+
+      public void PublishAmmo(BattleRoleRuntimeData member)
+      {
+         var mode = member?.WeaponMode;
+         Magazine.Value = mode?.CurrentMagazine ?? -1;
+         MaxMagazine.Value = mode?.MaxMagazine ?? 0;
+         Reloading.Value = mode != null && mode.IsReloading ? 1 : 0;
+         ReloadStep.Value = mode != null ? Mathf.RoundToInt(mode.ReloadProgress * 20f) : 0;
+      }
+
       /// <summary>当前出战角色槽位（写入点：<c>BattleRoleSystem.SelectRole</c> / <c>HandleRoleDowned</c>）。</summary>
       public readonly BindableProperty<int> SelectedRoleIndex = new(0);
 

@@ -1,5 +1,16 @@
 # Battle 调用链与阅读目录（P1A · S2 补充交付物）
 
+> **2026-09-19 Actor 专项更新（已实现，编译/Play 待验）**：用户确认移动/传送 Actor、角色/武器/相机表现 Actor，InputSystem 保持原样；旧 BattleViewSystem 及 InitializeView 已删除，现为 **1 Model + 10 System + 4 Actor**。Aim 发布 BindableProperty 位置，主面板负责 UI 映射与 Lerp；血条/弹药/队伍 HUD 归主面板。当前入口、帧序、生命周期、资产操作与回归步骤见 [19 当前实施记录](19_表现层分层_View与Actor_设计.md)。**下文的旧行号、66 文件统计、§5 系统表、§8.8 / §9.4 / §9.9 中 ViewSystem 链为迁移前快照，不作为当前调用依据。**
+
+| 原调用 | 当前归属 |
+|---|---|
+| InitializeView | Host 装配 Actor → RoleSystem.AttachActor → RoleActor.Attach/ShowMember/PlaySpawn |
+| ViewSystem.TickUpdate | Host.TickActors（动画→FOV→模型→武器）+ Hud.PublishAmmo |
+| ViewSystem 血条/队伍列表 | RoleSystem 发布血量绑定；主面板渲染并持有队伍 HUD |
+| AimSystem 准星 anchoredPosition | Hud.AimPosition → 主面板 TickAim，Host 在 Aim.TickLateUpdate 之后调用 |
+| rig.TransformMoveDirection/AddForce | MovementActor.ResolveDirection/ApplyForce |
+
+
 > 产出日期：**2026-09-18**。定位：P1A 的 S2「现状地图」在 `03_Battle`（**66 个文件 / 9673 行**）上的补齐——**一份可以当目录用的调用链说明书**。
 > **2026-09-18 二次修订**：主 HUD（技能行）已从 `Battle_PlayerControl` 迁至 `Battle_MainPanel`（`BindableProperty` 反向绑定），新增 `UI/BattleHudState.cs` 与 `UI/Panels/Battle_MainPanel.cs`(+Designer)；`Battle_PlayerControl` 285 → **206 行**。表现层的后续规划见 `19_表现层分层_View与Actor_设计.md`。
 > 关系：域级地图见 `17_代码现状地图.md`；本文只覆盖 `03_Battle/`（不含 `Contracts/`、`Editor/`）。纪律见 `16_热更新方案选型与落地计划.md` §5A。

@@ -9,9 +9,9 @@ namespace TeaGame
    ///
    /// 职责收口：
    /// 1. 能量经济：订阅命中/击杀事件积攒共享能量（写入 StateModel.RoleEnergy），
-   ///    变化即广播 <see cref="BattleSkillEnergyChangedEvent"/>（HUD 反向 bind，不轮询）；
+   ///    变化即广播 <see cref="BattleEvent_SkillEnergyChanged"/>（HUD 反向 bind，不轮询）；
    /// 2. 冷却管理：按角色 × 槽维护冷却结束时间戳，冷却读秒以"整秒变化"节流广播
-   ///    <see cref="BattleSkillCooldownChangedEvent"/>（避免每帧刷 UI）；
+   ///    <see cref="BattleEvent_SkillCooldownChanged"/>（避免每帧刷 UI）；
    /// 3. 施放分发：读取 E/Q 输入 → 冷却/能量校验 → 扣能量、进冷却 →
    ///    装配 <see cref="BattleSkillContext"/> → 按角色元素调用差异执行器。
    /// </summary>
@@ -38,9 +38,9 @@ namespace TeaGame
 
       protected override void OnInit()
       {
-         mHitUnregister = Architecture.RegisterEvent<BattleEnemyHitEvent>(e => OnEnemyHit(e));
-         mKilledUnregister = Architecture.RegisterEvent<BattleEnemyKilledEvent>(_ => OnEnemyKilled());
-         mRoleSwitchedUnregister = Architecture.RegisterEvent<BattleRoleSwitchedEvent>(e => OnRoleSwitched(e));
+         mHitUnregister = Architecture.RegisterEvent<BattleEvent_EnemyHit>(e => OnEnemyHit(e));
+         mKilledUnregister = Architecture.RegisterEvent<BattleEvent_EnemyKilled>(_ => OnEnemyKilled());
+         mRoleSwitchedUnregister = Architecture.RegisterEvent<BattleEvent_RoleSwitched>(e => OnRoleSwitched(e));
       }
 
       protected override void OnDeinit()
@@ -97,7 +97,7 @@ namespace TeaGame
       }
 
       /// <summary>命中敌人 → 少量能量。</summary>
-      private void OnEnemyHit(BattleEnemyHitEvent e)
+      private void OnEnemyHit(BattleEvent_EnemyHit e)
       {
          AddEnergy(BattleSkillCatalog.EnergyGainPerHit);
       }
@@ -109,7 +109,7 @@ namespace TeaGame
       }
 
       /// <summary>角色切换 → 广播新角色 E/Q 槽冷却状态（HUD 刷新）。</summary>
-      private void OnRoleSwitched(BattleRoleSwitchedEvent e)
+      private void OnRoleSwitched(BattleEvent_RoleSwitched e)
       {
          BroadcastCurrentRoleCooldowns();
       }
@@ -202,7 +202,7 @@ namespace TeaGame
          State.RoleEnergy = next;
          // 主 HUD 视图状态（反向绑定数据源，见 BattleHudState）
          State.Hud.Energy.Value = next;
-         Architecture.SendEvent(new BattleSkillEnergyChangedEvent
+         Architecture.SendEvent(new BattleEvent_SkillEnergyChanged
          {
             Energy = next,
             Max = max
@@ -337,7 +337,7 @@ namespace TeaGame
          mLastRemainSeconds[roleIndex, slotIndex] = ready ? 0 : Mathf.Max(1, Mathf.CeilToInt(remainSeconds));
          mLastReady[roleIndex, slotIndex] = ready;
 
-         Architecture.SendEvent(new BattleSkillCooldownChangedEvent
+         Architecture.SendEvent(new BattleEvent_SkillCooldownChanged
          {
             Slot = slotIndex,
             Ready = ready,

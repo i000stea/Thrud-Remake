@@ -46,13 +46,21 @@ namespace TeaGame
 
       protected override void OnOpen(IUIData uiData = null)
       {
+         BindPresentation();
          BindHud();
       }
 
       protected override void OnClose()
       {
+         ReleasePresentation();
          // 绑定句柄由 UnRegisterWhenGameObjectDestroyed 随面板销毁自动反注册，这里只复位标志。
          mBound = false;
+      }
+
+      protected override void OnBeforeDestroy()
+      {
+         ReleasePresentation();
+         base.OnBeforeDestroy();
       }
 
       /// <summary>

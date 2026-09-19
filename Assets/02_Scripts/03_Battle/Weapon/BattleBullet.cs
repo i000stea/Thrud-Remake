@@ -93,7 +93,7 @@ namespace TeaGame
 
             // T2.4 命中敌人 → 派发攒能事件（仅新版敌人接入技能能量经济）。
             // 若该发子弹同时击杀敌人，BattleEnemyEntity 内部已先派发 BattleEnemyKilledEvent。
-            BattleArchitecture.Interface.SendEvent(new BattleEnemyHitEvent
+            BattleArchitecture.Interface.SendEvent(new BattleEvent_EnemyHit
             {
                Damage = finalDamage,
                Element = Element

@@ -31,11 +31,11 @@ namespace TeaGame
       private readonly RectTransform mRoot;
       private readonly List<Row> mRows = new();
 
-      private BattleTeamHudView(Canvas canvas, int memberCount)
+      private BattleTeamHudView(RectTransform parent, int memberCount)
       {
          var rootObject = new GameObject("TeamHud(T3.1B)", typeof(RectTransform));
          mRoot = (RectTransform)rootObject.transform;
-         mRoot.SetParent(canvas.transform, false);
+         mRoot.SetParent(parent, false);
 
          // 左上角锚定（留边 30/40），按成员数向下排布
          mRoot.anchorMin = new Vector2(0f, 1f);
@@ -56,13 +56,13 @@ namespace TeaGame
       /// <summary>
       /// 创建队伍血条列表（挂到指定 Canvas）。
       /// </summary>
-      /// <param name="canvas">战斗 Canvas（MainCanvas）。</param>
+      /// <param name="parent">主面板根节点；队伍 HUD 随面板创建和释放。</param>
       /// <param name="memberCount">出战成员数（建行数，之后不变）。</param>
       /// <returns>视图实例；canvas 为空或成员数为 0 时返回 null。</returns>
-      public static BattleTeamHudView Create(Canvas canvas, int memberCount)
+      public static BattleTeamHudView Create(RectTransform parent, int memberCount)
       {
-         if (canvas == null || memberCount <= 0) return null;
-         return new BattleTeamHudView(canvas, memberCount);
+         if (parent == null || memberCount <= 0) return null;
+         return new BattleTeamHudView(parent, memberCount);
       }
 
       /// <summary>

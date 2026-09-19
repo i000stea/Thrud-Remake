@@ -30,8 +30,6 @@ namespace TeaGame
          this.RegisterSystem(new BattleInputSystem());
          // 移动
          this.RegisterSystem(new BattleMovementSystem());
-         // 显示
-         this.RegisterSystem(new BattleViewSystem());
          // 相机
          this.RegisterSystem(new BattleCameraSystem());
          // 准星

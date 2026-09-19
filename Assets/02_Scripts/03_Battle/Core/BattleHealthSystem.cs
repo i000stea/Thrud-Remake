@@ -8,8 +8,8 @@ namespace TeaGame
    /// 职责：
    /// - 每名出战成员独立血量（<see cref="BattleRoleRuntimeData.CurrentHealth"/>，MaxHp 取自角色 SO）；
    /// - 受击只扣「当前出战角色」（<see cref="BattleStateModel.SelectedRoleIndex"/>）；
-   /// - 当前角色血量归零 → IsDowned + 派发 <see cref="BattleRoleDownedEvent"/> → 自动切下一存活；
-   /// - 无存活成员才派发 <see cref="BattlePlayerDiedEvent"/>（全灭 → 关卡 Defeat），单成员阵亡不接管控制。
+   /// - 当前角色血量归零 → IsDowned + 派发 <see cref="BattleEvent_RoleDowned"/> → 自动切下一存活；
+   /// - 无存活成员才派发 <see cref="BattleEvent_PlayerDied"/>（全灭 → 关卡 Defeat），单成员阵亡不接管控制。
    /// </summary>
    // [调试提醒 2026-09-06] 伤害构成存在待查怀疑（玩家侧受击结算/成员归属/扣血与血条联动），
    // 改动或调试本区域前请先读 Docs/12_伤害构成_怀疑存档.md 并向用户确认复现与期望值。
@@ -25,7 +25,7 @@ namespace TeaGame
 
       protected override void OnInit()
       {
-         mDamagedUnregister = Architecture.RegisterEvent<BattlePlayerDamagedEvent>(OnPlayerDamaged);
+         mDamagedUnregister = Architecture.RegisterEvent<BattleEvent_PlayerDamaged>(OnPlayerDamaged);
       }
 
       protected override void OnDeinit()
@@ -61,7 +61,7 @@ namespace TeaGame
          data.CurrentHealth = Mathf.Min(
             data.MaxHealth,
             data.CurrentHealth + Mathf.Max(0f, amount));
-         Architecture.SendEvent(new BattleRoleHealthChangedEvent { RoleIndex = index });
+         Architecture.SendEvent(new BattleEvent_RoleHealthChanged { RoleIndex = index });
       }
 
       /// <summary>
@@ -69,7 +69,7 @@ namespace TeaGame
       /// - 控制接管（终局/全灭演出）或关卡已终局时忽略伤害；
       /// - 当前成员归零 → 阵亡流程（自动切人 / 全灭 Defeat）。
       /// </summary>
-      private void OnPlayerDamaged(BattlePlayerDamagedEvent e)
+      private void OnPlayerDamaged(BattleEvent_PlayerDamaged e)
       {
          if (State.ControlTakenOver) return;
          if (State.LevelState == BattleLevelState.Victory
@@ -84,7 +84,7 @@ namespace TeaGame
          if (data == null || data.IsDowned) return;
 
          data.CurrentHealth = Mathf.Max(0f, data.CurrentHealth - e.Damage);
-         Architecture.SendEvent(new BattleRoleHealthChangedEvent { RoleIndex = index });
+         Architecture.SendEvent(new BattleEvent_RoleHealthChanged { RoleIndex = index });
 
          if (data.CurrentHealth > 0f) return;
 
@@ -92,7 +92,7 @@ namespace TeaGame
          data.IsDowned = true;
          Debug.Log($"[T3.1B] {data.RoleName} 阵亡（槽 {index + 1}）。");
 
-         Architecture.SendEvent(new BattleRoleDownedEvent { RoleIndex = index });
+         Architecture.SendEvent(new BattleEvent_RoleDowned { RoleIndex = index });
 
          var switched = Architecture.GetSystem<BattleRoleSystem>().HandleRoleDowned(index);
          if (switched) return;
@@ -105,7 +105,7 @@ namespace TeaGame
          }
 
          Debug.Log("[T3.1B] 全队阵亡 → 失败判定。");
-         Architecture.SendEvent(new BattlePlayerDiedEvent());
+         Architecture.SendEvent(new BattleEvent_PlayerDied());
       }
    }
 }
