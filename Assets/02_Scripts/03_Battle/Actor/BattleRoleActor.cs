@@ -32,6 +32,12 @@ namespace TeaGame
       private readonly Transform yawAxis;
       /// <summary>表现参数（跟随旋转平滑速度）。注入引用而非快照值：Play 中调参仍即时生效。</summary>
       private readonly BattlePlayerConfig config;
+      /// <summary>
+      /// 战斗状态（**只读**：当前成员 / 选中槽）。构造期注入而非运行期 `Architecture.GetModel` 查找
+      /// ——21 文档纪律 4：「依赖注入可以，服务定位不行」。
+      /// （事件订阅仍走架构事件总线：那是本工程的进程内消息通道，不是依赖查找。）
+      /// </summary>
+      private readonly BattleStateModel state;
       private BattleRoleRuntimeData[] members = System.Array.Empty<BattleRoleRuntimeData>();
       private Animator animator;
 
@@ -46,7 +52,7 @@ namespace TeaGame
       /// 依赖集合（21 文档纪律 4：构造期注入，一眼看全；运行期只读，不做任何查找）。
       /// </summary>
       public BattleRoleActor(Transform roles, Transform weapons, Transform viewAxis,
-         Camera camera, Transform yawAxis, BattlePlayerConfig config)
+         Camera camera, Transform yawAxis, BattlePlayerConfig config, BattleStateModel state)
       {
          this.roles = roles;
          this.weapons = weapons;
@@ -54,6 +60,7 @@ namespace TeaGame
          this.camera = camera;
          this.yawAxis = yawAxis;
          this.config = config;
+         this.state = state;
       }
 
       /// <summary>
@@ -92,9 +99,8 @@ namespace TeaGame
       /// <summary>按当前出战槽刷新显隐（战斗初始化/重开时由持有者调用）。只读模型。</summary>
       public void RefreshCurrent()
       {
-         var state = Architecture.GetModel<BattleStateModel>();
-         var data = state.CurrentBattleData;
-         ShowMember(state.SelectedRoleIndex.Value, data != null && !data.IsDowned);
+         var data = state?.CurrentBattleData;
+         ShowMember(state != null ? state.SelectedRoleIndex.Value : 0, data != null && !data.IsDowned);
       }
 
       /// <summary>把全部成员的角色/武器实例挂到对应挂点下并归零局部变换。</summary>

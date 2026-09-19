@@ -90,7 +90,7 @@ namespace TeaGame
 
          // 三个表现 Actor（依赖集合见各构造函数；每帧中间量在 Actor 内派生——第 3 步）
          RoleActor = new BattleRoleActor(rig.Roles, rig.GetWeaponParent(), rig.ViewRotateAxis,
-            rig.Control_Camera, rig.ControlXAxis, rig.PlayerConfig);
+            rig.Control_Camera, rig.ControlXAxis, rig.PlayerConfig, state);
          WeaponActor = new BattleWeaponActor(rig.WepLookatTarget, rig.Control_Camera, rig.ControlXAxis,
             rig.transform, state, rig.PlayerConfig);
          CameraActor = new BattleCameraActor(rig.Control_Camera, rig.PlayerConfig.MainFov);
