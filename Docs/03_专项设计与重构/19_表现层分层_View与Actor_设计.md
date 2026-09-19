@@ -15,7 +15,7 @@
 > | 4 | 合并 `BattleHealthSystem` → `BattleRoleSystem` | ✅ | `Role/BattleRoleSystem.Health.cs`（partial，**不带基类**）；订阅/`OnDeinit` 收口到主文件；血量复位并入 `Initialize`；`GetSystem<BattleRoleSystem>().HandleRoleDowned(...)` → 同类内部调用；注册 **10 → 9** |
 > | 5 | `BattleViewSystem` 降级 | ✅ 基本完成 | 类**已删除**，拆为 `Actor/` 4 个 Actor + `Battle_MainPanel` |
 > | 6 | 最小引用注入（替掉"总仓库"） | ⏳ **未做** | 残留：`BattleRoleSystem.Initialize(Battle_PlayerControl controller, …)` 只要 3 个引用却要整台 rig；`BattleRoleSystem.Health` 写 `State.Controller.ControlTakeOff` |
-> | — | **瞄准量下沉**（`AimPosition`/`AimLerpSpeed` 离开模型） | ⏳ **未做** | 需把 Canvas 投影搬进 `Battle_MainPanel.TickForBattle`（用 `BattleRuntimeBridge.Camera`）；**临时**在 `BattleAimSystem` 内重复了一份 `AimReferenceWidth` 并在注释标明，待下沉后删除 |
+> | — | **瞄准量下沉**（`AimPosition`/`AimLerpSpeed` 离开模型） | ⏳ **未做** | 需把 Canvas 投影搬进 `Battle_MainPanel.TickForBattle`（相机读 `BattleStateModel.BattleCamera`）；**临时**在 `BattleAimSystem` 内重复了一份 `AimReferenceWidth` 并在注释标明，待下沉后删除 |
 >
 > **模型拆分评估（新增，已决定跳过）**：**不按"关卡/玩家/敌人"拆 `BattleStateModel`**。一个模型 = 一个生命周期 + 一组不变量；三域共享同一生命周期（都是"每场战斗"），且 `LevelState`/`ControlTakenOver`/`Paused` 是**横切字段**被多域读写；"敌人"目前没有模型（血量/行为由 `BattleEnemyEntity` 自持，经 `BattleEnemyRegistry` 暴露）。拆分收益要等"多场战斗并行/回放""模型需独立序列化""跨程序集共享"三者之一成立时才出现；届时**优先只拆关卡**（`BattleLevelModel`）。结论已写入 `Core/BattleStateModel.cs` 类注释。
 > 关系：总体架构见 `../02_系统与玩法设计/01_技术架构设计.md`（已加「表现层（View / Actor）分层」一节指向本文）；域与程序集边界见 `17_代码现状地图.md`；`03_Battle` 调用链与文件目录见 `18_Battle调用链与阅读目录.md`。
@@ -90,15 +90,34 @@
 | `Camera` | 3（`Battle_EnemyUI` / `BattleEnemyEntity` / `BattleEnvironmentEffectController`） | 新增 Model 派生只读 `BattleCamera`（`Controller ? Controller.Control_Camera : null`）→ **删 Bridge 成员** |
 | `EnvironmentEffectController` | 1（`BattleEnemyEntity`） | 新增 Model 派生只读 `EnvironmentEffects` → **删 Bridge 成员** |
 | `LockEnemyTransform` / `LockSpeed` | 各 1（都是 `Weapon_ObjectComponent`） | 退役该组件自驱：删 `Update`/`TowardsUpdate`/`GetLockEnemy`，改为公开 `RefreshAim(Transform, float)`，由 `LegacyBattleWeaponViewAdapter.RefreshAim` 转发（宿主 `TickActors` 里那句 `weaponActor.Aim(...)` 原本就在每帧调用）→ **删 Bridge 成员** |
-| `PlayerTransform` | **7**（`BattleStageDirector` + 4 个 `IEnemyBehaviour` + `BattleEnemyEntity` ×2） | **本批不动**（本质是"目标选择"，需先有 `IBattlePlayerTarget` 注册表 → 见下方第 2 批） |
+| `PlayerTransform` | **8**（`BattleStageDirector` + 4 个 `IEnemyBehaviour`（Missile 占 2 处）+ `BattleEnemyEntity` ×2） | **第 2 批已落地**：改为 `IBattlePlayerTarget` + `BattlePlayerRegistry` 自注册注册表（`56c249bf`），桥接类已删除 → 见下方"续 · 桥接层整类退役" |
 
-**当前状态：`BattleRuntimeBridge` 只剩 `PlayerTransform` 一个成员**（写入方仍只有 `Battle_PlayerControl.SyncRuntimeBridge`；`UpdateState` 签名已收窄为 `(owner, playerTransform)`）。
+**当前状态（2026-09-19 第 2 批之后）：`BattleRuntimeBridge` 已整体删除**（类与文件都不存在；`Actor/` 与 `Enemy/` 均改读 `BattlePlayerRegistry`）。
 
 **行为等价性**：武器瞄准的**目标与速度表达式与原实现逐字相同**——宿主传的就是 `state.LockEnemy.IsAlive() ? LockPoint : null` 与 `GetCurrentLockSpeed(state.LockSpeedMultiplier)`，且 `RefreshAim` 内部保留 `Mathf.Max(0.01f, lockSpeed)`。**唯一差异**：原先旧组件在 `battleReady` 之前与**暂停中**也继续插值，现在只在 `TickActors()` 里推进 → 暂停时武器朝向冻结（与 `roleActor`/`cameraActor` 同批行为一致，视为修正）。
 
-**验收边界**：静态自检通过（Bridge 已无 `Camera`/`ActiveElement`/`EnvironmentEffectController`/`LockSpeed`/`LockEnemyTransform` 字样除注释；`BattleCamera` 3 读者、`EnvironmentEffects` 1 读者、`CurrentDamageElement` 1 写者、武器 `ActiveElement` 3 读者；`PlayerTransform` 7 读者）。**未编译、未 Play**——本批改动晚于 20:37:02 那次干净构建，需在 Editor 触发刷新后取证。
+**验收边界**：静态自检通过（Bridge 已无 `Camera`/`ActiveElement`/`EnvironmentEffectController`/`LockSpeed`/`LockEnemyTransform` 字样除注释；`BattleCamera` 3 读者、`EnvironmentEffects` 1 读者、`CurrentDamageElement` 1 写者、武器 `ActiveElement` 3 读者；`PlayerTransform` 当时 7 读者，实测 8 处——见第 2 批记录）。**该批当时未编译、未 Play**（后续 2026-09-19 22:57 的 Unity 导入编译已通过）——本批改动晚于 20:37:02 那次干净构建，需在 Editor 触发刷新后取证。
 
-**第 2 批（未做）**：`PlayerTransform` → `IBattlePlayerTarget` 注册表（对称于既有 `BattleEnemyRegistry`，是"敌人实体化"的地基），完成后 `BattleRuntimeBridge.cs` 可整体删除；与本文件 §6"最小引用注入"（`Battle_PlayerControl` 场景引用总仓库）是同一件事的两半，建议合并成一个任务。
+**第 2 批（✅ 2026-09-19 晚已完成，commit `56c249bf`）**：`PlayerTransform` → **`IBattlePlayerTarget` + `BattlePlayerRegistry`** 自注册注册表（对称于既有 `BattleEnemyRegistry`），`BattleRuntimeBridge.cs`（**61 行**）连同 `.meta` **已整体删除**（`Data/` 现只剩 `BattleRuntimeData.cs`）。详见下方"续 · 桥接层整类退役"。
+
+---
+
+### 续（2026-09-19 晚）· 桥接层整类退役：玩家目标改自注册注册表
+
+**读者实测**：原文档写"`PlayerTransform` 7 处读者"**是错的**——逐行数下来是 **8 处 / 6 个文件**（`EnemyBehaviour_Missile` 有 2 处，`BattleEnemyEntity` 有 2 处）：
+`BattleStageDirector.IsPlayerWithin`、`EnemyBehaviour_Patrol`（只判"有没有玩家"）、`EnemyBehaviour_Missile`（追踪 + 引爆距离）、`EnemyBehaviour_Mine`（感应引爆）、`EnemyBehaviour_GunTurret`（射程判定）、`BattleEnemyEntity.FireBulletAt`（`LookAt` 朝向）与 `DamagePlayerInRadius`。
+
+**为什么不是"把字段搬到另一个类"**：`BattleRuntimeBridge` 的病根有两条 —— ① 它镜像**本来可派生**的数据（相机/元素/飘字控制器，第 1 批已拔掉）；② **它由外部每帧喂**（`SyncRuntimeBridge()`）。所以第 2 批的关键不是换名字，而是**换所有权**：
+
+| | 旧（桥接层） | 新（注册表） |
+|---|---|---|
+| 谁写 | 宿主/装配器每帧调用 `SyncRuntimeBridge()` 喂（宿主 Update 暂停分支、Update 尾、FixedUpdate 尾、LateUpdate 尾 + 装配器各 1 处 = **5 处调用**） | **rig 自己**：`Awake` 调 `BattlePlayerRegistry.Register(this)`、`OnDestroy` 调 `UnRegister(this)`（`UnRegister` 内部 `ReferenceEquals` 身份守卫 = 旧 owner 守卫） |
+| 类型 | 静态类硬引用 `Battle_PlayerControl`（为了 owner 守卫） | 注册表按 `IBattlePlayerTarget` 持有 → **`Core/` 不再知道 rig 的具体类型** |
+| 读取 | `BattleRuntimeBridge.PlayerTransform`（可拿到"伪非空"的已销毁对象） | `BattlePlayerRegistry.CurrentTransform`（**内置存活判空**，玩家不存在/已销毁返回 null）→ 读者写法不变但更安全 |
+
+**新增类型**（都在 `Core/BattleCombatTypes.cs`，与敌人侧同文件同形）：`IBattlePlayerTarget { Transform RootTransform { get; } }`、`BattlePlayerRegistry { Register / UnRegister / CurrentTransform }`、`BattleCombatUtility.IsAlive(this IBattlePlayerTarget)` 重载（**09 关键坑 13** 的复用：接口持有的 `UnityEngine.Object` 判空不触发 Unity 的 `==` 重载，重开本关 / 离场最容易撞上）。
+
+**结果**：宿主相位表里 **4 处** `Rig.SyncRuntimeBridge()` 与装配器里 **1 处** 全部删除，`SyncRuntimeBridge()` 方法本身删除；`Rig` 仍是"每帧读 `ControlTakeOff`"等只读用法的持有者，但**不再有任何"把 rig 状态喂给全局静态"的写路径**。
 
 ---
 
