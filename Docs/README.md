@@ -94,7 +94,7 @@ Docs/
 | 17_代码现状地图.md | **代码现状地图（P1A 的 S2/S3 交付物）**：域与程序集边界（9 个 / 含 GUID 表）、**实测**跨程序集依赖边、`TeaGame.Battle.Contracts` 契约层的判定口径、搬迁回退映射表、遗留问题与"本次不动"决定；并给出与 P1C 三层命名（`Tea.Framework`/`Tea.Game`/`Tea.Data`）的映射建议 | v1.0（2026-09-18）；**域拆分已编译通过**（`Editor.log` 取证 `error CS` = 0），**S4/S5 未完成**；Play 回归待用户执行 |
 | 18_Battle调用链与阅读目录.md | 调用链与文件阅读目录；头部新增 Actor 迁移映射，旧行号及系统表标明历史快照 | 2026-09-19 已补当前入口，详见 19 |
 | 19_表现层分层_View与Actor_设计.md | 用户确认的移动/角色/武器/相机 Actor、Aim 绑定与 View 插值、当前调用链和一次性验收；保留旧草案存档 | 2026-09-19 代码已落地；编译 / Play / Editor 资产清理待验 |
-| 20_代码知识图谱可视化工具_设计与实施计划.md | `web/ProgressChaser` 代码关系画布升级方案：两层知识图谱、Cytoscape.js Canvas、ELK Worker、三类 JSON 契约、性能预算、K0–K6 实施与验收 | 2026-09-19 方案已确认；当前为 SVG 原型，正式迁移待执行 |
+| 20_代码知识图谱可视化工具_设计与实施计划.md | `web/ProgressChaser` 代码关系画布升级方案：两层知识图谱、Cytoscape.js Canvas、ELK Worker、三类 JSON 契约、性能预算、K0–K6 实施与验收 | 2026-09-19 **K0–K5 已实施**：Cytoscape + ELK Worker 落地、10 项测试通过、layout 迁移到 schemaVersion 2；K6 文档同步中，浏览器视觉验收待用户执行（见 `web/ProgressChaser/PERFORMANCE.md`） |
 
 ### 04_模块设计（原 `Modules/`）
 
@@ -148,4 +148,5 @@ Docs/
 - 开发类文档按既有习惯更新：每日收尾写「日结/收工」，进度同步 07 与 09；**更新后请同步本 README 与 99_下一步行动 的状态**。
 - git 工作区现状（重组前已有，重组后请一并核对提交）：`Docs/01_里程碑与执行/13_手游试玩Demo_规划.md` **已入库**（随 `2be69fc1`）；保留中的工作区修改主要是 `Assets/08_Fonts/Before/Default.asset`、`Assets/Data/RoleItemDatas/2001001-Faria.asset`、`2004001-Willa.asset`（Demo 数值/字体 churn，见 13 §P9，勿与业务改动混提），以及 Unity 重新序列化类 churn。
 - **2026-09-18 工作区状态（提交前必读）**：`Assets/02_Scripts` 存在一次**大范围域拆分**未提交改动——9 个 asmdef（含 4 个新建、1 个改名搬迁）、约 19 组 `.cs`+`.cs.meta` 成对移动（**GUID 全部保留**）、`UIPanel/` 目录删除、旧的 `TeaGame.asmdef` 删除。**提交时应按 `refactor(scripts)` 单独一次提交**，不要与业务改动或 Unity churn 混提；回退映射表见 `03_专项设计与重构/17_代码现状地图.md` §4（**不要用 `git clean`**，工作区还有与本任务无关的未跟踪文件）。
+- **2026-09-19 工作区状态（web 工具）**：`web/ProgressChaser` 落地代码知识图谱升级（Cytoscape + ELK Worker、`package.json`/`package-lock.json`、`scripts/`、`README.md`、`PERFORMANCE.md`），并把 `data/code-atlas.layout.json` 迁移为 `schemaVersion 2`。`node_modules/` 与 `data/backups/` 已由 `web/ProgressChaser/.gitignore` 排除。**与 `Assets/02_Scripts` 的域拆分改动分开提交**。
 - 本 README 第 3 节的“状态”列为整理时点观测值，实际以对应文档为准。

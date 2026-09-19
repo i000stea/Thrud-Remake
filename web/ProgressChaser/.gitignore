@@ -1,0 +1,7 @@
+# 本地依赖，不入库（设计文档 §8.3）
+node_modules/
+node_modules/.thrud-install-stamp
+
+# 基准与历史备份可随时由脚本重建
+data/backups/
+*.log

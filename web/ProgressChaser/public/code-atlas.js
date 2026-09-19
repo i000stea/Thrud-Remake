@@ -32,6 +32,37 @@ const state = {
 
 const status = (text) => { $('#status').textContent = text; };
 
+// —— 滚轮缩放力度（wheelSensitivity）——
+// Cytoscape 只在初始化时读取该值，但会复制到 renderer，滚轮事件里读的是 renderer.wheelSensitivity，
+// 因此运行时改 renderer 即可立即生效，无需重建实例。
+const WHEEL_KEY = 'atlas.wheelSensitivity';
+const WHEEL_DEFAULT = 0.18;
+const WHEEL_MIN = 0.05;
+const WHEEL_MAX = 1;
+
+function readWheelSensitivity() {
+  try {
+    const stored = Number(localStorage.getItem(WHEEL_KEY));
+    if (Number.isFinite(stored) && stored >= WHEEL_MIN && stored <= WHEEL_MAX) return stored;
+  } catch { /* localStorage 不可用时用默认值 */ }
+  return WHEEL_DEFAULT;
+}
+
+function applyWheelSensitivity(value) {
+  const renderer = state.cy && typeof state.cy.renderer === 'function' ? state.cy.renderer() : null;
+  if (renderer) renderer.wheelSensitivity = value;
+  const label = $('#wheelValue');
+  if (label) label.textContent = value.toFixed(2);
+  const slider = $('#wheelSensitivity');
+  if (slider && Number(slider.value) !== value) slider.value = String(value);
+}
+
+function setWheelSensitivity(value) {
+  const clamped = Math.min(WHEEL_MAX, Math.max(WHEEL_MIN, value));
+  try { localStorage.setItem(WHEEL_KEY, String(clamped)); } catch { /* 忽略持久化失败 */ }
+  applyWheelSensitivity(clamped);
+}
+
 async function api(url, options = {}) {
   const response = await fetch(url, options);
   const data = await response.json();
@@ -145,12 +176,13 @@ function buildCy(elements) {
     elements,
     style: CY_STYLE,
     layout: { name: 'preset', fit: false, padding: 40 },
-    wheelSensitivity: 0.18,
+    wheelSensitivity: readWheelSensitivity(),
     minZoom: 0.1,
     maxZoom: 4,
     boxSelectionEnabled: false,
   });
   state.cy = cy;
+  applyWheelSensitivity(readWheelSensitivity());
   bindCy(cy);
   return cy;
 }
@@ -499,13 +531,13 @@ function disposeElkWorker() {
   if (elkWorker) { elkWorker.terminate(); elkWorker = null; }
 }
 
-function settleElk(kind, payload) {
+function settleElk(kind, payload, requestId) {
   const pending = elkPending;
+  if (!pending || (requestId !== undefined && pending.requestId !== requestId)) return;
   elkPending = null;
   clearTimeout(elkProgressTimer);
   const button = $('#cancelLayoutButton');
   if (button) button.hidden = true;
-  if (!pending) return;
   if (kind === 'error') pending.reject(payload); else pending.resolve(payload);
 }
 
@@ -516,6 +548,8 @@ function cancelElkLayout(reason) {
 }
 
 function requestElkLayout(graph) {
+  // 新请求取代旧请求：终止旧 Worker 并让旧 Promise 以取消结束，避免回调误结算。
+  if (elkPending) cancelElkLayout('被新的布局请求取代');
   return new Promise((resolve, reject) => {
     if (typeof Worker === 'undefined') { reject(new Error('当前浏览器不支持 Web Worker')); return; }
     const worker = getElkWorker();
@@ -525,14 +559,14 @@ function requestElkLayout(graph) {
       if (data.requestId !== requestId) return; // 过期结果直接丢弃
       worker.removeEventListener('message', onMessage);
       worker.removeEventListener('error', onError);
-      if (data.type === 'error') settleElk('error', new Error(data.error || 'ELK 布局失败'));
-      else settleElk('resolve', data.result);
+      if (data.type === 'error') settleElk('error', new Error(data.error || 'ELK 布局失败'), requestId);
+      else settleElk('resolve', data.result, requestId);
     };
     const onError = (event) => {
       worker.removeEventListener('message', onMessage);
       worker.removeEventListener('error', onError);
       disposeElkWorker();
-      settleElk('error', new Error(event.message || 'ELK Worker 异常'));
+      settleElk('error', new Error(event.message || 'ELK Worker 异常'), requestId);
     };
     worker.addEventListener('message', onMessage);
     worker.addEventListener('error', onError);
@@ -655,6 +689,13 @@ function bindControls() {
   });
   const depthSelect = $('#neighborDepth');
   if (depthSelect) depthSelect.onchange = () => applySelection();
+  const wheelSlider = $('#wheelSensitivity');
+  if (wheelSlider) {
+    const initial = readWheelSensitivity();
+    wheelSlider.value = String(initial);
+    applyWheelSensitivity(initial);
+    wheelSlider.oninput = () => setWheelSensitivity(Number(wheelSlider.value));
+  }
   $('#resetButton').onclick = () => resetLayout();
   $('#fitButton').onclick = () => { checkpoint(); fit(); changed(); };
   $('#undoButton').onclick = () => undo();

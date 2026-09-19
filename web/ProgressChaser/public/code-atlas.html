@@ -55,6 +55,12 @@
           </select>
         </div>
         <div class="sidebar-section">
+          <h3>视图</h3>
+          <label class="check" for="wheelSensitivity">滚轮力度 <span id="wheelValue">0.18</span></label>
+          <input id="wheelSensitivity" type="range" min="0.05" max="1" step="0.01" value="0.18" />
+          <p class="muted">数值越小滚轮越细腻（默认 0.18）。设置会记住，刷新后仍生效。</p>
+        </div>
+        <div class="sidebar-section">
           <h3>JSON 文件</h3>
           <p class="muted">自动关系</p><code>data/code-atlas.generated.json</code>
           <p class="muted">布局</p><code>data/code-atlas.layout.json</code>

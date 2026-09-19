@@ -1,12 +1,12 @@
 {
   "schemaVersion": 2,
-  "revision": 41,
+  "revision": 76,
   "views": {
     "assembly": {
-      "zoom": 1.0742720372825354,
+      "zoom": 1.6036672916224093,
       "pan": {
-        "x": 108.78228655377882,
-        "y": 131.23524989751553
+        "x": 24.916550205061164,
+        "y": 396.2484483256852
       },
       "nodes": {
         "TeaGame.App": {
@@ -18,8 +18,8 @@
           "y": 277.4469033190482
         },
         "TeaGame.Gacha": {
-          "x": 48.35066089404509,
-          "y": 172.79258874464307
+          "x": 70.69233560131758,
+          "y": 128.10923933009815
         },
         "TeaGame.Battle.Contracts": {
           "x": 761.4098467972474,
@@ -113,10 +113,10 @@
       }
     },
     "class:TeaGame.Battle": {
-      "zoom": 0.11828087167070218,
+      "zoom": 1.261579193386316,
       "pan": {
-        "x": 527.1707021791768,
-        "y": 21.720338983050848
+        "x": -495.30898970217083,
+        "y": 170.41456590373667
       },
       "nodes": {
         "TeaGame.Battle::TeaGame.BattleCameraActor": {
@@ -488,8 +488,8 @@
           "y": 3870
         },
         "TeaGame.Battle::TeaGame.Battle_LevelResultPanel": {
-          "x": 1070,
-          "y": 70
+          "x": 1121.522726706936,
+          "y": 16.099301291205364
         },
         "TeaGame.Battle::TeaGame.Battle_LevelResultPanelData": {
           "x": 80,
@@ -722,6 +722,300 @@
         "TeaGame.Data::TeaGame.WeaponSubType": {
           "x": 1730,
           "y": 2070
+        }
+      }
+    },
+    "class:TeaGame.Data": {
+      "zoom": 0.960373515604595,
+      "pan": {
+        "x": 233.3560664141994,
+        "y": 189.20239747682018
+      },
+      "nodes": {
+        "TeaGame.Data::TeaGame.Base_AllItemData": {
+          "x": 80,
+          "y": 70
+        },
+        "TeaGame.Data::TeaGame.Base_ItemData": {
+          "x": 740,
+          "y": 70
+        },
+        "TeaGame.Data::TeaGame.DamageElement": {
+          "x": 1122.702809207829,
+          "y": -1.8674671015850777
+        },
+        "TeaGame.Data::TeaGame.WeaponType": {
+          "x": 1070,
+          "y": 370
+        },
+        "TeaGame.Data::TeaGame.WeaponSubType": {
+          "x": 1070,
+          "y": 270
+        },
+        "TeaGame.Data::TeaGame.RoleSpecialty": {
+          "x": 1070,
+          "y": 170
+        },
+        "TeaGame.Data::TeaGame.PoolTag": {
+          "x": 740,
+          "y": 170
+        },
+        "TeaGame.Data::TeaGame.ConversionEnumOrString": {
+          "x": 80,
+          "y": 170
+        },
+        "TeaGame.Data::TeaGame.EnumDescriptionAttribute": {
+          "x": 410,
+          "y": 70
+        },
+        "TeaGame.Data::TeaGame.GachaPool_Data": {
+          "x": 410,
+          "y": 170
+        },
+        "TeaGame.Data::TeaGame.GachaPool_ListData": {
+          "x": 80,
+          "y": 270
+        },
+        "TeaGame.Data::TeaGame.PropItem_Data": {
+          "x": 410,
+          "y": 270
+        },
+        "TeaGame.Data::TeaGame.PropItem_ListData": {
+          "x": 80,
+          "y": 370
+        },
+        "TeaGame.Data::TeaGame.RoleItem_Data": {
+          "x": 740,
+          "y": 270
+        },
+        "TeaGame.Data::TeaGame.RoleItem_ListData": {
+          "x": 404.0663615562192,
+          "y": 381.8672768875618
+        },
+        "TeaGame.Data::TeaGame.WeaponItem_Data": {
+          "x": 740,
+          "y": 370
+        },
+        "TeaGame.Data::TeaGame.WeaponItem_ListData": {
+          "x": 410,
+          "y": 470
+        },
+        "TeaGame.Menu::TeaGame.IBattlePlayerDataService": {
+          "x": 1730,
+          "y": 3070
+        },
+        "TeaGame.Menu::TeaGame.MemoryBattlePlayerDataService": {
+          "x": 1730,
+          "y": 3570
+        },
+        "TeaGame.Menu::TeaGame.Main_FormationController": {
+          "x": 1730,
+          "y": 3270
+        },
+        "TeaGame.Menu::TeaGame.Main_FormationController+ListEntry": {
+          "x": 1730,
+          "y": 3170
+        },
+        "TeaGame.Menu::TeaGame.Main_FormationModel": {
+          "x": 1730,
+          "y": 3370
+        },
+        "TeaGame.Menu::TeaGame.Main_TeamSlotDraft": {
+          "x": 1730,
+          "y": 3470
+        },
+        "TeaGame.Gacha::TeaGame.Gacha_CoreOperation": {
+          "x": 1730,
+          "y": 2570
+        },
+        "TeaGame.Gacha::TeaGame.Gacha_MainControl": {
+          "x": 1730,
+          "y": 2670
+        },
+        "TeaGame.Gacha::TeaGame.Gacha_UIOperation": {
+          "x": 1730,
+          "y": 2770
+        },
+        "TeaGame.Gacha::TeaGame.Gacha_UIOperation_Config": {
+          "x": 1730,
+          "y": 2870
+        },
+        "TeaGame.Gacha::TeaGame.GachaUIItemData": {
+          "x": 1730,
+          "y": 2970
+        },
+        "TeaGame.Battle::TeaGame.Battle_PlayerControl": {
+          "x": 1822.6291798198206,
+          "y": 263.6117807020813
+        },
+        "TeaGame.Battle.Contracts::TeaGame.BattleSpawnRow": {
+          "x": 1730,
+          "y": 1870
+        },
+        "TeaGame.Battle.Contracts::TeaGame.BattleTeamCatalog": {
+          "x": 1730,
+          "y": 2070
+        },
+        "TeaGame.Battle.Contracts::TeaGame.BattleTeamMemberDraft": {
+          "x": 1730,
+          "y": 2170
+        },
+        "TeaGame.Battle::TeaGame.BattleEvent_EnemyHit": {
+          "x": 1730,
+          "y": 770
+        },
+        "TeaGame.Battle::TeaGame.BattleEvent_EnemyKilled": {
+          "x": 1730,
+          "y": 870
+        },
+        "TeaGame.Battle::TeaGame.BattleRuntimeBridge": {
+          "x": 1730,
+          "y": 1170
+        },
+        "TeaGame.Battle::TeaGame.BattleRoleRuntimeData": {
+          "x": 1730,
+          "y": 970
+        },
+        "TeaGame.Battle::TeaGame.BattleElementBalance": {
+          "x": 1730,
+          "y": 470
+        },
+        "TeaGame.Battle::TeaGame.ElementStateEffect": {
+          "x": 1730,
+          "y": 2470
+        },
+        "TeaGame.Battle::TeaGame.BattleEnemyEntity": {
+          "x": 1730,
+          "y": 670
+        },
+        "TeaGame.Battle::TeaGame.Battle_EnemyUI": {
+          "x": 1650.1472587760165,
+          "y": -6.658631575024104
+        },
+        "TeaGame.Battle::TeaGame.BattleSceneRuntimeHost": {
+          "x": 1730,
+          "y": 1270
+        },
+        "TeaGame.Battle::TeaGame.BattleStageDirector": {
+          "x": 1730,
+          "y": 1970
+        },
+        "TeaGame.Battle::TeaGame.BattleSkillExecutorFactory": {
+          "x": 1730,
+          "y": 1670
+        },
+        "TeaGame.Battle::TeaGame.BattleSkillSystem": {
+          "x": 1730,
+          "y": 1770
+        },
+        "TeaGame.Battle::TeaGame.BattleRoleSkillProfile": {
+          "x": 1730,
+          "y": 1070
+        },
+        "TeaGame.Battle::TeaGame.BattleSkillCatalog": {
+          "x": 1730,
+          "y": 1370
+        },
+        "TeaGame.Battle::TeaGame.BattleSkillContext": {
+          "x": 1730,
+          "y": 1470
+        },
+        "TeaGame.Battle::TeaGame.BattleSkillEffect": {
+          "x": 1730,
+          "y": 1570
+        },
+        "TeaGame.Battle::TeaGame.Battle_MainPanel": {
+          "x": 1851.3761666604548,
+          "y": 142.85006798384563
+        },
+        "TeaGame.Battle::TeaGame.BattleBullet": {
+          "x": 1730,
+          "y": 370
+        },
+        "TeaGame.Battle::TeaGame.BattleElementBulletLibrary": {
+          "x": 1730,
+          "y": 570
+        },
+        "TeaGame.Battle::TeaGame.BattleWeaponModeFactory": {
+          "x": 1730,
+          "y": 2370
+        },
+        "TeaGame.Battle::TeaGame.BattleWeaponModeBase": {
+          "x": 1730,
+          "y": 2270
+        }
+      }
+    },
+    "class:TeaGame.Gacha": {
+      "zoom": 1.3576571733364837,
+      "pan": {
+        "x": 148.03939297043718,
+        "y": 192.04828962715555
+      },
+      "nodes": {
+        "TeaGame.Gacha::TeaGame.GachaArchitecture": {
+          "x": 80,
+          "y": 170
+        },
+        "TeaGame.Gacha::TeaGame.GachaModule": {
+          "x": 80,
+          "y": 270
+        },
+        "TeaGame.Gacha::TeaGame.Gacha_CoreOperation": {
+          "x": 410,
+          "y": 70
+        },
+        "TeaGame.Gacha::TeaGame.PoolRecord": {
+          "x": 740,
+          "y": 170
+        },
+        "TeaGame.Gacha::TeaGame.Gacha_MainControl": {
+          "x": 80,
+          "y": 70
+        },
+        "TeaGame.Gacha::TeaGame.Gacha_UIOperation": {
+          "x": 410,
+          "y": 170
+        },
+        "TeaGame.Gacha::TeaGame.Gacha_UIOperation_Config": {
+          "x": 1070,
+          "y": 70
+        },
+        "TeaGame.Gacha::TeaGame.GachaUIItemData": {
+          "x": 740,
+          "y": 70
+        },
+        "TeaGame.Data::TeaGame.GachaPool_Data": {
+          "x": 1730,
+          "y": 170
+        },
+        "TeaGame.Data::TeaGame.PoolTag": {
+          "x": 1730,
+          "y": 270
+        },
+        "TeaGame.Data::TeaGame.RoleItem_Data": {
+          "x": 1730,
+          "y": 370
+        },
+        "TeaGame.Data::TeaGame.WeaponItem_Data": {
+          "x": 1730,
+          "y": 670
+        },
+        "TeaGame.Data::TeaGame.Base_ItemData": {
+          "x": 1730,
+          "y": 70
+        },
+        "TeaGame.Data::TeaGame.RoleItem_ListData": {
+          "x": 1730,
+          "y": 470
+        },
+        "TeaGame.Data::TeaGame.WeaponItem_ListData": {
+          "x": 1730,
+          "y": 770
+        },
+        "TeaGame.App::TeaGame.TeaBaseButton": {
+          "x": 1730,
+          "y": 570
         }
       }
     }

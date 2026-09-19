@@ -18,6 +18,8 @@
 
 关闭命令行窗口即停止服务。首次使用需要一次网络安装；之后日常启动不访问网络。
 
+> **维护提示**：`start-progress-web.cmd` 必须保持**纯 ASCII**。中文 Windows 的 `cmd.exe` 按 GBK 解析批处理文件，文件里的 UTF-8 中文会乱码并破坏 `if (...)` 语句块；中文提示一律由 Node 输出，脚本开头的 `chcp 65001` 保证控制台正确显示。修改后可用 `node scripts/smoke-cmd.js` 验证。
+
 ## 代码画布（Code Atlas）
 
 启动同一个服务后访问 `code-atlas.html`：
@@ -26,6 +28,7 @@
 - **类图**：当前程序集的类型 + 实际指向的外部类型/程序集，点击类高亮一跳邻居（可切两跳），点击连线在右侧查看方法、事件、读写证据与源码片段；
 - **关系类型**：`assembly` / `class` / `call` / `event` / `data`，同一方向聚合为一条边，边上的数字是明细数量；
 - **交互**：滚轮围绕鼠标缩放（10%–400%）、拖拽空白平移、拖拽节点保存坐标、自动布局（ELK Worker）、撤销、重置、适应画布、搜索定位；
+- **滚轮力度**：左栏「视图」滑块实时调节 `wheelSensitivity`（0.05–1，默认 0.18，越小越细腻），设置存 `localStorage`，刷新后保留；
 - **性能模式**：缩放级别自动分级显示（LOD）；布局计算在 Web Worker，超过 3 秒出现「取消布局」，取消或失败时保留上次位置。
 
 ### 依赖与渲染
@@ -100,6 +103,7 @@ npm run scan                    # 重建 generated.json
 npm run baseline                # K0 基准：备份三份 JSON 并统计图规模
 node scripts/perf-atlas.js      # 合成大图性能取证（默认 500 节点 / 2000 边）
 node scripts/smoke-server.js    # 启动冒烟（health / vendor / code-atlas）
+node scripts/smoke-cmd.js       # 一键启动脚本端到端冒烟（真实调用 .cmd 后关闭）
 node scripts/verify-layout-roundtrip.js   # 布局读写与冲突拒绝闭环
 ```
 

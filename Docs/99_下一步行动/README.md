@@ -8,13 +8,15 @@
 - [ ] 执行 Thrud/Battle/Actor 资产清理菜单、检查场景覆盖、rig CodeGen。
 - [ ] 按 19 当前实施记录一次性 Play 回归；发布前重建 AB。
 
-代码阅读工具专项（来源：`../03_专项设计与重构/20_代码知识图谱可视化工具_设计与实施计划.md`）：
-- [ ] K0 冻结当前 SVG 原型与 Battle 性能基准，核对 `web/` 历史目录搬迁。
-- [ ] K1 增加 npm 锁文件与 `.cmd` / PowerShell 一键依赖检查、启动链。
-- [ ] K2 用 Cytoscape.js Canvas 替换 SVG 整图重建渲染。
-- [ ] K3 用 ELK.js Worker 落地 layered + orthogonal 布局、取消与失败回退。
-- [ ] K4 完成 LOD、邻居模式、外部聚合、搜索及 500/2,000 合成图性能取证。
-- [ ] K5/K6 完成 JSON 错误恢复、文档同步和用户视觉验收。
+代码阅读工具专项（来源：`../03_专项设计与重构/20_代码知识图谱可视化工具_设计与实施计划.md`；2026-09-19 落地）：
+- [x] K0 冻结基准：`web/ProgressChaser/scripts/baseline-stats.js`，备份见 `data/backups/`（9 程序集 / 143 文件 / 221 类型 / 1525 关系；Battle 151 节点 / 559 聚合边）。
+- [x] K1 npm 锁文件 + `.cmd` 一键依赖检查启动链（`scripts/ensure-deps.js`、`GET /api/health`、`/vendor/*` 白名单）。
+- [x] K2 Cytoscape.js Canvas 替换 SVG 整图重建渲染（两层视图、筛选、拖拽、右侧证据、同向聚合单边）。
+- [x] K3 ELK.js Worker 落地 layered + orthogonal 布局：requestId 丢弃过期结果、>3 秒取消、失败回退。
+- [x] K4 LOD、一跳/两跳邻居、搜索定位、`cy.batch()`、合成图性能取证（`web/ProgressChaser/PERFORMANCE.md`）。
+- [x] K5 JSON 校验与错误恢复：逐字段定位、layout schema 1→2 迁移、orphan 保留、409 冲突、扫描 `.bak` 回滚；`npm test` 10 项通过。
+- [ ] K6 文档已同步（README/PERFORMANCE/本文/20），**待用户按 §10.3 做浏览器视觉验收**（FPS、内存、线团改善）。
+- [ ] 未实现（文档 §6.4 可选建议）：外部类型按程序集聚合节点；本轮外部节点逐个显示并保留折叠开关。
 
 
 > 汇总日期：**2026-09-18（P1A S2/S3 落地：代码域拆分完成、产出 17 代码现状地图，来源 `../03_专项设计与重构/17_代码现状地图.md` + `../03_专项设计与重构/16…` §5A + `../05_开发日志/09_开发日志_会话交接.md`）**；上一轮汇总 2026-09-15（回填 `M1_TeamSelect` 文档清账）。目的：在文档按类型重组后，**保留并集中可追溯的「下一步要做」内容**。
