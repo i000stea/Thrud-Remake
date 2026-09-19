@@ -166,32 +166,95 @@ async function atomic(file, value) {
   await fs.writeFile(tmp, JSON.stringify(value, null, 2) + '\n', 'utf8');
   await fs.rename(tmp, file);
 }
-function validateLayout(layout) {
-  if (layout?.schemaVersion !== 1 || !layout.views || Array.isArray(layout.views)) throw new Error('布局需要 schemaVersion:1 和 views 对象');
-  for (const v of Object.values(layout.views)) {
-    if (!v || !Number.isFinite(v.zoom) || v.zoom < .1 || v.zoom > 4 || !Number.isFinite(v.pan?.x) || !Number.isFinite(v.pan?.y) || !v.nodes) throw new Error('布局视口无效');
-    for (const n of Object.values(v.nodes)) if (!Number.isFinite(n.x) || !Number.isFinite(n.y)) throw new Error('节点坐标必须是有限数值');
+function validateGenerated(generated, label = names.generated) {
+  if (!generated || typeof generated !== 'object' || Array.isArray(generated)) throw new Error(`${label}：内容必须是对象`);
+  if (generated.schemaVersion !== 2) throw new Error(`${label}：schemaVersion 必须是 2，实际为 ${JSON.stringify(generated.schemaVersion)}`);
+  for (const key of ['assemblies', 'classes', 'relations', 'files']) {
+    if (!Array.isArray(generated[key])) throw new Error(`${label}：字段 ${key} 必须是数组`);
   }
+  if (generated.orphans !== undefined && !Array.isArray(generated.orphans)) throw new Error(`${label}：字段 orphans 必须是数组`);
+  return generated;
+}
+
+function validateManual(manual, label = names.manual) {
+  if (!manual || typeof manual !== 'object' || Array.isArray(manual)) throw new Error(`${label}：内容必须是对象`);
+  if (manual.schemaVersion !== 1) throw new Error(`${label}：schemaVersion 必须是 1，实际为 ${JSON.stringify(manual.schemaVersion)}`);
+  if (!Array.isArray(manual.relations)) throw new Error(`${label}：字段 relations 必须是数组`);
+  if (!Array.isArray(manual.notes)) throw new Error(`${label}：字段 notes 必须是数组`);
+  const ids = new Set();
+  manual.relations.forEach((relation, index) => {
+    const at = `${label} → relations[${index}]`;
+    if (!relation || typeof relation !== 'object') throw new Error(`${at}：必须是对象`);
+    for (const field of ['id', 'source', 'target', 'kind']) {
+      if (!relation[field]) throw new Error(`${at}：缺少字段 ${field}`);
+    }
+    if (!['assembly', 'class', 'call', 'event', 'data'].includes(relation.kind)) throw new Error(`${at}.kind：非法值 ${JSON.stringify(relation.kind)}`);
+    if (ids.has(relation.id)) throw new Error(`${at}.id：重复的 id ${relation.id}`);
+    ids.add(relation.id);
+  });
+  manual.notes.forEach((note, index) => {
+    const at = `${label} → notes[${index}]`;
+    if (!note || typeof note !== 'object') throw new Error(`${at}：必须是对象`);
+    if (!note.node) throw new Error(`${at}：缺少字段 node`);
+    if (typeof note.text !== 'string' || !note.text.trim()) throw new Error(`${at}.text：必须是非空字符串`);
+  });
+  return manual;
+}
+
+// 旧布局为 schemaVersion 1，读入后统一提升到 2（结构兼容，只是版本号）。
+function normalizeLayout(layout) {
+  if (layout && (layout.schemaVersion === 1 || layout.schemaVersion === 2)) return { ...layout, schemaVersion: 2 };
+  return layout;
+}
+
+function validateLayout(layout, label = names.layout) {
+  if (!layout || typeof layout !== 'object' || Array.isArray(layout)) throw new Error(`${label}：内容必须是对象`);
+  if (layout.schemaVersion !== 1 && layout.schemaVersion !== 2) throw new Error(`${label}：schemaVersion 必须是 1 或 2，实际为 ${JSON.stringify(layout.schemaVersion)}`);
+  if (!layout.views || typeof layout.views !== 'object' || Array.isArray(layout.views)) throw new Error(`${label}：字段 views 必须是对象`);
+  for (const [name, v] of Object.entries(layout.views)) {
+    const at = `${label} → views["${name}"]`;
+    if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error(`${at}：必须是对象`);
+    if (!Number.isFinite(v.zoom) || v.zoom < 0.1 || v.zoom > 4) throw new Error(`${at}.zoom：需要在 0.1~4 之间`);
+    if (!Number.isFinite(v.pan?.x) || !Number.isFinite(v.pan?.y)) throw new Error(`${at}.pan：需要有限的 x / y`);
+    if (!v.nodes || typeof v.nodes !== 'object' || Array.isArray(v.nodes)) throw new Error(`${at}.nodes：必须是对象`);
+    for (const [id, node] of Object.entries(v.nodes)) {
+      if (!node || !Number.isFinite(node.x) || !Number.isFinite(node.y)) throw new Error(`${at}.nodes["${id}"]：坐标必须是有限数值`);
+    }
+  }
+  return layout;
 }
 const fingerprint = value => crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
 let queue = Promise.resolve();
 function enqueue(fn) { const next = queue.then(fn); queue = next.catch(()=>{}); return next; }
 async function saveLayout(dir, body) {
   return enqueue(async () => {
-    validateLayout(body.layout);
-    const file = path.join(dir, names.layout), current = await read(file, { revision: 0 });
-    if (body.revision !== (current.revision || 0) || body.token !== fingerprint(current)) throw new Error('布局已在另一页面或 JSON 中更新，请重新读取后再保存');
-    const result = { ...body.layout, revision: (current.revision || 0) + 1 };
+    try {
+      validateLayout(body.layout, '提交的布局');
+    } catch (error) {
+      error.statusCode = 400;
+      throw error;
+    }
+    const file = path.join(dir, names.layout);
+    const current = normalizeLayout(validateLayout(await read(file, { schemaVersion: 2, revision: 0, views: {} })));
+    if (body.revision !== (current.revision || 0) || body.token !== fingerprint(current)) {
+      const error = new Error('布局已在另一页面或 JSON 中更新，请重新读取后再保存');
+      error.statusCode = 409;
+      throw error;
+    }
+    const result = { ...body.layout, schemaVersion: 2, revision: (current.revision || 0) + 1 };
     await atomic(file, result); return { layout: result, token:fingerprint(result) };
   });
 }
 async function scanAndSave(root, dir) {
   return enqueue(async () => {
     await fs.mkdir(dir, { recursive: true });
-    const file = path.join(dir, names.generated), old = await read(file, null), next = await scan(root);
+    const file = path.join(dir, names.generated), old = await read(file, null);
+    // 先扫描到内存；扫描抛错时不动旧文件，等于自动回滚。
+    const next = validateGenerated(await scan(root));
     const live = new Set([...next.assemblies.map(a=>a.id), ...next.classes.map(c=>c.id)]);
-    next.orphans = [...(old?.orphans || []), ...(old?.classes || []), ...(old?.assemblies || [])].filter(n => !live.has(n.id));
-    next.orphans = [...new Map(next.orphans.map(n=>[n.id,n])).values()];
+    const inherited = [...(old?.orphans || []), ...(old?.classes || []), ...(old?.assemblies || [])];
+    next.orphans = inherited.filter(n => n && n.id && !live.has(n.id));
+    next.orphans = [...new Map(next.orphans.map(n=>[n.id, { ...n, orphan: true }])).values()];
     if (old) await atomic(file + '.bak', old);
     await atomic(file, next); return next;
   });
@@ -200,11 +263,9 @@ async function readBundle(root, dir) {
   await fs.mkdir(dir, { recursive: true });
   let generated = await read(path.join(dir, names.generated), null);
   if (!generated || generated.schemaVersion !== 2) generated = await scanAndSave(root, dir);
-  const layout = await read(path.join(dir, names.layout), { schemaVersion: 1, revision: 0, views: {} });
-  validateLayout(layout);
-  const manual = await read(path.join(dir, names.manual), { schemaVersion: 1, relations: [], notes: [] });
-  if (!Array.isArray(manual.relations) || !Array.isArray(manual.notes)) throw new Error('人工 JSON 的 relations 和 notes 必须是数组');
-  for (const r of manual.relations) if (!r.id || !r.source || !r.target || !['assembly','class','call','event','data'].includes(r.kind)) throw new Error('人工关系需要 id/source/target 和有效 kind');
+  validateGenerated(generated);
+  const layout = normalizeLayout(validateLayout(await read(path.join(dir, names.layout), { schemaVersion: 2, revision: 0, views: {} })));
+  const manual = validateManual(await read(path.join(dir, names.manual), { schemaVersion: 1, relations: [], notes: [] }));
   return { generated, layout, manual, layoutToken:fingerprint(layout) };
 }
-module.exports = { scan, parseSource, mask, readBundle, scanAndSave, saveLayout, validateLayout };
+module.exports = { scan, parseSource, mask, readBundle, scanAndSave, saveLayout, validateLayout, validateGenerated, validateManual, normalizeLayout };

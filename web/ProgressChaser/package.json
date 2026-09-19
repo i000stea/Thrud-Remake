@@ -1,0 +1,17 @@
+{
+  "name": "thrud-progress-chaser",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Thrud Remake 本地进度面板与代码知识图谱画布（离线可用）",
+  "scripts": {
+    "start": "node server.js",
+    "scan": "node scripts/scan-code-atlas.js",
+    "baseline": "node scripts/baseline-stats.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "cytoscape": "3.34.3",
+    "cytoscape-elk": "2.3.0",
+    "elkjs": "0.12.0"
+  }
+}

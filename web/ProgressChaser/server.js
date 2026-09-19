@@ -24,6 +24,14 @@ const ATLAS_LAYOUT_FILE = path.join(ATLAS_DIR, "code-atlas.layout.json");
 const ATLAS_MANUAL_FILE = path.join(ATLAS_DIR, "code-atlas.manual.json");
 const atlas = require('./atlas-core');
 
+// 浏览器端依赖由本地服务提供，禁止 CDN。仅暴露白名单文件。
+const VENDOR_FILES = {
+  "/vendor/cytoscape.min.js": path.join(ROOT_DIR, "node_modules", "cytoscape", "dist", "cytoscape.min.js"),
+  "/vendor/cytoscape-elk.js": path.join(ROOT_DIR, "node_modules", "cytoscape-elk", "dist", "cytoscape-elk.js"),
+  "/vendor/elk.bundled.js": path.join(ROOT_DIR, "node_modules", "elkjs", "lib", "elk.bundled.js"),
+  "/vendor/elk-worker.min.js": path.join(ROOT_DIR, "node_modules", "elkjs", "lib", "elk-worker.min.js"),
+};
+
 let browserOpened = false;
 
 const DEFAULT_DATA = {
@@ -177,6 +185,16 @@ function normalizeTask(input, oldTask = null) {
 }
 
 async function handleApi(request, response, url) {
+  if (url.pathname === "/api/health" && request.method === "GET") {
+    return sendJson(response, 200, {
+      ok: true,
+      service: "progress-web",
+      port: PORT,
+      pid: process.pid,
+      uptime: Number(process.uptime().toFixed(1)),
+      time: new Date().toISOString(),
+    });
+  }
   if (url.pathname.startsWith('/api/code-atlas') && !['GET','HEAD'].includes(request.method)) {
     if (request.headers.origin && request.headers.origin !== `http://${request.headers.host}`) return sendJson(response, 403, { message: '拒绝跨站写入' });
   }
@@ -246,6 +264,20 @@ async function handleApi(request, response, url) {
   return false;
 }
 
+async function serveVendor(response, requestPath) {
+  const file = VENDOR_FILES[requestPath];
+  try {
+    const content = await fs.readFile(file);
+    response.writeHead(200, {
+      "Content-Type": getContentType(file),
+      "Cache-Control": "no-store",
+    });
+    response.end(content);
+  } catch {
+    sendText(response, 404, `依赖文件缺失，请先运行 start-progress-web.cmd 安装依赖：${requestPath}`);
+  }
+}
+
 async function serveStatic(response, requestPath) {
   const safePath = requestPath === "/"
     ? path.join(PUBLIC_DIR, "index.html")
@@ -290,9 +322,11 @@ const server = http.createServer(async (request, response) => {
       return sendJson(response, 404, { message: "接口不存在" });
     }
 
-    return serveStatic(response, url.pathname);
+          if (VENDOR_FILES[url.pathname]) return serveVendor(response, url.pathname);
+
+      return serveStatic(response, url.pathname);
   } catch (error) {
-    return sendJson(response, 500, {
+    return sendJson(response, error.statusCode || 500, {
       message: error.message || "服务器内部错误",
     });
   }

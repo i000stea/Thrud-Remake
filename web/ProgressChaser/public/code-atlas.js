@@ -1,129 +1,696 @@
 'use strict';
-const NS = 'http://www.w3.org/2000/svg';
-const $ = s => document.querySelector(s);
-const clone = value => JSON.parse(JSON.stringify(value));
-const colors = { assembly:'#80a9ff', class:'#82d9b0', call:'#c48cff', event:'#ff7c9b', data:'#5ed2e6' };
-const labels = { assembly:'程序集依赖', class:'类引用', call:'方法调用', event:'事件', data:'数据 / 状态' };
-const dashes = { event:'6 4', data:'2 4' };
-const state = { bundle:null, view:'assembly', filters:new Set(Object.keys(colors)), external:true, history:[], graph:null, drag:null, selected:null, saveTimer:null, saving:false, dirty:false, blocked:false, revision:0, suppressClick:false, request:0 };
-const status = text => { $('#status').textContent = text; };
-function el(tag, attrs={}, text='') { const e=document.createElement(tag); for (const [k,v] of Object.entries(attrs)) e.setAttribute(k,v); e.textContent=text; return e; }
-function svg(tag, attrs={}, text='') { const e=document.createElementNS(NS,tag); for (const [k,v] of Object.entries(attrs)) e.setAttribute(k,v); e.textContent=text; return e; }
-async function api(url, options={}) { const r=await fetch(url,options); const data=await r.json(); if(!r.ok) throw new Error(data.message||`HTTP ${r.status}`); return data; }
+
+// Cytoscape.js Canvas 渲染 + ELK 布局的代码关系画布。
+// 数据仍来自 generated/manual/layout 三份 JSON；只改变渲染与交互实现。
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+const clone = (value) => JSON.parse(JSON.stringify(value));
+
+const KIND_COLORS = { assembly: '#5b8cff', class: '#82d9b0', call: '#c48cff', event: '#ff7c9b', data: '#5ed2e6' };
+const KIND_LABELS = { assembly: '程序集依赖', class: '类引用', call: '方法调用', event: '事件', data: '数据 / 状态' };
+const ALL_KINDS = Object.keys(KIND_COLORS);
+
+const state = {
+  bundle: null,
+  view: 'assembly',
+  filters: new Set(ALL_KINDS),
+  external: true,
+  history: [],
+  cy: null,
+  graph: null,
+  selected: null,
+  saveTimer: null,
+  saving: false,
+  dirty: false,
+  blocked: false,
+  revision: 0,
+  lod: '',
+  gestureOpen: false,
+  suppress: false,
+  request: 0,
+};
+
+const status = (text) => { $('#status').textContent = text; };
+
+async function api(url, options = {}) {
+  const response = await fetch(url, options);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || `HTTP ${response.status}`);
+  return data;
+}
+
 function view() {
-  const views=state.bundle.layout.views;
-  views[state.view] ||= { zoom:1, pan:{x:0,y:0}, nodes:{} };
+  const views = state.bundle.layout.views;
+  views[state.view] ||= { zoom: 1, pan: { x: 0, y: 0 }, nodes: {} };
   return views[state.view];
 }
-function checkpoint() { state.history.push({view:state.view, value:clone(view())}); if(state.history.length>60)state.history.shift(); $('#undoButton').disabled=false; }
-function changed() { state.dirty=true; status('布局待保存…'); clearTimeout(state.saveTimer); state.saveTimer=setTimeout(()=>{state.saveTimer=null;flush();},600); }
+
+function checkpoint() {
+  state.history.push({ view: state.view, value: clone(view()) });
+  if (state.history.length > 60) state.history.shift();
+  $('#undoButton').disabled = false;
+}
+
+function changed() {
+  state.dirty = true;
+  status('布局待保存…');
+  clearTimeout(state.saveTimer);
+  state.saveTimer = setTimeout(() => { state.saveTimer = null; flush(); }, 700);
+}
+
 async function flush() {
   if (state.saving || !state.dirty || state.blocked) return;
-  state.saving=true;
+  state.saving = true;
   try {
-    while(state.dirty) {
-      state.dirty=false;
-      const saved=await api('/api/code-atlas/layout',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:state.revision,token:state.bundle.layoutToken,layout:state.bundle.layout})});
-      state.revision=saved.layout.revision; state.bundle.layoutToken=saved.token;
+    while (state.dirty) {
+      state.dirty = false;
+      const saved = await api('/api/code-atlas/layout', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ revision: state.revision, token: state.bundle.layoutToken, layout: state.bundle.layout }),
+      });
+      state.revision = saved.layout.revision;
+      state.bundle.layoutToken = saved.token;
     }
     status('布局已保存');
-  } catch(e) { state.dirty=true; state.blocked=true; status('保存失败：'+e.message+'；可导出布局保留改动'); }
-  finally { state.saving=false; }
-}
-function setTransform() { const v=view(); $('#viewport').setAttribute('transform',`translate(${v.pan.x},${v.pan.y}) scale(${v.zoom})`); $('#zoomReadout').textContent=`${Math.round(v.zoom*100)}%`; }
-function render() {
-  if(!state.bundle)return;
-  state.graph=AtlasModel.graph(state.bundle,state.view,state.filters,state.external);
-  const {nodes,edges}=state.graph,v=view();
-  const automatic=AtlasModel.autoLayout(nodes,edges);
-  nodes.forEach(n=>{ v.nodes[n.id] ||= automatic[n.id]; });
-  $('#edges').replaceChildren(); $('#nodes').replaceChildren();
-  const selectedNode=state.selected?.node;
-  const neighbors=new Set([selectedNode]); edges.filter(e=>e.source===selectedNode||e.target===selectedNode).forEach(e=>{neighbors.add(e.source);neighbors.add(e.target);});
-  for(const e of edges) {
-    const a=v.nodes[e.source],b=v.nodes[e.target]; if(!a||!b)continue;
-    const group=svg('g',{'class':'edge-group','tabindex':'0','role':'button','aria-label':`${e.source} 指向 ${e.target}`});
-    const ax=a.x+125,ay=a.y+30,bx=b.x+125,by=b.y+30;
-    const angle=Math.atan2(by-ay,bx-ax);
-    const radius=(dx,dy)=>Math.min(125/Math.max(Math.abs(dx),.001),30/Math.max(Math.abs(dy),.001));
-    const ra=radius(Math.cos(angle),Math.sin(angle)),rb=radius(Math.cos(angle),Math.sin(angle));
-    const x1=ax+Math.cos(angle)*ra,y1=ay+Math.sin(angle)*ra,x2=bx-Math.cos(angle)*rb,y2=by-Math.sin(angle)*rb;
-    const path=`M ${x1} ${y1} Q ${(x1+x2)/2-Math.sin(angle)*25} ${(y1+y2)/2+Math.cos(angle)*25} ${x2} ${y2}`;
-    const hit=svg('path',{d:path,fill:'none',stroke:'transparent','stroke-width':18}); group.append(hit);
-    e.kinds.forEach((kind,i)=>group.append(svg('path',{d:path,class:'edge',stroke:colors[kind],'stroke-dasharray':dashes[kind]||'none','marker-end':`url(#arrow-${kind})`,transform:`translate(${i*2},${i*2})`})));
-    if(e.relations.length>1)group.append(svg('text',{x:(x1+x2)/2,y:(y1+y2)/2-7,class:'edge-label'},`${e.relations.length}`));
-    if(selectedNode&&!neighbors.has(e.source))group.style.opacity='.16';
-    if(state.selected?.edge===e.id)group.classList.add('selected');
-    group.addEventListener('click',()=>showEdge(e)); group.addEventListener('keydown',ev=>{if(ev.key==='Enter')showEdge(e);});
-    $('#edges').append(group);
+  } catch (error) {
+    state.dirty = true;
+    state.blocked = true;
+    status('保存失败：' + error.message + '；可导出布局保留改动');
+  } finally {
+    state.saving = false;
   }
-  for(const n of nodes) {
-    const p=v.nodes[n.id];
-    const group=svg('g',{class:`node ${state.view==='assembly'?'assembly':''} ${n.external?'external':''} ${n.orphan?'orphan':''} ${selectedNode===n.id?'selected':''}`,transform:`translate(${p.x},${p.y})`,'data-id':n.id,tabindex:0,role:'button','aria-label':n.name});
-    group.append(svg('rect',{width:250,height:60}));
-    group.append(svg('title',{},n.id));
-    const display=n.label.length>29?n.label.slice(0,27)+'…':n.label;
-    group.append(svg('text',{x:12,y:24},display));
-    group.append(svg('text',{x:12,y:46,class:'node-meta'},n.orphan?'孤立 · 保留记录':n.external?'外部 · '+(n.assembly||'程序集'):state.view==='assembly'?'点击进入类图':n.kind+' · '+n.methods?.length+' 方法'));
-    if(selectedNode&&!neighbors.has(n.id))group.style.opacity='.26';
-    if(p.color)group.firstChild.setAttribute('stroke',p.color);
-    group.addEventListener('click',()=>{if(!state.suppressClick)activate(n);});
-    group.addEventListener('keydown',e=>{if(e.key==='Enter')activate(n);});
-    $('#nodes').append(group);
-  }
-  const crumb=$('#crumb'); crumb.replaceChildren();
-  const back=el('button',{class:'secondary'},'全部程序集'); back.onclick=()=>switchView('assembly'); crumb.append(back);
-  if(state.view!=='assembly')crumb.append(el('span',{},' / '+state.view.slice(6)));
-  crumb.append(el('span',{class:'muted'},`　${nodes.length} 节点 · ${edges.length} 组关系 · 箭头：引用者 → 被引用者；事件：发布者 → 事件 → 订阅者`));
-  setTransform();
 }
-function switchView(key) { state.view=key; state.selected=null; state.request++; const fresh=!state.bundle.layout.views[key]; render(); if(fresh){fit();changed();} showIntro(); }
-function detailTitle(title) { const d=$('#detail'); d.replaceChildren(el('h2',{},title)); return d; }
-function activate(n) {
-  if(state.view==='assembly'&&!n.external&&!n.orphan){switchView('class:'+n.id);return;}
-  state.selected={node:n.id}; render(); state.request++;
-  const d=detailTitle(n.name); d.append(el('code',{},n.id));
-  const copy=el('button',{class:'secondary'},'复制 ID'); copy.onclick=()=>navigator.clipboard.writeText(n.id).then(()=>status('节点 ID 已复制')).catch(()=>status('请选中上方 ID 复制')); d.append(copy);
-  d.append(el('p',{class:'muted'},n.orphan?'代码已失效，保留位置与人工说明。':n.external?'外部引用节点。项目内外部类型可跳转；第三方程序集当前只展示边界。':'类级视图；点击关系查看方法、事件和状态证据。'));
-  if(n.assembly&&state.bundle.generated.assemblies.some(a=>a.name===n.assembly&&!a.external)&&n.assembly!==state.view.slice(6)){const b=el('button',{},'进入 '+n.assembly); b.onclick=()=>switchView('class:'+n.assembly);d.append(b);}
-  for(const f of n.files||[])addEvidence(d,{file:f.path,line:f.line});
-  for(const note of state.bundle.manual.notes.filter(x=>x.node===n.id))d.append(el('p',{},note.text));
-  d.append(el('h3',{},'方法声明'));
-  for(const m of n.methods||[]) {d.append(el('p',{class:'method-name'},m.signature));addEvidence(d,m);}
-  if(n.unresolved)d.append(el('p',{class:'muted'},'引用 GUID 未在 Assets/Packages 源码中解析，可能位于 PackageCache 或预编译 DLL。'));
-}
-function showIntro(){const d=detailTitle('阅读方式');d.append(el('p',{class:'muted'},'先点击程序集进入类图，再点击类高亮相邻关系，点击连线查看源码证据。外部类型以虚线边框标识。'));
-  d.append(el('p',{class:'muted'},state.bundle.generated.diagnostics.note));
-  d.append(el('p',{class:'muted'},'人工关系只编辑 manual.json；修改 JSON 后点“重新读取 JSON”。“重新扫描”只重建 generated.json。'));
-  d.append(el('p',{class:'muted'},'扫描时间：'+new Date(state.bundle.generated.generatedAt).toLocaleString()));
-}
-function showEdge(edge){state.selected={edge:edge.id};render();state.request++;const d=detailTitle('关系明细');
-  const nodeName=id=>state.graph.nodes.find(n=>n.id===id)?.name||id;
-  d.append(el('p',{},nodeName(edge.source)+' → '+nodeName(edge.target)));
-  for(const r of edge.relations){const section=el('section',{class:'relation-detail'}); section.append(el('span',{class:'relation-tag'},labels[r.kind]+' · '+(r.origin==='manual'?'人工说明':r.confidence==='declared'?'显式声明':'静态候选')));section.append(el('p',{},r.label||r.kind));if(r.method)section.append(el('p',{class:'muted'},'所在方法：'+r.method));if(r.note)section.append(el('p',{},r.note));addEvidence(section,r);d.append(section);}
-}
-function addEvidence(container,r){if(!r.file)return; const b=el('button',{class:'source-link'},r.file+':'+(r.line||1));b.onclick=async()=>{const token=state.request;try{const data=await api('/api/code-atlas/source?file='+encodeURIComponent(r.file));if(token!==state.request)return;const lines=data.source.split('\n'),start=Math.max(0,(r.line||1)-5),end=Math.min(lines.length,(r.line||1)+8);container.querySelector('pre')?.remove();container.append(el('pre',{class:'source-code'},lines.slice(start,end).map((s,i)=>`${start+i+1} ${s}`).join('\n')));}catch(e){status(e.message);}};container.append(b);}
-function fit(){const v=view(),ps=state.graph.nodes.map(n=>v.nodes[n.id]);if(!ps.length)return;const rect=$('#canvas').getBoundingClientRect(),x=Math.min(...ps.map(p=>p.x)),y=Math.min(...ps.map(p=>p.y)),w=Math.max(...ps.map(p=>p.x+250))-x,h=Math.max(...ps.map(p=>p.y+60))-y;v.zoom=Math.max(.1,Math.min(1.4,(rect.width-60)/w,(rect.height-60)/h));v.pan={x:(rect.width-w*v.zoom)/2-x*v.zoom,y:(rect.height-h*v.zoom)/2-y*v.zoom};setTransform();}
-function zoomAt(factor,clientX,clientY){const v=view(),r=$('#canvas').getBoundingClientRect(),x=clientX-r.left,y=clientY-r.top,next=Math.min(4,Math.max(.1,v.zoom*factor));v.pan={x:x-(x-v.pan.x)*next/v.zoom,y:y-(y-v.pan.y)*next/v.zoom};v.zoom=next;setTransform();}
-const canvas=$('#canvas');
-canvas.addEventListener('pointerdown',e=>{if(e.button!==0||!state.bundle||e.target.closest('.edge-group'))return;const node=e.target.closest('.node'),v=view();state.drag={id:node?.dataset.id,startX:e.clientX,startY:e.clientY,before:clone(v),moved:false};canvas.setPointerCapture(e.pointerId);});
-canvas.addEventListener('pointermove',e=>{const d=state.drag;if(!d)return;const dx=e.clientX-d.startX,dy=e.clientY-d.startY;if(!d.moved&&Math.hypot(dx,dy)<4)return;if(!d.moved){checkpoint();d.moved=true;state.suppressClick=true;}const v=view();if(d.id){v.nodes[d.id].x=d.before.nodes[d.id].x+dx/v.zoom;v.nodes[d.id].y=d.before.nodes[d.id].y+dy/v.zoom;render();}else{v.pan={x:d.before.pan.x+dx,y:d.before.pan.y+dy};setTransform();}});
-function finishDrag(e){if(!state.drag)return;const d=state.drag;state.drag=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(d.moved){changed();setTimeout(()=>state.suppressClick=false,0);}else if(d.id){const n=state.graph.nodes.find(n=>n.id===d.id);state.suppressClick=true;activate(n);setTimeout(()=>state.suppressClick=false,0);}}
-canvas.addEventListener('pointerup',finishDrag);canvas.addEventListener('pointercancel',e=>{if(state.drag){state.bundle.layout.views[state.view]=state.drag.before;state.drag=null;render();}state.suppressClick=false;});
-canvas.addEventListener('wheel',e=>{e.preventDefault();if(!state.bundle)return;if(!state.saveTimer)checkpoint();zoomAt(Math.exp(-e.deltaY*.0015),e.clientX,e.clientY);changed();},{passive:false});
-$('#autoLayoutButton').onclick=()=>{checkpoint();const positions=AtlasModel.autoLayout(state.graph.nodes,state.graph.edges);for(const [id,p] of Object.entries(positions))view().nodes[id]={...view().nodes[id],...p};render();fit();changed();};
-$('#resetButton').onclick=()=>{checkpoint();const fresh=AtlasModel.autoLayout(state.graph.nodes,state.graph.edges);for(const [id,p] of Object.entries(fresh))view().nodes[id]={...view().nodes[id],...p};view().zoom=1;view().pan={x:0,y:0};render();fit();changed();};
-$('#undoButton').onclick=()=>{const old=state.history.pop();if(!old)return;state.bundle.layout.views[old.view]=old.value;state.view=old.view;state.selected=null;render();changed();$('#undoButton').disabled=!state.history.length;};
-$('#fitButton').onclick=()=>{checkpoint();fit();changed();};
-$('#exportButton').onclick=()=>{const blob=new Blob([JSON.stringify(state.bundle.layout,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=el('a',{href:url,download:'code-atlas.layout.json'});a.click();URL.revokeObjectURL(url);};
-async function load(scan=false){clearTimeout(state.saveTimer);if(state.dirty||state.saving){await flush();if(state.dirty||state.saving){status('布局仍未保存；请先解决保存错误，或导出后刷新页面');return;}}status(scan?'扫描源码中…':'读取 JSON 中…');
-  const bundle=await api(scan?'/api/code-atlas/scan':'/api/code-atlas',scan?{method:'POST'}:{});state.bundle=bundle;state.revision=bundle.layout.revision||0;state.blocked=false;state.history=[];$('#undoButton').disabled=true;const fresh=!Object.keys(bundle.layout.views[state.view]?.nodes||{}).length;render();if(fresh){fit();changed();}showIntro();status(`已读取：${bundle.generated.stats.files} 文件 · ${bundle.generated.stats.classes} 类型`);
-}
-$('#reloadButton').onclick=()=>load().catch(e=>status(e.message));$('#scanButton').onclick=()=>load(true).catch(e=>status(e.message));
-document.querySelectorAll('[data-kind]').forEach(input=>input.onchange=()=>{if(input.dataset.kind==='external')state.external=input.checked;else input.checked?state.filters.add(input.dataset.kind):state.filters.delete(input.dataset.kind);render();});
-window.addEventListener('beforeunload',e=>{if(state.dirty||state.saving){e.preventDefault();e.returnValue='';}});
-document.addEventListener('visibilitychange',()=>{if(document.hidden)flush();});
-document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!/INPUT|TEXTAREA/.test(e.target.tagName)){e.preventDefault();$('#undoButton').click();}});
-const defs=svg('defs');for(const [kind,color] of Object.entries(colors)){const marker=svg('marker',{id:'arrow-'+kind,viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:7,markerHeight:7,orient:'auto-start-reverse'});marker.append(svg('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:color}));defs.append(marker);}canvas.prepend(defs);
-load().catch(e=>status('加载失败：'+e.message));
 
+// —— Cytoscape 样式 ——
+const CY_STYLE = [
+  {
+    selector: 'node',
+    style: {
+      shape: 'round-rectangle',
+      width: 190,
+      height: 46,
+      'background-color': '#161c26',
+      'border-width': 1.6,
+      'border-color': (ele) => KIND_COLORS[ele.data('kind')] || '#5a6472',
+      label: 'data(label)',
+      color: '#e6edf6',
+      'font-size': 12,
+      'text-valign': 'center',
+      'text-halign': 'center',
+      'text-max-width': 168,
+      'text-wrap': 'ellipsis',
+      'overlay-opacity': 0,
+    },
+  },
+  { selector: 'node[external]', style: { 'border-style': 'dashed', 'border-color': '#f0b85b' } },
+  { selector: 'node[orphan]', style: { 'border-style': 'dotted', 'border-color': '#ff7272', 'background-color': '#241a1a' } },
+  { selector: 'node:selected', style: { 'border-width': 3, 'border-color': '#ffcf5b', 'background-color': '#1d2733' } },
+  {
+    selector: 'edge',
+    style: {
+      width: 1.4,
+      'curve-style': 'bezier',
+      'line-color': (ele) => KIND_COLORS[ele.data('primary')] || '#5a6472',
+      'target-arrow-color': (ele) => KIND_COLORS[ele.data('primary')] || '#5a6472',
+      'target-arrow-shape': 'triangle',
+      'arrow-scale': 0.9,
+      opacity: 0.55,
+      label: 'data(label)',
+      'font-size': 9,
+      color: '#9fb0c3',
+      'text-background-color': '#0d1117',
+      'text-background-opacity': 0.85,
+      'text-background-padding': 2,
+      'text-rotation': 'autorotate',
+      'overlay-opacity': 0,
+    },
+  },
+  { selector: 'edge:selected', style: { width: 3, opacity: 1, 'line-color': '#ffcf5b', 'target-arrow-color': '#ffcf5b' } },
+  { selector: '.faded', style: { opacity: 0.16 } },
+  // LOD：只改表现，不改数据与选择。
+  { selector: 'node.lod-far', style: { label: '', width: 70, height: 22, 'font-size': 0 } },
+  { selector: 'edge.lod-far', style: { label: '', opacity: 0.3 } },
+  { selector: 'edge.lod-mid', style: { label: '' } },
+];
+
+function lodClass(level) {
+  return 'lod-' + level;
+}
+
+function buildCy(elements) {
+  if (state.cy) { state.cy.destroy(); state.cy = null; }
+  const cy = cytoscape({
+    container: $('#cy'),
+    elements,
+    style: CY_STYLE,
+    layout: { name: 'preset', fit: false, padding: 40 },
+    wheelSensitivity: 0.18,
+    minZoom: 0.1,
+    maxZoom: 4,
+    boxSelectionEnabled: false,
+  });
+  state.cy = cy;
+  bindCy(cy);
+  return cy;
+}
+
+function bindCy(cy) {
+  cy.on('tap', 'node', (evt) => { if (!state.suppress) activate(evt.target); });
+  cy.on('tap', 'edge', (evt) => { if (!state.suppress) showEdge(evt.target); });
+  cy.on('tap', (evt) => { if (evt.target === cy) clearSelection(); });
+
+  cy.on('grab', 'node', () => { if (!state.gestureOpen) { state.gestureOpen = true; checkpoint(); } });
+  cy.on('dragfree', 'node', (evt) => {
+    state.gestureOpen = false;
+    const node = evt.target;
+    const v = view();
+    v.nodes[node.id()] = { ...(v.nodes[node.id()] || {}), x: node.position('x'), y: node.position('y') };
+    changed();
+  });
+
+  cy.on('panstart zoomstart', () => { if (!state.gestureOpen) { state.gestureOpen = true; checkpoint(); } });
+  cy.on('panend zoomend', () => { state.gestureOpen = false; });
+  cy.on('zoom', () => { updateZoomReadout(); applyLod(); });
+  cy.on('pan zoom', () => {
+    const v = view();
+    v.pan = { ...cy.pan() };
+    v.zoom = cy.zoom();
+    changed();
+  });
+}
+
+function currentPosition(id) {
+  return view().nodes[id];
+}
+
+function renderGraph() {
+  if (!state.bundle) return;
+  const graph = AtlasModel.graph(state.bundle, state.view, state.filters, state.external);
+  state.graph = graph;
+
+  const v = view();
+  const fallback = AtlasView.gridFallback(graph);
+  for (const node of graph.nodes) {
+    const existing = v.nodes[node.id];
+    if (!existing || !Number.isFinite(existing.x) || !Number.isFinite(existing.y)) {
+      v.nodes[node.id] = { ...(existing || {}), ...(fallback[node.id] || { x: 0, y: 0 }) };
+    }
+  }
+
+  const elements = AtlasView.toElements(graph, currentPosition);
+  const cy = buildCy(elements);
+  if (Number.isFinite(v.zoom)) cy.zoom(v.zoom);
+  if (v.pan) cy.pan(v.pan);
+  applyLod();
+  updateZoomReadout();
+  updateCrumb();
+  applySelection();
+}
+
+function updateCrumb() {
+  const crumb = $('#crumb');
+  crumb.replaceChildren();
+  const back = document.createElement('button');
+  back.className = 'secondary';
+  back.textContent = '全部程序集';
+  back.onclick = () => switchView('assembly');
+  crumb.append(back);
+  if (state.view !== 'assembly') {
+    const span = document.createElement('span');
+    span.textContent = ' / ' + state.view.slice(6);
+    crumb.append(span);
+  }
+  const info = document.createElement('span');
+  info.className = 'muted';
+  const nodes = state.graph ? state.graph.nodes.length : 0;
+  const edges = state.graph ? state.graph.edges.length : 0;
+  info.textContent = `　${nodes} 节点 · ${edges} 组关系 · 箭头：引用者 → 被引用者；事件：发布者 → 事件 → 订阅者`;
+  crumb.append(info);
+}
+
+function updateZoomReadout() {
+  if (!state.cy) return;
+  $('#zoomReadout').textContent = `${Math.round(state.cy.zoom() * 100)}%`;
+}
+
+function applyLod() {
+  if (!state.cy) return;
+  const level = AtlasView.lodOf(state.cy.zoom());
+  if (level === state.lod) return;
+  state.lod = level;
+  const elements = state.cy.elements();
+  for (const name of ['far', 'mid', 'near', 'close']) elements.removeClass(lodClass(name));
+  elements.addClass(lodClass(level));
+}
+
+function clearSelection() {
+  state.selected = null;
+  applySelection();
+  showIntro();
+}
+
+function neighborDepth() {
+  const select = $('#neighborDepth');
+  return select ? Number(select.value) || 0 : 0;
+}
+
+function applySelection() {
+  const cy = state.cy;
+  if (!cy) return;
+  cy.batch(() => {
+    cy.elements().removeClass('faded');
+    cy.elements().unselect();
+    if (!state.selected) return;
+
+    if (state.selected.node) {
+      const node = cy.getElementById(state.selected.node);
+      if (node.empty()) return;
+      const depth = neighborDepth();
+      if (depth === 0) { node.select(); return; }
+      let neighbors = node.closedNeighborhood();
+      if (depth >= 2) neighbors = neighbors.closedNeighborhood();
+      cy.elements().difference(neighbors).addClass('faded');
+      node.select();
+    } else if (state.selected.edge) {
+      const edge = cy.getElementById(state.selected.edge);
+      if (edge.empty()) return;
+      const neighbors = edge.connectedNodes().union(edge);
+      cy.elements().difference(neighbors).addClass('faded');
+      edge.select();
+    }
+  });
+}
+
+// 搜索定位：按名称 / ID / 程序集匹配，选中并居中。
+function searchAndFocus(query) {
+  if (!state.cy || !state.graph) return false;
+  const text = String(query || '').trim().toLowerCase();
+  if (!text) return false;
+  const match = state.graph.nodes.find((n) =>
+    n.id.toLowerCase().includes(text) || (n.name || '').toLowerCase().includes(text) || (n.assembly || '').toLowerCase().includes(text));
+  if (!match) { status('未找到匹配节点：' + query); return false; }
+  state.selected = { node: match.id };
+  applySelection();
+  state.request += 1;
+  const element = state.cy.getElementById(match.id);
+  if (!element.empty()) {
+    state.cy.animate({ center: { eles: element }, zoom: Math.max(0.7, state.cy.zoom()) }, { duration: 220 });
+    activate(element);
+  }
+  return true;
+}
+
+function switchView(key, options = {}) {
+  state.view = key;
+  state.selected = null;
+  state.request += 1;
+  state.lod = '';
+  const fresh = !state.bundle.layout.views[key] || !Object.keys(state.bundle.layout.views[key].nodes || {}).length;
+  renderGraph();
+  if (fresh && !options.keepViewport) { fit(); changed(); }
+  if (!options.keepDetail) showIntro();
+}
+
+function detailTitle(title) {
+  const detail = $('#detail');
+  detail.replaceChildren();
+  const h2 = document.createElement('h2');
+  h2.textContent = title;
+  detail.append(h2);
+  return detail;
+}
+
+function activate(node) {
+  const data = node.data();
+  if (state.view === 'assembly' && !data.external && !data.orphan) { switchView('class:' + data.id); return; }
+  state.selected = { node: data.id };
+  applySelection();
+  state.request += 1;
+
+  const detail = detailTitle(data.name);
+  const code = document.createElement('code');
+  code.textContent = data.id;
+  detail.append(code);
+  const copy = document.createElement('button');
+  copy.className = 'secondary';
+  copy.textContent = '复制 ID';
+  copy.onclick = () => navigator.clipboard.writeText(data.id).then(() => status('节点 ID 已复制')).catch(() => status('请选中上方 ID 复制'));
+  detail.append(copy);
+
+  const info = document.createElement('p');
+  info.className = 'muted';
+  info.textContent = data.orphan
+    ? '代码已失效，保留位置与人工说明。'
+    : data.external
+      ? '外部引用节点。项目内外部类型可跳转；第三方程序集当前只展示边界。'
+      : '类级视图；点击关系查看方法、事件和状态证据。';
+  detail.append(info);
+
+  const source = state.graph.nodes.find((n) => n.id === data.id);
+  if (source && source.assembly && state.bundle.generated.assemblies.some((a) => a.name === source.assembly && !a.external) && source.assembly !== state.view.slice(6)) {
+    const button = document.createElement('button');
+    button.textContent = '进入 ' + source.assembly;
+    button.onclick = () => switchView('class:' + source.assembly);
+    detail.append(button);
+  }
+
+  if (source) {
+    for (const file of source.files || []) addEvidence(detail, { file: file.path, line: file.line });
+    for (const note of state.bundle.manual.notes.filter((n) => n.node === data.id)) {
+      const p = document.createElement('p');
+      p.textContent = note.text;
+      detail.append(p);
+    }
+    if ((source.methods || []).length) {
+      const h3 = document.createElement('h3');
+      h3.textContent = '方法声明';
+      detail.append(h3);
+      for (const method of source.methods) {
+        const p = document.createElement('p');
+        p.className = 'method-name';
+        p.textContent = method.signature;
+        detail.append(p);
+        addEvidence(detail, method);
+      }
+    }
+    if (source.unresolved) {
+      const p = document.createElement('p');
+      p.className = 'muted';
+      p.textContent = '引用 GUID 未在 Assets/Packages 源码中解析，可能位于 PackageCache 或预编译 DLL。';
+      detail.append(p);
+    }
+  }
+}
+
+function showIntro() {
+  const detail = detailTitle('阅读方式');
+  const lines = [
+    '先点击程序集进入类图，再点击类高亮相邻关系，点击连线查看源码证据。外部类型以虚线边框标识。',
+    state.bundle?.generated?.diagnostics?.note || '',
+    '人工关系只编辑 manual.json；修改 JSON 后点“重新读取 JSON”。重新扫描只重建 generated.json。',
+    state.bundle?.generated ? '扫描时间：' + new Date(state.bundle.generated.generatedAt).toLocaleString() : '',
+  ].filter(Boolean);
+  for (const line of lines) {
+    const p = document.createElement('p');
+    p.className = 'muted';
+    p.textContent = line;
+    detail.append(p);
+  }
+}
+
+function showEdge(edge) {
+  const data = edge.data();
+  state.selected = { edge: data.id };
+  applySelection();
+  state.request += 1;
+
+  const detail = detailTitle('关系明细');
+  const nodeName = (id) => state.graph?.nodes.find((n) => n.id === id)?.name || id;
+  const head = document.createElement('p');
+  head.textContent = nodeName(data.source) + ' → ' + nodeName(data.target);
+  detail.append(head);
+
+  const record = state.graph.edges.find((e) => e.id === data.id);
+  for (const relation of (record?.relations || [])) {
+    const section = document.createElement('section');
+    section.className = 'relation-detail';
+    const tag = document.createElement('span');
+    tag.className = 'relation-tag';
+    tag.textContent = `${KIND_LABELS[relation.kind]} · ${relation.origin === 'manual' ? '人工说明' : relation.confidence === 'declared' ? '显式声明' : '静态候选'}`;
+    section.append(tag);
+    const label = document.createElement('p');
+    label.textContent = relation.label || relation.kind;
+    section.append(label);
+    if (relation.method) {
+      const method = document.createElement('p');
+      method.className = 'muted';
+      method.textContent = '所在方法：' + relation.method;
+      section.append(method);
+    }
+    if (relation.note) {
+      const note = document.createElement('p');
+      note.textContent = relation.note;
+      section.append(note);
+    }
+    addEvidence(section, relation);
+    detail.append(section);
+  }
+}
+
+function addEvidence(container, relation) {
+  if (!relation.file) return;
+  const button = document.createElement('button');
+  button.className = 'source-link';
+  button.textContent = relation.file + ':' + (relation.line || 1);
+  button.onclick = async () => {
+    const token = state.request;
+    try {
+      const data = await api('/api/code-atlas/source?file=' + encodeURIComponent(relation.file));
+      if (token !== state.request) return;
+      const lines = data.source.split('\n');
+      const start = Math.max(0, (relation.line || 1) - 5);
+      const end = Math.min(lines.length, (relation.line || 1) + 8);
+      container.querySelector('pre')?.remove();
+      const pre = document.createElement('pre');
+      pre.className = 'source-code';
+      pre.textContent = lines.slice(start, end).map((line, index) => `${start + index + 1} ${line}`).join('\n');
+      container.append(pre);
+    } catch (error) {
+      status(error.message);
+    }
+  };
+  container.append(button);
+}
+
+function fit() {
+  if (!state.cy || !state.cy.elements().length) return;
+  state.cy.fit(state.cy.elements(), 50);
+  const v = view();
+  v.zoom = state.cy.zoom();
+  v.pan = { ...state.cy.pan() };
+  updateZoomReadout();
+  applyLod();
+}
+
+function hasElkExtension() {
+  return typeof cytoscape === 'function' && !!cytoscape('layout', 'elk');
+}
+
+function syncPositionsFromCy() {
+  const v = view();
+  for (const node of state.cy.nodes()) {
+    v.nodes[node.id()] = { ...(v.nodes[node.id()] || {}), x: node.position('x'), y: node.position('y') };
+  }
+}
+
+// —— ELK Worker 客户端：支持取消、过期结果丢弃、异常回退 ——
+let elkWorker = null;
+let elkSeq = 0;
+let elkPending = null;
+let elkProgressTimer = null;
+
+function getElkWorker() {
+  if (!elkWorker) elkWorker = new Worker('./elk-worker.js');
+  return elkWorker;
+}
+
+function disposeElkWorker() {
+  if (elkWorker) { elkWorker.terminate(); elkWorker = null; }
+}
+
+function settleElk(kind, payload) {
+  const pending = elkPending;
+  elkPending = null;
+  clearTimeout(elkProgressTimer);
+  const button = $('#cancelLayoutButton');
+  if (button) button.hidden = true;
+  if (!pending) return;
+  if (kind === 'error') pending.reject(payload); else pending.resolve(payload);
+}
+
+function cancelElkLayout(reason) {
+  if (!elkPending) return;
+  disposeElkWorker();
+  settleElk('error', new Error(reason || '布局已取消'));
+}
+
+function requestElkLayout(graph) {
+  return new Promise((resolve, reject) => {
+    if (typeof Worker === 'undefined') { reject(new Error('当前浏览器不支持 Web Worker')); return; }
+    const worker = getElkWorker();
+    const requestId = ++elkSeq;
+    const onMessage = (event) => {
+      const data = event.data || {};
+      if (data.requestId !== requestId) return; // 过期结果直接丢弃
+      worker.removeEventListener('message', onMessage);
+      worker.removeEventListener('error', onError);
+      if (data.type === 'error') settleElk('error', new Error(data.error || 'ELK 布局失败'));
+      else settleElk('resolve', data.result);
+    };
+    const onError = (event) => {
+      worker.removeEventListener('message', onMessage);
+      worker.removeEventListener('error', onError);
+      disposeElkWorker();
+      settleElk('error', new Error(event.message || 'ELK Worker 异常'));
+    };
+    worker.addEventListener('message', onMessage);
+    worker.addEventListener('error', onError);
+    elkPending = { requestId, resolve, reject };
+    const button = $('#cancelLayoutButton');
+    if (button) button.hidden = true;
+    elkProgressTimer = setTimeout(() => {
+      if (elkPending && elkPending.requestId === requestId && button) button.hidden = false;
+    }, 3000);
+    worker.postMessage({ type: 'layout', requestId, graph });
+  });
+}
+
+function applyElkPositions(positions) {
+  const v = view();
+  for (const [id, position] of Object.entries(positions)) {
+    v.nodes[id] = { ...(v.nodes[id] || {}), ...position };
+    const node = state.cy.getElementById(id);
+    if (node && !node.empty()) node.position(position);
+  }
+}
+
+function fallbackGridLayout() {
+  const fallback = AtlasView.gridFallback(state.graph);
+  const v = view();
+  for (const [id, position] of Object.entries(fallback)) v.nodes[id] = { ...(v.nodes[id] || {}), ...position };
+  for (const node of state.cy.nodes()) {
+    const position = v.nodes[node.id()];
+    if (position) node.position(position);
+  }
+}
+
+async function runAutoLayout() {
+  if (!state.cy) return;
+  checkpoint();
+  status('ELK 布局中…');
+  try {
+    const graph = AtlasView.buildElkGraph(state.graph);
+    const result = await requestElkLayout(graph);
+    applyElkPositions(AtlasView.elkPositions(result));
+    fit();
+    changed();
+    status('ELK 布局完成');
+  } catch (error) {
+    if (error.message === '布局已取消') { status('已取消布局，保留上次位置'); return; }
+    console.warn('[code-atlas] ELK Worker 失败，回退布局：', error);
+    if (hasElkExtension()) {
+      await new Promise((resolve) => {
+        const layout = state.cy.layout({ name: 'elk', fit: true, padding: 40, elk: AtlasView.ELK_LAYERED_OPTIONS });
+        layout.one('layoutstop', resolve);
+        layout.run();
+      });
+      syncPositionsFromCy();
+    } else {
+      fallbackGridLayout();
+    }
+    fit();
+    changed();
+    status('已回退布局：' + error.message);
+  }
+}
+
+function resetLayout() {
+  if (!state.cy) return;
+  checkpoint();
+  const fallback = AtlasView.gridFallback(state.graph);
+  const v = view();
+  for (const [id, position] of Object.entries(fallback)) v.nodes[id] = { ...(v.nodes[id] || {}), ...position };
+  for (const node of state.cy.nodes()) {
+    const position = v.nodes[node.id()];
+    if (position) node.position(position);
+  }
+  v.zoom = 1;
+  v.pan = { x: 0, y: 0 };
+  fit();
+  changed();
+}
+
+function undo() {
+  const previous = state.history.pop();
+  if (!previous) return;
+  state.bundle.layout.views[previous.view] = previous.value;
+  state.view = previous.view;
+  state.selected = null;
+  state.lod = '';
+  renderGraph();
+  changed();
+  $('#undoButton').disabled = !state.history.length;
+}
+
+async function load(scan = false) {
+  clearTimeout(state.saveTimer);
+  if (state.dirty || state.saving) {
+    await flush();
+    if (state.dirty || state.saving) { status('布局仍未保存；请先解决保存错误，或导出后刷新页面'); return; }
+  }
+  status(scan ? '扫描源码中…' : '读取 JSON 中…');
+  const bundle = await api(scan ? '/api/code-atlas/scan' : '/api/code-atlas', scan ? { method: 'POST' } : {});
+  state.bundle = bundle;
+  state.revision = bundle.layout.revision || 0;
+  state.blocked = false;
+  state.history = [];
+  state.lod = '';
+  $('#undoButton').disabled = true;
+  const freshView = !Object.keys(bundle.layout.views[state.view]?.nodes || {}).length;
+  renderGraph();
+  if (freshView) { fit(); changed(); }
+  showIntro();
+  status(`已读取：${bundle.generated.stats.files} 文件 · ${bundle.generated.stats.classes} 类型`);
+}
+
+function bindControls() {
+  $('#reloadButton').onclick = () => load().catch((error) => status(error.message));
+  $('#scanButton').onclick = () => load(true).catch((error) => status(error.message));
+  $('#autoLayoutButton').onclick = () => runAutoLayout();
+  $('#cancelLayoutButton').onclick = () => cancelElkLayout('布局已取消');
+  const searchInput = $('#searchInput');
+  if (searchInput) searchInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') { event.preventDefault(); searchAndFocus(event.target.value); }
+  });
+  const depthSelect = $('#neighborDepth');
+  if (depthSelect) depthSelect.onchange = () => applySelection();
+  $('#resetButton').onclick = () => resetLayout();
+  $('#fitButton').onclick = () => { checkpoint(); fit(); changed(); };
+  $('#undoButton').onclick = () => undo();
+  $('#exportButton').onclick = () => {
+    const blob = new Blob([JSON.stringify(state.bundle.layout, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'code-atlas.layout.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  $$('[data-kind]').forEach((input) => {
+    if (input.checked) {
+      if (input.dataset.kind === 'external') state.external = true; else state.filters.add(input.dataset.kind);
+    }
+    input.onchange = () => {
+      if (input.dataset.kind === 'external') state.external = input.checked;
+      else if (input.checked) state.filters.add(input.dataset.kind); else state.filters.delete(input.dataset.kind);
+      state.selected = null;
+      state.lod = '';
+      renderGraph();
+      showIntro();
+    };
+  });
+  window.addEventListener('beforeunload', (event) => {
+    if (state.dirty || state.saving) { event.preventDefault(); event.returnValue = ''; }
+  });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+  document.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !/INPUT|TEXTAREA/.test(event.target.tagName)) {
+      event.preventDefault();
+      $('#undoButton').click();
+    }
+  });
+}
+
+bindControls();
+load().catch((error) => status('加载失败：' + error.message));
