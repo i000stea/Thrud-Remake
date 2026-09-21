@@ -11,14 +11,10 @@ namespace TeaGame
    /// </summary>
    public class BattleBullet : MonoBehaviour, IBattlePoolable
    {
-      /// <summary>
-      /// 当前子弹的伤害值。
-      /// </summary>
+      /// <summary> 当前子弹的伤害值。 </summary>
       public float Damage = 1f;
 
-      /// <summary>
-      /// T2.3 子弹携带的攻击元素（开火时由当前角色元素写入）。
-      /// </summary> 
+      /// <summary> T2.3 子弹携带的攻击元素（开火时由当前角色元素写入）。 </summary> 
       public DamageElement Element = DamageElement.none;
 
       /// <summary>
@@ -27,24 +23,16 @@ namespace TeaGame
       /// </summary>
       [SerializeField] private GameObject hitEffectPrefab;
 
-      /// <summary>
-      /// 是否武装（仅对象池新路径为 true）。
-      /// </summary>
+      /// <summary> 是否武装（仅对象池新路径为 true）。 </summary>
       private bool mArmed;
 
-      /// <summary>
-      /// 用于防止一颗子弹在同一帧内重复命中多个碰撞体。
-      /// </summary>
+      /// <summary> 用于防止一颗子弹在同一帧内重复命中多个碰撞体。 </summary>
       private bool mCanHit = true;
 
-      /// <summary>
-      /// 未命中时的自动回收时间点（武装时由开火路径写入）。
-      /// </summary>
+      /// <summary> 未命中时的自动回收时间点（武装时由开火路径写入）。 </summary>
       private float mAutoReturnTime;
 
-      /// <summary>
-      /// 供对象池取出后的组件状态重置。
-      /// </summary>
+      /// <summary> 供对象池取出后的组件状态重置。 </summary>
       public void OnPoolSpawn()
       {
          mCanHit = true;
@@ -76,9 +64,7 @@ namespace TeaGame
          BattleObjectPool.Despawn(gameObject);
       }
 
-      /// <summary>
-      /// 当子弹进入触发器时，尝试寻找目标并施加伤害。
-      /// </summary>
+      /// <summary> 当子弹进入触发器时，尝试寻找目标并施加伤害。 </summary>
       private void OnTriggerEnter(Collider other)
       {
          if (!mArmed || !mCanHit) return;
