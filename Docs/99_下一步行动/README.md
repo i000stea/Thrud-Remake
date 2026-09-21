@@ -1,5 +1,15 @@
 # 下一步行动清单（Docs 整理日汇总）
 
+> 🔻 **2026-09-20 · 排期已重排**：新增 `../01_里程碑与执行/22_后续开发总排期.md`（**R0–R9**），后续开发顺序一律以该文为准。本文继续作为**逐条待办的汇总摘编**（保留可追溯来源），但**阶段归属以 22 为准**。本次的编号映射要点：
+> - 原清单的「系统 1.1 热更 / 1.2 升引擎」= **R1**（顺序为**先升引擎** P1B，再 HybridCLR/YooAsset P1C）；
+> - 原清单的「Menu 2.x」= **R3**（R3.4 关卡系统拆 5 张子卡）；
+> - 原清单的「抽卡 3.x」= **R6**；「养成 2.4」= **R7（已后移）**；
+> - 原清单的「战斗 3.1/3.2 显示与触屏 UI」= **R0.3**；「3.3–3.7 技能/武器/角色/敌人」= **R5**（收口）+ **R8**（扩量）；
+> - **新增两段原清单没有的**：**R2 数据地基**（Save/Profile/Bag/Economy + 结算回写）、**R4 战斗表现基建**（音频 + 演出编排 + 打击反馈）；
+> - `07` 的 **T3.4 结算系统已从战斗改归经济**（R2.7）。
+>
+> ⚠️ 本文下方的 `P1A · S1–S5`、`14 文档 P0–P4`、`16 文档 P1A–P3` 是**三套不同来源的编号**，均未被 R 编号取代，不要混用（速查见 `../README.md` §5）。
+
 > **2026-09-19 宿主瘦身专项（五步已全部落地并提交；Unity 导入编译已通过，Play 待验）**：`BattleSceneRuntimeHost.cs` **559 → 314 行**，"数据解析 → `Core/BattleSetupSystem.cs`、装配 → `Actor/BattleSceneAssembler.cs`、每帧中间量 → 各 Actor"三处职责搬出；System 注册 9 → 10。**下一位立刻要做的两件**：① Unity 刷新一次后**提交两个新 `.cs.meta`**；② 按 `../03_专项设计与重构/21_战斗场景装配与宿主瘦身_设计与落地指导.md` **§8.5（10 项）**做 Play 回归。**步骤 5 未做**（落地方式待用户决策，见 21 §8.4）。详细条目见本文 §3.3「P1A · 2026-09-19（宿主瘦身专项）」。
 
 > **2026-09-19 Actor 专项（用户已确认，代码落地，编译/Play 待验）**：移动含传送→MovementActor；模型显隐/动画→RoleActor；武器表现→WeaponActor；FOV→CameraActor。InputSystem 原样保留。BattleViewSystem / InitializeView / 注册已删除，UI 职责归 Battle_MainPanel；Aim → BindableProperty<Vector2> → View 映射/Lerp，吸附倍率独立于 UI。Host 统一装配和 Tick；敌人/子弹/资源加载不扩范围。详细验收与 Editor 清理菜单见 `../03_专项设计与重构/19_表现层分层_View与Actor_设计.md` 当前实施记录。未修改伤害规则，未运行 prefab 工具/重建 AB，不宣称资产或真机完成。
@@ -109,6 +119,17 @@
 - [ ] 垂直切片角色：默认法尼娅（雷）+ 突击武器
 - [ ] 整场限时用途（T2.2）：默认超时判负（Defeat 占位日志）
 - [ ] 导弹被击落（T2.1）：默认直接销毁不爆炸；地雷被击杀必爆炸（大范围）——参数随灰盒调参
+
+### 3.2A Battle MVC 职责收口（来源：`../03_专项设计与重构/22_Battle_MVC职责收口_分批推进方案.md`）
+
+- [ ] **B0**：建立 Battle MVC 重构基线，记录编译、调用链、敌人/UI、波次、武器和瞄准行为。
+- [ ] **B1**：收口 `BattleEnemyEntity`，拆出敌人 Actor 与头顶 UI Binder。
+- [ ] **B2**：收口 `BattleStageDirector`，拆出波次生成和站点标记表现。
+- [ ] **B3**：拆分 `BattleWeaponRuntime.cs` 的规则、表现适配和弹道生成职责。
+- [ ] **B4**：将 Canvas/UI 空间瞄准数据从 Model 下沉到 `Battle_MainPanel`。
+- [ ] **B5**：以统一 UI 入口收口 `BattleSceneRuntimeHost` 的 Panel 管理。
+- [ ] **B6**：拆分 `BattleSystems.cs`、清理死代码并刷新架构图。
+- 推进纪律：每批独立提交；无 Editor 时标记“未验证”；涉及 prefab、scene、AB 的变更必须单独记录。
 
 ### 3.3 ConfigScene / M0 剩余（来源：`../03_专项设计与重构/08_常驻管理场景_ConfigScene_设计.md`）
 

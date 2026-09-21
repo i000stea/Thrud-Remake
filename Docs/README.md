@@ -98,6 +98,7 @@ Docs/
 | 19_表现层分层_View与Actor_设计.md | 用户确认的移动/角色/武器/相机 Actor、Aim 绑定与 View 插值、当前调用链和一次性验收；保留旧草案存档 | 2026-09-19 代码已落地；编译 / Play / Editor 资产清理待验 |
 | 20_代码知识图谱可视化工具_设计与实施计划.md | `web/ProgressChaser` 代码关系画布升级方案：两层知识图谱、Cytoscape.js Canvas、ELK Worker、三类 JSON 契约、性能预算、K0–K6 实施与验收 | 2026-09-19 **K0–K5 已实施**：Cytoscape + ELK Worker 落地、10 项测试通过、layout 迁移到 schemaVersion 2；K6 文档同步中，浏览器视觉验收待用户执行（见 `web/ProgressChaser/PERFORMANCE.md`） |
 | 21_战斗场景装配与宿主瘦身_设计与落地指导.md | **`BattleSceneRuntimeHost`（559 行）职责收拢方案**：559 行构成与 32 处 `playerControl` 访问点的实测诊断、**同意做 5 步 / 不同意做 3 条**的评估（附反例）、目标形状（`BattleSceneAssembler` + `BattleSetupSystem`）、五步落地路线与逐步验收口径/回滚；**§8 为落地记录**（结果表、验证证据、4 处偏差、下一步决策、7 项 Play 清单） | 2026-09-19 **步骤 1–4 已落地并提交**（`9b4e7e69`/`a77eb347`/`69f851ab`/`50e509b5`；宿主 559 → 309 行、System 9 → 10）；**步骤 5 待用户决策**；Unity 导入编译与 Play 未验（离线整程序集编译通过） |
+| 22_Battle_MVC职责收口_分批推进方案.md | **Battle MVC 职责错位专项**：仅覆盖 `03_Battle`，按 B0–B6 拆分敌人实体、关卡导演、武器运行时、瞄准数据、UI 入口和文件整理；每批包含实施顺序、禁止事项、验收与回滚点 | 2026-09-21 方案稿；待按 B0 → B6 推进 |
 
 ### 04_模块设计（原 `Modules/`）
 
