@@ -1,12 +1,12 @@
 {
   "schemaVersion": 2,
-  "revision": 143,
+  "revision": 149,
   "views": {
     "assembly": {
-      "zoom": 0.7621842871852985,
+      "zoom": 1.207980688160806,
       "pan": {
-        "x": 181.00000000000006,
-        "y": 431
+        "x": -85.00000000000014,
+        "y": 582
       },
       "nodes": {
         "TeaGame.App": {
@@ -22,8 +22,8 @@
           "y": 128.10923933009815
         },
         "TeaGame.Battle.Contracts": {
-          "x": 761.4098467972474,
-          "y": -24.017153327042877
+          "x": 473.32577110739294,
+          "y": 50.48734900654015
         },
         "TeaGame.Battle.Editor": {
           "x": 90.2394920636913,
@@ -113,10 +113,10 @@
       }
     },
     "class:TeaGame.Battle": {
-      "zoom": 2.023733392588474,
+      "zoom": 0.6701211078695903,
       "pan": {
-        "x": -11278.181774844024,
-        "y": -8513.211617657886
+        "x": 594.489668566897,
+        "y": 265.5241505151372
       },
       "nodes": {
         "TeaGame.Battle::TeaGame.BattleCameraActor": {
@@ -722,6 +722,30 @@
         "TeaGame.Data::TeaGame.WeaponSubType": {
           "x": 4902,
           "y": 3705.2786935286936
+        },
+        "TeaGame.Battle::TeaGame.BattleSceneAssembler": {
+          "x": 740,
+          "y": 670
+        },
+        "TeaGame.Battle::TeaGame.IBattlePlayerTarget": {
+          "x": 410,
+          "y": 470
+        },
+        "TeaGame.Battle::TeaGame.BattlePlayerRegistry": {
+          "x": 1070,
+          "y": 1570
+        },
+        "TeaGame.Battle::TeaGame.BattleEvent_ControlTakeOverRequested": {
+          "x": 80,
+          "y": 970
+        },
+        "TeaGame.Battle::TeaGame.BattleSetupSystem": {
+          "x": 1070,
+          "y": 1870
+        },
+        "TeaGame.Battle::TeaGame.BattleSetupSystem+BattleTeamResolution": {
+          "x": 80,
+          "y": 3970
         }
       }
     },
@@ -1022,8 +1046,8 @@
     "class:TeaGame.Battle.Contracts": {
       "zoom": 0.6224870051298353,
       "pan": {
-        "x": -583.632016187403,
-        "y": -156.4318893873292
+        "x": 0,
+        "y": 0
       },
       "nodes": {
         "TeaGame.Battle.Contracts::TeaGame.BattleLevelCatalog": {
@@ -1189,6 +1213,14 @@
         "TeaGame.Battle::TeaGame.Battle_PauseMenuPanel": {
           "x": 1730,
           "y": 170
+        },
+        "TeaGame.Battle::TeaGame.BattleSceneAssembler": {
+          "x": 1730,
+          "y": 670
+        },
+        "TeaGame.Battle::TeaGame.BattleSetupSystem": {
+          "x": 1730,
+          "y": 870
         }
       }
     }
