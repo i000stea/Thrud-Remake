@@ -160,4 +160,5 @@ Docs/
 - **2026-09-18 工作区状态（提交前必读）**：`Assets/02_Scripts` 存在一次**大范围域拆分**未提交改动——9 个 asmdef（含 4 个新建、1 个改名搬迁）、约 19 组 `.cs`+`.cs.meta` 成对移动（**GUID 全部保留**）、`UIPanel/` 目录删除、旧的 `TeaGame.asmdef` 删除。**提交时应按 `refactor(scripts)` 单独一次提交**，不要与业务改动或 Unity churn 混提；回退映射表见 `03_专项设计与重构/17_代码现状地图.md` §4（**不要用 `git clean`**，工作区还有与本任务无关的未跟踪文件）。
 - **2026-09-19 工作区状态（web 工具）**：`web/ProgressChaser` 落地代码知识图谱升级（Cytoscape + ELK Worker、`package.json`/`package-lock.json`、`scripts/`、`README.md`、`PERFORMANCE.md`），并把 `data/code-atlas.layout.json` 迁移为 `schemaVersion 2`。`node_modules/` 与 `data/backups/` 已由 `web/ProgressChaser/.gitignore` 排除。**与 `Assets/02_Scripts` 的域拆分改动分开提交**。
 - **2026-09-20 工作区状态（排期文档）**：新增 `01_里程碑与执行/22_后续开发总排期.md`，并修正 `06` 的验收状态（原全表误勾 `[x]`）。**纯文档改动，建议按 `docs(plan)` 单独一次提交**，不要与 `Assets/02_Scripts` 的重构改动混提。
+- **2026-10-18 工作区状态（进度面板数据同步）**：`web/ProgressChaser/data/progress.json` 手工同步到 **99 条**（27 已完成 / 3 进行中 / 69 未开始），并重扫 `code-atlas.generated.json`（9 程序集 / 145 文件 / 224 类型 / 1538 关系）。**纯数据改动，建议按 `chore(web)` 单独一次提交**，不要与 `Assets/02_Scripts` 的 B1 改动混提；`data/backups/` 与 `node_modules/` 由 `.gitignore` 排除。
 - 本 README 第 3 节的“状态”列为整理时点观测值，实际以对应文档为准。

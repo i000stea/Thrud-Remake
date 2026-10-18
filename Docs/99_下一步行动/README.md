@@ -308,6 +308,14 @@
 - [ ] 若要正式投入使用：在 `web/server/.env` 配置 `ADMIN_TOKEN`，按 `web/README.md` 本地或宝塔启动，并做一次人工页面联调（编辑模式、备份目录、错误提示文案）
 - [x] **任务清单已于 2026-09-15 人工重排**（`web/data/progress.json`，77 条）：按 **P1A → P1B → P1C → P2 → P3** 组织，标题带阶段前缀、描述改成口语化拆解、id 改用 `p1a-1` 这类稳定值；`sortOrder` 按阶段分桶（`0` = P1A 验证回路闸门，`2` = P1A 其余，`3` = 真机资源/Demo 线，`4` = P1B，`6` = P1C，`7`/`8`/`9` = 后续与收尾，`5` = 已完成留档）
 - [ ] ⚠️ **注意**：`web/sync-doc-tasks.js` 是**整体覆写**式生成器（从本文档重新抽取 + 重发随机 id），**直接跑会丢掉上面这次人工整理**。若要重新同步，先备份 `progress.json`，或先把它改成按 `raw` 合并（保留 id/status/priority/sortOrder）
+- [x] **任务清单已于 2026-10-18 手工同步**（`web/ProgressChaser/data/progress.json`，**99 条：27 已完成 / 3 进行中 / 69 未开始**；备份 `data/backups/progress.pre-sync-2026-10-18T20-39-15.json`）
+  - **补成已完成卡（09-18~09-21 的交付物，原先面板里没有）**：域拆分 S2/S3（9 程序集 + 契约层）、19 表现层分层、21 宿主瘦身（559→314 行）、`BattleRuntimeBridge` 整类退役、legacy 武器路径删除 + AB 重建、弹药「变更点发布」、K0–K5 代码图谱、R0–R9 排期、B0 基线
+  - **按文档核实后翻成已完成（12 条旧待办）**：`p1a-2`（17 地图）/`p1a-3`（AOT 归属）/`p1a-4`（`PlayerControl`、`Bullet_Base` 判定）/`p1a-5`（三处纠缠）/`p1a-6`（旧脚本摘净）/`p1a-9`（死代码 + `EnemyUIData`）/`p1a-10`（gacha 隔离）/`p1a-13`（`03_Module` 名实）/`.meta`… 及 `09a044d8`、`2f23bf3a`、`4fe919b0`、`p1c-1`
+  - **实测核对结论（与本清单旧状态不同，已按实测处理）**：全工程 `.unity`/`.prefab` 已**无 `m_Script: {fileID: 0}`**（`p1a-6` 成立）；`2MainScene` 的 `MainCityControl` Missing Script **已摘除**；两个 `Enemy_Test-*` Variant 孤儿 **已删除**；两个技能事件 `BattleSkillEnergyChangedEvent`/`BattleSkillCooldownChangedEvent` **已不存在**；但**四个禁用场景仍在 `Assets/01_Scenes/`（未移入 `Legacy/`）**、3 条硬编码资产路径**仍未修**、rig prefab 上的旧 HUD 对象（`Cross_LockEnemy`/`Health_*`/`SkillHud*`）**仍在**
+  - **新增待办卡**：`b1-verify`（**只剩 Play 回归 8 项**——B1 代码与两个新 `.cs.meta` 已于同日提交 `c469d184`，但该提交把代码与文档混在了一起，与「一次一个范围」的纪律不符）、B2–B6（`b2-director`…`b6-file-tidy`）、R0 三卡（Play 基线 / rig 摘 HUD + 重打 AB / 重新出包真机验收）、`p1c-naming`（三层命名归并）、R2/R3/R4 伞卡
+  - **一处按事实校正**：`fbd604f0`「把真机主流程跑通」由 **已完成** 改回 **进行中**——09-10 真机首测只到「进战斗装配」，且现有最新包（根目录 `a047.apk`，09-12 15:58）早于 09-19 21:49 的 AB 重建；出包两张历史卡保留已完成但补了「当前代码需重新出包」的说明
+  - **代码图谱已重扫**（`npm run scan`）：9 程序集 / **145 文件** / **224 类型** / **1538 关系**，7 个 orphan（`BattleRuntimeBridge`、`Weapon_ObjectComponent`、`LegacyBattleWeaponViewAdapter`、`BattleHealthSystem`、`BattleHudState`、`BattleUiFlow*` 等已删类型按契约保留坐标）
+  - ⚠️ **`npm test` 在本机受限 shell 下会 `spawn EPERM`**（`node --test` 需要把子进程 stdout 走管道；沙箱禁止命名管道）→ 改为逐文件跑 `node atlas.test.js` / `atlas-schema.test.js` / `atlas-view.test.js` / `atlas-elk.test.js`，**11 项全通过**；`node scripts/check-elk.js` 六个视图布局全 OK（Battle 类图 159 节点）
 
 ---
 
