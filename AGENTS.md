@@ -8,14 +8,17 @@ It does not override system, developer, or direct user instructions.
 
 Verify these before relying on them; they are the ones that most often change an answer.
 
-- **Unity 2022.3.60f1c1c1** (Unity China build, `c1` suffix). This is **not Unity 6**:
-  do not propose Unity 6-only APIs (Render Graph, newer UI Toolkit runtime binding,
-  `Awaitable`-based async patterns, etc.) without checking availability first.
-- Render pipeline: **URP 14.0.12**, with **RealToon** for character shading and
-  **Amplify Shader Editor** for authored shaders. Post-processing goes through the
-  Volume framework.
+- **Unity 6000.3.24f1 (Unity 6.3 LTS, international build)** since **2026-10-18** (P1B).
+  Was `2022.3.60f1c1` (China build) before that. Unity 6 APIs are now available, but read
+  the migration notes below before using the newest ones (URP 17 Render Graph, TMP 5.0).
+- Render pipeline: **URP 17.3.0** (resolved as a *builtin* package by Unity 6 — the
+  `manifest.json` entry may still read `14.0.12`; trust `packages-lock.json` / the Editor).
+  **RealToon** (new version, `DeNorSob Outline` no longer ships with it) for character
+  shading and **Amplify Shader Editor 1.9.9.13** for authored shaders. Post-processing goes
+  through the Volume framework.
 - Frameworks in use: **QFramework** (`Assets/QFramework`: CoreKit / ResKit / UIKit /
-  Data / QFrameworkData), **DOTween**, **TextMeshPro**, **Cinemachine 2.10.3**,
+  Data / QFrameworkData), **DOTween**, **TextMeshPro 5.0.0** (`com.unity.textmeshpro`
+  still listed as 3.0.7 in the manifest but resolves to 5.0.0), **Cinemachine 2.10.3**,
   2D sprite + tilemap, `com.unity.ai.navigation` 1.1.5.
 - Target platform: **Android**. `Thrud-Remake-a044.apk` at the repo root is a build
   artifact — never commit it, never edit it.
@@ -87,13 +90,21 @@ Verify these before relying on them; they are the ones that most often change an
 
 ## Verification
 
-- **Live Editor control is not available in this project right now**: the `unity` CLI is
-  not on PATH, so `unity_status` / `unity_command` / `unity_eval` fail immediately, and
-  the project also lacks `com.unity.pipeline`. Call `unity_status` at most once; when it
-  fails, say so and fall back to reading and editing project files — never retry in a loop.
+- **Live Editor control is available since 2026-10-18**: the `unity` CLI is on PATH
+  (`~/.local\Unity\bin\unity.exe`) and the project has `com.unity.pipeline 0.8.0-exp.1`,
+  so `unity_status` / `unity_command` / `unity_eval` work against a running Editor
+  (`state: "ready"`). Prefer driving the Editor over hand-editing YAML. If `unity_status`
+  fails, the Editor is closed or still resolving the package — ask the user to focus the
+  Unity window once; do not retry in a loop.
+  - Practical limits found so far: `Start-Process` and `pwsh` are unavailable in this
+    shell (use `powershell -NoProfile -File …` for scripts), and `.ps1` files must be
+    **pure ASCII** — Windows PowerShell 5.1 parses them as ANSI otherwise.
 - Without a running Editor you cannot compile C#. Mark such changes **unverified** instead
   of claiming they build; when the user has the Editor open, ask for the console output or
   read fresh entries under `Logs/`.
+  - With the Editor reachable, the quickest ground truth is
+    `unity_eval` → `EditorUtility.scriptCompilationFailed` plus a `Csc`-anchored scan of
+    `%LOCALAPPDATA%\Unity\Editor\Editor.log`.
 - **Cheapest real verification (2026-09-18)**: when the user has the Editor open, the compile
   result is readable at `%LOCALAPPDATA%\Unity\Editor\Editor.log`. Find the newest
   asmdef-import / `Csc` block and count `error CS` **only after that line number** — the same
