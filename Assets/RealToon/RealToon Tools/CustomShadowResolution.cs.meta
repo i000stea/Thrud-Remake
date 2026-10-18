@@ -10,3 +10,10 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 65518
+  packageName: RealToon (Pro Anime/Toon Shader)
+  packageVersion: 5.0.8p8
+  assetPath: Assets/RealToon/RealToon Tools/CustomShadowResolution.cs
+  uploadId: 629436

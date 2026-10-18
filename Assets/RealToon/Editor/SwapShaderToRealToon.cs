@@ -1,6 +1,5 @@
 //Swap Shader To RealToon
-//MJQStudioWorks
-//2021
+//©MJQStudioWorks
 
 using UnityEngine;
 using UnityEditor;
@@ -42,6 +41,7 @@ namespace RealToon.Tools
         private Texture ShaMetaMap = null;
         private Texture ShaSpecMap = null;
         private Texture ShaMasMa = null;
+        private Texture VRMShaOutWid = null;
 
         private bool Enswap = true;
         private bool SKEmi = false;
@@ -74,6 +74,7 @@ namespace RealToon.Tools
         static Shader ShaRTBIFT;
         static Shader ShaVRM;
         static Shader ShaVRM10;
+        static Shader ShaVRM10URP;
         private string RTShader = "No RealToon Shader In Your Project";
 
         int ToBaInt = 0;
@@ -97,6 +98,7 @@ namespace RealToon.Tools
             ShaRTBIFT = Shader.Find("RealToon/Version 5/Default/Fade Transparency");
             ShaVRM = Shader.Find("VRM/MToon");
             ShaVRM10 = Shader.Find("VRM10/MToon10");
+            ShaVRM10URP = Shader.Find("VRM10/Universal Render Pipeline/MToon10");
 
             SupShaURP = "Supported Unity URP Shaders:\n" +
             "*Complex Lit\n" +
@@ -115,12 +117,13 @@ namespace RealToon.Tools
             "*Standard (Specular setup)\n" +
             "*Unlit/Color\n" +
             "*Unlit/Texture\n" +
-            "*Unlit/Transparent" +
+            "*Unlit/Transparent\n" +
             "*Unlit/Transparent Cutout\n\n";
 
             SupShaVRM = "Supported VRoid|VRM Shaders:\n" +
                         "*VRM\n" +
-                        "*VRM10\n\n";
+                        "*VRM10\n" +
+                        "*VRM10 [URP]\n\n";
 
             InfoString = SupShaVRM;
 
@@ -241,11 +244,11 @@ namespace RealToon.Tools
                         {
                             if (ShaVRM || ShaVRM10)
                             {
-                                if (m.shader.name == "VRM/MToon" || m.shader.name == "VRM10/MToon10")
+                                if (m.shader.name == "VRM/MToon" || m.shader.name == "VRM10/MToon10" || m.shader.name == "VRM10/Universal Render Pipeline/MToon10")
                                 {
                                     ShaderName = m.shader.name;
 
-                                    if (ShaderName == "VRM10/MToon10")
+                                    if (ShaderName == "VRM10/MToon10" || m.shader.name == "VRM10/Universal Render Pipeline/MToon10")
                                     {
                                         MatType = m.GetFloat("_AlphaMode");
                                     }
@@ -256,11 +259,12 @@ namespace RealToon.Tools
 
                                     ShaMainTex = m.GetTexture("_MainTex");
                                     ShaNormalMap = m.GetTexture("_BumpMap");
+                                    VRMShaOutWid = m.GetTexture("_OutlineWidthTex");
                                     ShaNormalScale = m.GetFloat("_BumpScale");
                                     ShaColor = m.GetColor("_Color");
                                     VRMShadeColor = m.GetColor("_ShadeColor");
 
-                                    if (ShaderName == "VRM10/MToon10")
+                                    if (ShaderName == "VRM10/MToon10" || m.shader.name == "VRM10/Universal Render Pipeline/MToon10")
                                     {
                                         CullingMode = m.GetFloat("_DoubleSided");
                                     }
@@ -281,12 +285,12 @@ namespace RealToon.Tools
                                     VRMOutliColor = m.GetColor("_OutlineColor");
 
                                 }
-                                else if (m.shader.name != "VRM/MToon" || m.shader.name != "VRM10/MToon10")
+                                else if (m.shader.name != "VRM/MToon" || m.shader.name != "VRM10/MToon10" || m.shader.name == "VRM10/Universal Render Pipeline/MToon10")
                                 {
                                     InfoString += "The selected '" + m.name + "' material, shader is not supported.\n '" + m.shader.name + "'\n\n" + SupShaVRM;
                                 }
 
-                                if (ShaderName == "VRM/MToon" || ShaderName == "VRM10/MToon10")
+                                if (ShaderName == "VRM/MToon" || ShaderName == "VRM10/MToon10" || m.shader.name == "VRM10/Universal Render Pipeline/MToon10")
                                 {
 
                                     if (ShaRTURP)
@@ -313,6 +317,11 @@ namespace RealToon.Tools
                                     }
 
                                     m.SetFloat("_OutlineWidth", 0.12f);
+
+                                    if (VRMShaOutWid != null)
+                                    {
+                                        m.SetTexture("_OutlineWidthControl", VRMShaOutWid);
+                                    }
 
                                     if (ForTrasCuto != true)
                                     {
@@ -358,6 +367,8 @@ namespace RealToon.Tools
 
                                                 m.EnableKeyword("N_F_CO_ON");
                                                 m.SetFloat("_N_F_CO", 1.0f);
+
+                                                m.SetInt("_ZWrite", 1);
 
                                                 if (ShaRTURP)
                                                 {
@@ -409,6 +420,8 @@ namespace RealToon.Tools
 
                                                 m.EnableKeyword("N_F_CO_ON");
                                                 m.SetFloat("_N_F_CO", 1.0f);
+
+                                                m.SetInt("_ZWrite", 1);
 
                                                 if (ShaRTURP)
                                                 {
@@ -541,7 +554,7 @@ namespace RealToon.Tools
 
                                     if (!ShaRTBID)
                                     {
-                                        if (ShaderName == "VRM10/MToon10")
+                                        if (ShaderName == "VRM10/MToon10" || m.shader.name == "VRM10/Universal Render Pipeline/MToon10")
                                         {
                                             if (CullingMode != 0.0f)
                                             {
@@ -561,7 +574,7 @@ namespace RealToon.Tools
                                     }
                                     else if (ShaRTBID)
                                     {
-                                        if (ShaderName == "VRM10/MToon10")
+                                        if (ShaderName == "VRM10/MToon10" || m.shader.name == "VRM10/Universal Render Pipeline/MToon10")
                                         {
                                             if (CullingMode == 1.0)
                                             {
@@ -1058,7 +1071,9 @@ namespace RealToon.Tools
                                         {
                                             m.EnableKeyword("N_F_SL_ON");
                                             m.SetFloat("_N_F_SL", 1.0f);
-                                            m.SetFloat("_SelfLitPower", 10);
+                                            m.EnableKeyword("N_F_SLMM_ON");
+                                            m.SetFloat("_N_F_SLMM", 1.0f);
+                                            m.SetFloat("_SelfLitPower", 10.0f);
                                             m.SetFloat("_SelfLitIntensity", 1.0f);
                                             m.SetTexture("_MaskSelfLit", ShaEmiMap);
                                             m.SetColor("_SelfLitColor", ShaEmiColor * ShaEmiColor);
@@ -1328,7 +1343,9 @@ namespace RealToon.Tools
                                         {
                                             m.EnableKeyword("N_F_SL_ON");
                                             m.SetFloat("_N_F_SL", 1.0f);
-                                            m.SetFloat("_SelfLitPower", 50);
+                                            m.EnableKeyword("N_F_SLMM_ON");
+                                            m.SetFloat("_N_F_SLMM", 1.0f);
+                                            m.SetFloat("_SelfLitPower", 50.0f);
                                             m.SetFloat("_SelfLitIntensity", 1.0f);
 
                                             if (ShaEmiMap != null)
@@ -1588,7 +1605,9 @@ namespace RealToon.Tools
                                     {
                                         m.EnableKeyword("N_F_SL_ON");
                                         m.SetFloat("_N_F_SL", 1.0f);
-                                        m.SetFloat("_SelfLitPower", 10);
+                                        m.EnableKeyword("N_F_SLMM_ON");
+                                        m.SetFloat("_N_F_SLMM", 1.0f);
+                                        m.SetFloat("_SelfLitPower", 10.0f);
                                         m.SetFloat("_SelfLitIntensity", 1.0f);
                                         m.SetTexture("_MaskSelfLit", ShaEmiMap);
                                         m.SetColor("_SelfLitColor", ShaEmiColor);
@@ -1742,31 +1761,45 @@ namespace RealToon.Tools
                 EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.BeginVertical();
-                FUL = GUILayout.Toggle(FUL, new GUIContent("Force Unlit", "This will disable all lighting and shadows,\nOnly Main Texture and Main Color are set."));
-                ForTrasCuto = GUILayout.Toggle(ForTrasCuto, "Force Transparent Material to Cutout");
-                EditorGUI.BeginDisabledGroup(FUL == true);
-                EditorGUI.BeginDisabledGroup(ShaRTBID && PlayerSettings.colorSpace == ColorSpace.Gamma);
-                EnhaHiLighColInt = GUILayout.Toggle(EnhaHiLighColInt, new GUIContent("Enhance Light Highlight Color Intensity", "Not available if project color space is Gamma."));
-                EditorGUI.EndDisabledGroup();
-                IncShaCol = GUILayout.Toggle(IncShaCol, "Include Shade/Shadow Color");
-                LigAffSha = GUILayout.Toggle(LigAffSha, new GUIContent("Light Affect Shadows", "Light's intensity and color will affect shadows.\nIf not enabled, The light will not affect the shadow and it will prevent overexpose shadow color when there are more lights on the scene and high intensity light value."));
-                DisRecSha = GUILayout.Toggle(DisRecSha, new GUIContent("Disable Received Shadows", "This will disable received shadows from other objects including received self cast shadows."));
-                EditorGUI.BeginDisabledGroup(UsEmiMapAnColAsGloTex == true);
-                IncEmi = GUILayout.Toggle(IncEmi, "Include Emission");
-                EditorGUI.EndDisabledGroup();
-                EditorGUI.BeginDisabledGroup(IncEmi == true);
-                UsEmiMapAnColAsGloTex = GUILayout.Toggle(UsEmiMapAnColAsGloTex, new GUIContent("Use Emission Map And Color As Gloss", "Mostly useful for hair materials.\nThis will use the VRoid Emission map as a gloss and use the selected Emission color."));
-                EditorGUI.EndDisabledGroup();
-                FERL = GUILayout.Toggle(FERL, "Force Enable Rim Light And Use White Color");
-                EditorGUILayout.BeginHorizontal();
-                EnaGiSha = GUILayout.Toggle(EnaGiSha, "Enable Global Illumination Shade");
-                EditorGUI.BeginDisabledGroup(EnaGiSha == false);
-                GiFlaLo = GUILayout.Toggle(GiFlaLo, new GUIContent("Global Illumination Flat Shade", "This will make the Global Illumination shade into flat/cel shade."));
-                EditorGUI.EndDisabledGroup();
-                EditorGUILayout.EndHorizontal();
-                EditorGUI.EndDisabledGroup();
-                EditorGUILayout.EndVertical();
+
+                    EditorGUILayout.BeginVertical();
+
+                        FUL = GUILayout.Toggle(FUL, new GUIContent("Force Unlit", "This will disable all lighting and shadows,\nOnly Main Texture and Main Color are set."));
+                        ForTrasCuto = GUILayout.Toggle(ForTrasCuto, "Force Transparent Material to Cutout");
+
+                        EditorGUI.BeginDisabledGroup(FUL == true);
+                        
+                            EditorGUI.BeginDisabledGroup(ShaRTBID && PlayerSettings.colorSpace == ColorSpace.Gamma);
+                                EnhaHiLighColInt = GUILayout.Toggle(EnhaHiLighColInt, new GUIContent("Enhance Light Highlight Color Intensity", "Not available if project color space is Gamma."));
+                            EditorGUI.EndDisabledGroup();
+                        
+                            IncShaCol = GUILayout.Toggle(IncShaCol, "Include Shade/Shadow Color");
+                            LigAffSha = GUILayout.Toggle(LigAffSha, new GUIContent("Light Affect Shadows", "Light's intensity and color will affect shadows.\nIf not enabled, The light will not affect the shadow and it will prevent overexpose shadow color when there are more lights on the scene and high intensity light value."));
+                            DisRecSha = GUILayout.Toggle(DisRecSha, new GUIContent("Disable Received Shadows", "This will disable received shadows from other objects including received self cast shadows."));
+                        
+                            EditorGUI.BeginDisabledGroup(UsEmiMapAnColAsGloTex == true);
+                                IncEmi = GUILayout.Toggle(IncEmi, "Include Emission");
+                            EditorGUI.EndDisabledGroup();
+
+                            EditorGUI.BeginDisabledGroup(IncEmi == true);
+                                UsEmiMapAnColAsGloTex = GUILayout.Toggle(UsEmiMapAnColAsGloTex, new GUIContent("Use Emission Map And Color As Gloss", "Mostly useful for hair materials.\nThis will use the VRoid Emission map as a gloss and use the selected Emission color."));
+                            EditorGUI.EndDisabledGroup();
+
+                            FERL = GUILayout.Toggle(FERL, "Force Enable Rim Light And Use White Color");
+
+                            EditorGUILayout.BeginHorizontal();
+                                EnaGiSha = GUILayout.Toggle(EnaGiSha, "Enable Global Illumination Shade");
+
+                                EditorGUI.BeginDisabledGroup(EnaGiSha == false);
+                                    GiFlaLo = GUILayout.Toggle(GiFlaLo, new GUIContent("Global Illumination Flat Shade", "This will make the Global Illumination shade into flat/cel shade."));
+                                EditorGUI.EndDisabledGroup();
+
+                            EditorGUILayout.EndHorizontal();
+
+                        EditorGUI.EndDisabledGroup();
+
+                    EditorGUILayout.EndVertical();
+
                 EditorGUILayout.EndHorizontal();
             }
             else if (ToBaInt == 1)
@@ -1775,8 +1808,8 @@ namespace RealToon.Tools
                 EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
 
                 EditorGUILayout.BeginHorizontal();
-                GUILayout.Space(135);
-                LigAffSha = GUILayout.Toggle(LigAffSha, new GUIContent("Light Affect Shadows", "Light's intensity and color will affect shadows.\n If not enabled, The light will not affect the shadow,\nthis will also prevent overexpose shadow color when there are more lights on the scene."));
+                    GUILayout.Space(135);
+                    LigAffSha = GUILayout.Toggle(LigAffSha, new GUIContent("Light Affect Shadows", "Light's intensity and color will affect shadows.\nIf not enabled, The light will not affect the shadow,\nthis will also prevent overexpose shadow color when there are more lights on the scene."));
                 EditorGUILayout.EndHorizontal();
             }
 
