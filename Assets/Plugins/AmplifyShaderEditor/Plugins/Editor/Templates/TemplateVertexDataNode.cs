@@ -9,7 +9,7 @@ using System.Collections.Generic;
 namespace AmplifyShaderEditor
 {
 	[Serializable]
-	[NodeAttributes( "Template Vertex Data" , "Vertex Data" , "Select and use available vertex data from the template" )]
+	[NodeAttributes( "Template Vertex Data" , "Template" , "Select and use available vertex data from the template", NodeAvailabilityFlags = (int)NodeAvailability.TemplateShader )]
 	public class TemplateVertexDataNode : TemplateNodeParent
 	{
 		private List<TemplateVertexData> m_interpolatorData = null;
@@ -66,7 +66,7 @@ namespace AmplifyShaderEditor
 						m_containerGraph.DeleteConnection( false , UniqueId , i , false , true );
 
 					m_headerColor = UIUtils.GetColorFromCategory( "Default" );
-					m_content.text = "None";
+					SetAdditonalTitleText( "<None>" );
 					m_additionalContent.text = string.Empty;
 					m_outputPorts[ 0 ].ChangeProperties( "None" , WirePortDataType.OBJECT , false );
 					ConfigurePorts();
@@ -103,7 +103,7 @@ namespace AmplifyShaderEditor
 				}
 
 				m_dataName = m_interpolatorData[ m_currentDataIdx ].VarName;
-				m_content.text = m_dataName;
+				SetAdditonalTitleText( m_dataName );
 				m_sizeIsDirty = true;
 				CheckWarningState();
 			}

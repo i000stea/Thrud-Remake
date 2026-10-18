@@ -53,7 +53,7 @@ namespace AmplifyShaderEditor
 		public NodeExporterUtils( AmplifyShaderEditorWindow window )
 		{
 			m_window = window;
-			Undo.undoRedoPerformed += OnUndoRedoPerformed;
+			UndoUtils.RegisterUndoRedoCallback( OnUndoRedoPerformed );
 		}
 
 		public void OnUndoRedoPerformed()
@@ -224,7 +224,7 @@ namespace AmplifyShaderEditor
 						{
 							Debug.Log( "Performing Undo" );
 							m_undoState = DebugUndoNodeState.WaitFrameUndo;
-							Undo.PerformUndo();
+							UndoUtils.PerformUndo();
 						}
 						break;
 						case DebugUndoNodeState.WaitFrameUndo: { } break;
@@ -316,6 +316,8 @@ namespace AmplifyShaderEditor
 
 		public void Destroy()
 		{
+			// @diogo: subscribed in the constructor; without this the instance leaks on the static undo event
+			UndoUtils.UnregisterUndoRedoCallback( OnUndoRedoPerformed );
 			m_window = null;
 			if( m_screenshotRT != null )
 			{

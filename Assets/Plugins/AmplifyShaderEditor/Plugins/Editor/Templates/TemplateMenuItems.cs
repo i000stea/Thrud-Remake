@@ -6,6 +6,51 @@ namespace AmplifyShaderEditor
 {
 	public class TemplateMenuItems
 	{
+		[MenuItem( "Assets/Create/Amplify Shader/Built-In/Default Sprites", false, 85 )]
+		public static void ApplyTemplateBuiltInDefaultSprites()
+		{
+			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "0f8ba0101102bb14ebf021ddadce9b49" );
+		}
+		[MenuItem( "Assets/Create/Amplify Shader/Built-In/Image Effect", false, 85 )]
+		public static void ApplyTemplateBuiltInImageEffect()
+		{
+			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "c71b220b631b6344493ea3cf87110c93" );
+		}
+		[MenuItem( "Assets/Create/Amplify Shader/Built-In/Lit", false, 85 )]
+		public static void ApplyTemplateBuiltInLit()
+		{
+			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "ed95fe726fd7b4644bb42f4d1ddd2bcd" );
+		}
+		[MenuItem( "Assets/Create/Amplify Shader/Built-In/Multi Pass Unlit", false, 85 )]
+		public static void ApplyTemplateBuiltInMultiPassUnlit()
+		{
+			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "e1de45c0d41f68c41b2cc20c8b9c05ef" );
+		}
+		[MenuItem( "Assets/Create/Amplify Shader/Built-In/Particles Alpha Blended", false, 85 )]
+		public static void ApplyTemplateBuiltInParticlesAlphaBlended()
+		{
+			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "0b6a9f8b4f707c74ca64c0be8e590de0" );
+		}
+		[MenuItem( "Assets/Create/Amplify Shader/Built-In/Post-Processing Stack", false, 85 )]
+		public static void ApplyTemplateBuiltInPostProcessingStack()
+		{
+			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "32139be9c1eb75640a847f011acf3bcf" );
+		}
+		[MenuItem( "Assets/Create/Amplify Shader/Built-In/Unlit", false, 85 )]
+		public static void ApplyTemplateBuiltInUnlit()
+		{
+			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "0770190933193b94aaa3065e307002fa" );
+		}
+		[MenuItem( "Assets/Create/Amplify Shader/Built-In/Unlit Lightmap", false, 85 )]
+		public static void ApplyTemplateBuiltInUnlitLightmap()
+		{
+			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "899e609c083c74c4ca567477c39edef0" );
+		}
+		[MenuItem( "Assets/Create/Amplify Shader/Built-In/Wireframe", false, 85 )]
+		public static void ApplyTemplateBuiltInWireframe()
+		{
+			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "45bf09b07249a46489d5200e9ba4d9f1" );
+		}
 		[MenuItem( "Assets/Create/Amplify Shader/Custom Render Texture/Initialize", false, 85 )]
 		public static void ApplyTemplateCustomRenderTextureInitialize()
 		{
@@ -16,66 +61,21 @@ namespace AmplifyShaderEditor
 		{
 			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "32120270d1b3a8746af2aca8bc749736" );
 		}
-		[MenuItem( "Assets/Create/Amplify Shader/Legacy/Default Sprites", false, 85 )]
-		public static void ApplyTemplateLegacyDefaultSprites()
+		[MenuItem( "Assets/Create/Amplify Shader/Templates/UI-Default", false, 85 )]
+		public static void ApplyTemplateTemplatesUIDefault()
 		{
-			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "0f8ba0101102bb14ebf021ddadce9b49" );
+			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "3e7faf6e1bfb12b478310f65b881c8cf" );
 		}
-		[MenuItem( "Assets/Create/Amplify Shader/Legacy/Default UI", false, 85 )]
-		public static void ApplyTemplateLegacyDefaultUI()
+		[MenuItem( "Assets/Create/Amplify Shader/UI/Default", false, 85 )]
+		public static void ApplyTemplateUIDefault()
 		{
 			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "5056123faa0c79b47ab6ad7e8bf059a4" );
 		}
-		[MenuItem( "Assets/Create/Amplify Shader/Legacy/Image Effect", false, 85 )]
-		public static void ApplyTemplateLegacyImageEffect()
-		{
-			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "c71b220b631b6344493ea3cf87110c93" );
-		}
-		[MenuItem( "Assets/Create/Amplify Shader/Legacy/Lit", false, 85 )]
-		public static void ApplyTemplateLegacyLit()
-		{
-			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "ed95fe726fd7b4644bb42f4d1ddd2bcd" );
-		}
-		[MenuItem( "Assets/Create/Amplify Shader/Legacy/Multi Pass Unlit", false, 85 )]
-		public static void ApplyTemplateLegacyMultiPassUnlit()
-		{
-			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "e1de45c0d41f68c41b2cc20c8b9c05ef" );
-		}
-		[MenuItem( "Assets/Create/Amplify Shader/Legacy/Particles Alpha Blended", false, 85 )]
-		public static void ApplyTemplateLegacyParticlesAlphaBlended()
-		{
-			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "0b6a9f8b4f707c74ca64c0be8e590de0" );
-		}
-		[MenuItem( "Assets/Create/Amplify Shader/Legacy/Post-Processing Stack", false, 85 )]
-		public static void ApplyTemplateLegacyPostProcessingStack()
-		{
-			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "32139be9c1eb75640a847f011acf3bcf" );
-		}
-		[MenuItem( "Assets/Create/Amplify Shader/Legacy/Unlit", false, 85 )]
-		public static void ApplyTemplateLegacyUnlit()
-		{
-			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "0770190933193b94aaa3065e307002fa" );
-		}
-		[MenuItem( "Assets/Create/Amplify Shader/Legacy/Unlit Lightmap", false, 85 )]
-		public static void ApplyTemplateLegacyUnlitLightmap()
-		{
-			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "899e609c083c74c4ca567477c39edef0" );
-		}
-		[MenuItem( "Assets/Create/Amplify Shader/Universal/2D Custom Lit", false, 85 )]
-		public static void ApplyTemplateUniversal2DCustomLit()
-		{
-			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "ece0159bad6633944bf6b818f4dd296c" );
-		}
-		[MenuItem( "Assets/Create/Amplify Shader/Universal/2D Lit", false, 85 )]
-		public static void ApplyTemplateUniversal2DLit()
-		{
-			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "199187dac283dbe4a8cb1ea611d70c58" );
-		}
-		[MenuItem( "Assets/Create/Amplify Shader/Universal/2D Unlit", false, 85 )]
-		public static void ApplyTemplateUniversal2DUnlit()
-		{
-			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "cf964e524c8e69742b1d21fbe2ebcc4a" );
-		}
+		//[MenuItem( "Assets/Create/Amplify Shader/Universal/ASEBridgeTemplates/Sprite Custom Lit (Bridge1)", false, 85 )]
+		//public static void ApplyTemplateUniversalASEBridgeTemplatesSpriteCustomLitBridge1()
+		//{
+		//	AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "25ed3094b38eca84ba6e6529789a1455" );
+		//}
 		[MenuItem( "Assets/Create/Amplify Shader/Universal/Decal", false, 85 )]
 		public static void ApplyTemplateUniversalDecal()
 		{
@@ -85,6 +85,21 @@ namespace AmplifyShaderEditor
 		public static void ApplyTemplateUniversalLit()
 		{
 			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "94348b07e5e8bab40bd6c8a1e3df54cd" );
+		}
+		[MenuItem( "Assets/Create/Amplify Shader/Universal/Sprite Custom Lit", false, 85 )]
+		public static void ApplyTemplateUniversalSpriteCustomLit()
+		{
+			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "ece0159bad6633944bf6b818f4dd296c" );
+		}
+		[MenuItem( "Assets/Create/Amplify Shader/Universal/Sprite Lit", false, 85 )]
+		public static void ApplyTemplateUniversalSpriteLit()
+		{
+			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "199187dac283dbe4a8cb1ea611d70c58" );
+		}
+		[MenuItem( "Assets/Create/Amplify Shader/Universal/Sprite Unlit", false, 85 )]
+		public static void ApplyTemplateUniversalSpriteUnlit()
+		{
+			AmplifyShaderEditorWindow.CreateConfirmationTemplateShader( "cf964e524c8e69742b1d21fbe2ebcc4a" );
 		}
 		[MenuItem( "Assets/Create/Amplify Shader/Universal/Unlit", false, 85 )]
 		public static void ApplyTemplateUniversalUnlit()

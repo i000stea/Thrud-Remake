@@ -2,7 +2,7 @@ Shader "Hidden/RGBToHSVNode"
 {
 	Properties
 	{
-		_A ( "_RGB",  2D ) = "white" {}
+		_A ( "_RGB",  2DArray ) = "white" {}
 	}
 
 	SubShader
@@ -11,10 +11,12 @@ Shader "Hidden/RGBToHSVNode"
 		{
 			CGPROGRAM
 			#include "UnityCG.cginc"
+			#include "Preview.cginc"
 			#pragma vertex vert_img
 			#pragma fragment frag
+			#pragma target 3.5
 
-			uniform sampler2D _A;
+			ASE_PORT( _A );
 
 			float3 RGBToHSV(float3 c)
 			{
@@ -28,7 +30,7 @@ Shader "Hidden/RGBToHSVNode"
 
 			float4 frag ( v2f_img i ) : SV_Target
 			{
-				float3 rgb = tex2D ( _A, i.uv ).rgb;
+				float3 rgb = ASE_SAMPLE_PORT( _A, i.uv ).rgb;
 				return float4( RGBToHSV(rgb), 1 );
 			}
 			ENDCG

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
+using System.Linq;
 
 namespace AmplifyShaderEditor
 {
@@ -33,15 +34,11 @@ namespace AmplifyShaderEditor
 		public string LineValue = string.Empty;
 		public bool GUIDToggle = false;
 		public string GUIDValue = string.Empty;
+		public bool ShowConditionals = false;
+		public int VersionMin = 0;
+		public int VersionMax = 0;
+		public string Passes = string.Empty;
 		public AdditionalContainerOrigin Origin = AdditionalContainerOrigin.Custom;
-		public AdditionalDirectiveContainerSaveItem( AdditionalLineType lineType, string lineValue, bool guidToggle, string guidValue, AdditionalContainerOrigin origin )
-		{
-			LineType = lineType;
-			LineValue = lineValue;
-			GUIDToggle = guidToggle;
-			GUIDValue = guidValue;
-			Origin = origin;
-		}
 
 		public AdditionalDirectiveContainerSaveItem( AdditionalDirectiveContainer container )
 		{
@@ -49,6 +46,10 @@ namespace AmplifyShaderEditor
 			LineValue = container.LineValue;
 			GUIDToggle = container.GUIDToggle;
 			GUIDValue = container.GUIDValue;
+			ShowConditionals = container.ShowConditionals;
+			VersionMin = container.VersionMin;
+			VersionMax = container.VersionMax;
+			Passes = container.Passes;
 			Origin = container.Origin;
 		}
 	}
@@ -60,19 +61,27 @@ namespace AmplifyShaderEditor
 		public string LineValue = string.Empty;
 		public bool GUIDToggle = false;
 		public string GUIDValue = string.Empty;
+		public bool ShowConditionals = false;
+		public int VersionMin = 0;
+		public int VersionMax = 0;
+		public string Passes = string.Empty;
 		public AdditionalContainerOrigin Origin = AdditionalContainerOrigin.Custom;
 		public TextAsset LibObject = null;
 		public string OwnerId = string.Empty;
 
 		public void Init( string ownerId, AdditionalDirectiveContainer item )
 		{
-			 LineType = item.LineType;
-			 LineValue = item.LineValue;
-			 GUIDToggle = item.GUIDToggle;
-			 GUIDValue = item.GUIDValue;
-			 Origin = item.Origin;
-			 LibObject = item.LibObject;
-			 OwnerId = ownerId;
+			LineType = item.LineType;
+			LineValue = item.LineValue;
+			GUIDToggle = item.GUIDToggle;
+			GUIDValue = item.GUIDValue;
+			ShowConditionals = item.ShowConditionals;
+			VersionMin = item.VersionMin;
+			VersionMax = item.VersionMax;
+			Passes = item.Passes;
+			Origin = item.Origin;
+			LibObject = item.LibObject;
+			OwnerId = ownerId;
 		}
 
 		public void Init( AdditionalDirectiveContainerSaveItem item )
@@ -81,6 +90,14 @@ namespace AmplifyShaderEditor
 			LineValue = item.LineValue;
 			GUIDToggle = item.GUIDToggle;
 			GUIDValue = item.GUIDValue;
+			ShowConditionals = item.ShowConditionals;
+			VersionMin = item.VersionMin;
+			VersionMax = item.VersionMax;
+			// Pass separators are kept as commas internally; the escaped separator is converted
+			// as well to heal assets saved while semicolons were still allowed
+			// @diogo: null when deserialized from assets saved before Passes existed (pre-1.9.1.4)
+			Passes = string.IsNullOrEmpty( item.Passes ) ? string.Empty :
+				item.Passes.Replace( Constants.SemiColonSeparator, ',' ).Replace( ';', ',' );
 			Origin = item.Origin;
 			if( GUIDToggle )
 			{
@@ -142,6 +159,42 @@ namespace AmplifyShaderEditor
 				return LineValue;
 			}
 		}
+
+		// @diogo: same filter resolved against the pass itself, so a name the template lists as
+		// former still matches a filter typed before the rename
+		public bool AppliesToPass( TemplatePass pass )
+		{
+			if ( string.IsNullOrEmpty( Passes ) )
+			{
+				return true;
+			}
+
+			if ( pass == null )
+			{
+				return false;
+			}
+
+			string[] tokens = Passes.Split( new char[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries );
+			for ( int i = 0; i < tokens.Length; i++ )
+			{
+				if ( pass.NameMatches( tokens[ i ].Trim() ) )
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		// @diogo: empty Passes applies everywhere; otherwise passName must be in the comma/semicolon list (case-insensitive)
+		public bool AppliesToPass( string passName )
+		{
+			if( string.IsNullOrEmpty( Passes ) )
+				return true;
+
+			return Passes.Split( new char[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries )
+				.Select( p => p.Trim() )
+				.Contains( passName, StringComparer.OrdinalIgnoreCase );
+		}
 	}
 
 
@@ -157,6 +210,30 @@ namespace AmplifyShaderEditor
 	public sealed class TemplateAdditionalDirectivesHelper : TemplateModuleParent
 	{
 		private string NativeFoldoutStr = "Native";
+
+		public const string PassesFormatInfo = "Passes are template pass names separated by commas (semicolons are also accepted and converted to commas); matching is case-insensitive and leaving it empty applies the directive to all passes.";
+		private const string SRPVersionFormatInfo = "Version bounds are raw SRP package versions with 6 digits, e.g. 140010 for 14.0.10; " +
+			"Min is inclusive while Max is NOT inclusive, and leaving a side empty makes it open-ended.";
+
+		// Label/tooltip for the per-directive version range. Defaults to SRP versioning ( master node usage );
+		// the Additional Directives node overrides these to describe UNITY_VERSION instead.
+		[NonSerialized]
+		public string ConditionalVersionLabel = "SRPVersion";
+		[NonSerialized]
+		public string ConditionalVersionTooltip = "Valid SRP version numbers must have 6 digits and be equal or higher than 100000, the lowest supported version. Min is inclusive while Max is NOT inclusive.";
+		// When set, version bounds are edited as Unity versions (major.minor.patch) stored as
+		// UNITY_VERSION macro values instead of raw SRP version integers. In both modes Min is
+		// inclusive while Max is exclusive (see the Additional Directives node's BuildVersionCondition
+		// and TestConditionals)
+		[NonSerialized]
+		public bool ConditionalVersionIsUnityVersion = false;
+
+		// Info help box shown under the list while any directive has its conditionals expanded.
+		// Defaults to SRP versioning; the Additional Directives node overrides it to describe UNITY_VERSION
+		[NonSerialized]
+		public string ConditionalsInfo = PassesFormatInfo + "\n\n" + SRPVersionFormatInfo;
+
+		private UnityVersionField m_versionField = new UnityVersionField();
 
 		[SerializeField]
 		private List<AdditionalDirectiveContainer> m_additionalDirectives = new List<AdditionalDirectiveContainer>();
@@ -179,6 +256,12 @@ namespace AmplifyShaderEditor
 		// Must revisit this later on and come up with a proper solution
 		[SerializeField]
 		private List<AdditionalDirectiveContainerSaveItem> m_directivesSaveItems = new List<AdditionalDirectiveContainerSaveItem>();
+
+		// Tracks whether VersionMax values in m_directivesSaveItems were saved with the current
+		// exclusive semantics; shader function assets from 1.9.9.9 and earlier lack this flag
+		// (deserializes as false) and have their inclusive maxes migrated on load
+		[SerializeField]
+		private bool m_versionMaxExclusive = false;
 
 
 		private ReordableAction m_actionType = ReordableAction.None;
@@ -214,6 +297,7 @@ namespace AmplifyShaderEditor
 				{
 					AdditionalDirectiveContainer item = ScriptableObject.CreateInstance<AdditionalDirectiveContainer>();
 					item.Init( ownerOutputId, functionList[ i ] );
+					item.hideFlags = HideFlags.HideAndDontSave;
 					m_shaderFunctionDirectives.Add( item );
 				}
 			}
@@ -337,6 +421,89 @@ namespace AmplifyShaderEditor
 			}
 		}
 
+		void DrawConditionals( Rect rect, AdditionalDirectiveContainer directive )
+		{
+			var tog = rect;
+			tog.width = 15;
+			tog.x += 5;
+			tog.y -= ( tog.height - ( EditorGUIUtility.singleLineHeight + 5 ) ) * 0.5f + 1;
+			tog.xMin += 2;
+			tog.yMin -= 2;
+			bool value = GUI.Toggle( tog, directive.ShowConditionals, "", UIUtils.MenuItemToggleStyle );
+			if ( Event.current.button == Constants.FoldoutMouseId )
+			{
+				directive.ShowConditionals = value;
+			}
+			if ( directive.ShowConditionals )
+			{
+				const int labelWidth = 70;
+				const int versionEditWidth = 55;
+				Rect condPos = rect;
+				condPos.height = EditorGUIUtility.singleLineHeight;
+
+				// List of passes to apply directive
+				directive.Passes = ( directive.Passes != null ) ? directive.Passes : string.Empty;
+				condPos.x = rect.x + 23;
+				condPos.y += EditorGUIUtility.singleLineHeight + 2;
+				condPos.width = labelWidth;
+				EditorGUI.LabelField( condPos, new GUIContent( "Passes", "Template pass names separated by commas (case-insensitive). Empty means it will be included in all passes." ) );
+				condPos.x += labelWidth;
+				condPos.xMax = rect.xMax + 1;
+				directive.Passes = m_currOwner.EditorGUITextField( condPos, string.Empty, directive.Passes ).Replace( ';', ',' );
+
+				// Range of SRP versions to apply directive
+				condPos.x = rect.x + 23;
+				condPos.y += EditorGUIUtility.singleLineHeight + 2;
+				condPos.width = labelWidth;
+				EditorGUI.LabelField( condPos, new GUIContent( ConditionalVersionLabel, ConditionalVersionTooltip ) );
+				condPos.x += labelWidth;
+
+				condPos.width = versionEditWidth;
+				if ( ConditionalVersionIsUnityVersion )
+				{
+					// Edited as Unity versions, stored as UNITY_VERSION macro values; 0 means no
+					// bound, and leaving both bounds empty applies no version filter at all, like
+					// an empty pass list
+					string controlName = "ASEDirectiveVersion" + AssetUtils.GetEntityId( directive );
+					directive.VersionMin = DrawUnityVersionField( condPos, controlName + "Min", directive.VersionMin );
+				}
+				else
+				{
+					string minText = ( directive.VersionMin == 0 ) ? string.Empty : directive.VersionMin.ToString();
+					minText = m_currOwner.EditorGUITextField( condPos, string.Empty, minText );
+					directive.VersionMin = int.TryParse( minText, out int min ) ? min : 0;
+				}
+				condPos.x += versionEditWidth + 5;
+
+				EditorGUI.LabelField( condPos, "to" );
+				condPos.x += 20;
+
+				if ( ConditionalVersionIsUnityVersion )
+				{
+					string controlName = "ASEDirectiveVersion" + AssetUtils.GetEntityId( directive );
+					directive.VersionMax = DrawUnityVersionField( condPos, controlName + "Max", directive.VersionMax );
+				}
+				else
+				{
+					string maxText = ( directive.VersionMax == 0 ) ? string.Empty : directive.VersionMax.ToString();
+					maxText = m_currOwner.EditorGUITextField( condPos, string.Empty, maxText );
+					directive.VersionMax = int.TryParse( maxText, out int max ) ? max : 0;
+				}
+				condPos.x = rect.x + 40;
+			}
+		}
+
+		// Mirrors EditorGUITextField undo behavior: record on the owner before applying the change
+		private int DrawUnityVersionField( Rect rect, string controlName, int version )
+		{
+			int newVersion = m_versionField.Draw( rect, GUIContent.none, controlName, version, true, 0, false, out bool changed );
+			if ( changed )
+			{
+				m_currOwner.UndoRecordObject( "Changing value " + ConditionalVersionLabel );
+			}
+			return newVersion;
+		}
+
 		public override void Draw( UndoParentNode currOwner, bool style = true )
 		{
 			m_currOwner = currOwner;
@@ -353,8 +520,8 @@ namespace AmplifyShaderEditor
 						{
 							return ( m_nativeDirectives.Count + 1 ) * ( EditorGUIUtility.singleLineHeight ) + 5;
 						}
-
-						return EditorGUIUtility.singleLineHeight + 5;
+						int lineCount = ( m_additionalDirectives[ index ].ShowConditionals ) ? 3 : 1;
+						return EditorGUIUtility.singleLineHeight * lineCount + 5;
 					},
 					drawElementCallback = ( Rect rect, int index, bool isActive, bool isFocused ) =>
 					{
@@ -366,27 +533,12 @@ namespace AmplifyShaderEditor
 						if( m_additionalDirectives[ index ] != null )
 						{
 							float labelWidthStyleAdjust = 0;
-							if( style )
-							{
-								rect.xMin -= 10;
-								labelWidthStyleAdjust = 15;
-							}
-							else
-							{
-								rect.xMin -= 1;
-							}
 
-							float popUpWidth = style ? 80 : 65f;
-							float widthAdjust = m_additionalDirectives[ index ].LineType == AdditionalLineType.Include ? -14 : 0;
-							Rect popupPos = new Rect( rect.x, rect.y, popUpWidth, EditorGUIUtility.singleLineHeight );
-							Rect GUIDTogglePos = m_additionalDirectives[ index ].LineType == AdditionalLineType.Include ? new Rect( rect.x + rect.width - 3 * Constants.PlusMinusButtonLayoutWidth, rect.y, Constants.PlusMinusButtonLayoutWidth, Constants.PlusMinusButtonLayoutWidth ) : new Rect();
-							Rect buttonPlusPos = new Rect( rect.x + rect.width - 2 * Constants.PlusMinusButtonLayoutWidth, rect.y - 2, Constants.PlusMinusButtonLayoutWidth, Constants.PlusMinusButtonLayoutWidth );
-							Rect buttonMinusPos = new Rect( rect.x + rect.width - Constants.PlusMinusButtonLayoutWidth, rect.y - 2, Constants.PlusMinusButtonLayoutWidth, Constants.PlusMinusButtonLayoutWidth );
-							float labelWidthBuffer = EditorGUIUtility.labelWidth;
-							Rect labelPos = new Rect( rect.x + popupPos.width - labelWidthStyleAdjust, rect.y, labelWidthStyleAdjust + rect.width - popupPos.width - buttonPlusPos.width - buttonMinusPos.width + widthAdjust, EditorGUIUtility.singleLineHeight );
-
-							if( m_additionalDirectives[ index ].Origin == AdditionalContainerOrigin.Native )
+							if ( m_additionalDirectives[ index ].Origin == AdditionalContainerOrigin.Native )
 							{
+								rect.xMin -= 5;
+								rect.xMax += 1;
+
 								m_nativeRect = rect;
 								m_nativeRect.y -= ( m_nativeRect.height - ( EditorGUIUtility.singleLineHeight + 5 ) ) * 0.5f;
 								m_nativeRect.xMin += 2;
@@ -396,6 +548,26 @@ namespace AmplifyShaderEditor
 								NodeUtils.DrawNestedPropertyGroup( ref m_nativeDirectivesFoldout, rect, NativeFoldoutStr, DrawNativeItemsRect, 4 );
 								return;
 							}
+							else
+							{
+								rect.xMin -= 10;
+								labelWidthStyleAdjust = 15;
+
+								DrawConditionals( rect, m_additionalDirectives[ index ] );
+							}
+
+							const int conditionalsOffset = 20;
+							rect.x += conditionalsOffset;
+
+							float popUpWidth = 88;
+							float widthAdjust = m_additionalDirectives[ index ].LineType == AdditionalLineType.Include ? -14 : 0;
+							widthAdjust -= conditionalsOffset;
+							Rect popupPos = new Rect( rect.x, rect.y, popUpWidth, EditorGUIUtility.singleLineHeight );
+							Rect GUIDTogglePos = m_additionalDirectives[ index ].LineType == AdditionalLineType.Include ? new Rect( rect.x + rect.width - 3 * Constants.PlusMinusButtonLayoutWidth - conditionalsOffset + 3, rect.y, Constants.PlusMinusButtonLayoutWidth, Constants.PlusMinusButtonLayoutWidth ) : new Rect();
+							Rect buttonPlusPos = new Rect( rect.x + rect.width - 2 * Constants.PlusMinusButtonLayoutWidth - conditionalsOffset + 1, rect.y + 1, Constants.PlusMinusButtonLayoutWidth, Constants.PlusMinusButtonLayoutWidth );
+							Rect buttonMinusPos = new Rect( rect.x + rect.width - Constants.PlusMinusButtonLayoutWidth - conditionalsOffset + 1, rect.y + 1, Constants.PlusMinusButtonLayoutWidth, Constants.PlusMinusButtonLayoutWidth );
+							float labelWidthBuffer = EditorGUIUtility.labelWidth;
+							Rect labelPos = new Rect( rect.x + popupPos.width - labelWidthStyleAdjust, rect.y, labelWidthStyleAdjust + rect.width - popupPos.width - buttonPlusPos.width - buttonMinusPos.width + widthAdjust, EditorGUIUtility.singleLineHeight );
 
 							m_additionalDirectives[ index ].LineType = (AdditionalLineType)m_currOwner.EditorGUIEnumPopup( popupPos, m_additionalDirectives[ index ].LineType );
 
@@ -435,7 +607,9 @@ namespace AmplifyShaderEditor
 								m_additionalDirectives[ index ].LineValue = m_currOwner.EditorGUITextField( labelPos, string.Empty, m_additionalDirectives[ index ].LineValue );
 							}
 
-							if( GUI.Button( buttonPlusPos, string.Empty, UIUtils.PlusStyle ) )
+							//NodeUtils.DrawNestedPropertyGroup( ref m_additionalDirectives[ index ].ShowConditionals, rect, "TEMP", DrawConditionals, 4 );
+
+							if ( GUI.Button( buttonPlusPos, string.Empty, UIUtils.PlusStyle ) )
 							{
 								m_actionType = ReordableAction.Add;
 								m_actionIndex = index;
@@ -488,6 +662,16 @@ namespace AmplifyShaderEditor
 			currOwner.ContainerGraph.ParentWindow.InnerWindowVariables.ExpandedAdditionalDirectives = foldoutValue;
 		}
 
+		// EditorGUILayout.HelpBox follows EditorGUI.indentLevel, which the enclosing property
+		// groups raise; reset it so boxes span the full available width like the list does
+		private static void DrawFullWidthHelpBox( string text )
+		{
+			int cachedIndent = EditorGUI.indentLevel;
+			EditorGUI.indentLevel = 0;
+			EditorGUILayout.HelpBox( text, MessageType.Info );
+			EditorGUI.indentLevel = cachedIndent;
+		}
+
 		void DrawReordableList()
 		{
 			if( m_reordableList != null )
@@ -505,18 +689,29 @@ namespace AmplifyShaderEditor
 				}
 				if( m_additionalDirectives.Count == 0 )
 				{
-					EditorGUILayout.HelpBox( "Your list is Empty!\nUse the plus button to add one.", MessageType.Info );
+					DrawFullWidthHelpBox( "Your list is Empty!\nUse the plus button to add one." );
 				}
 				else
 				{
 					m_reordableList.DoLayoutList();
+
+					// Formats for the conditional fields are only relevant while some directive
+					// has them expanded
+					for ( int i = 0; i < m_additionalDirectives.Count; i++ )
+					{
+						if ( m_additionalDirectives[ i ] != null && m_additionalDirectives[ i ].ShowConditionals )
+						{
+							DrawFullWidthHelpBox( ConditionalsInfo );
+							break;
+						}
+					}
 				}
 				EditorGUILayout.Space();
 				//EditorGUILayout.EndVertical();
 			}
 		}
 
-		public void AddAllToDataCollector( ref MasterNodeDataCollector dataCollector, TemplateIncludePragmaContainter nativesContainer )
+		public void AddAllToDataCollector( ref MasterNodeDataCollector dataCollector, TemplatePass pass, TemplateIncludePragmaContainter nativesContainer )
 		{
 			//List<AdditionalDirectiveContainer> list = m_additionalDirectives;
 			//int count = list.FindIndex( x => x.Origin.Equals( AdditionalContainerOrigin.Native ) );
@@ -559,73 +754,110 @@ namespace AmplifyShaderEditor
 			//	}
 			//}
 
-			AddToDataCollector( ref dataCollector, nativesContainer, false );
-			AddToDataCollector( ref dataCollector, nativesContainer, true );
+			AddToDataCollector( ref dataCollector, pass, nativesContainer, false );
+			AddToDataCollector( ref dataCollector, pass, nativesContainer, true );
 		}
 
 		public void AddAllToDataCollector( ref MasterNodeDataCollector dataCollector )
 		{
-			AddToDataCollector( ref dataCollector, false );
-			AddToDataCollector( ref dataCollector, true );
+			AddToDataCollector( ref dataCollector, null, false );
+			AddToDataCollector( ref dataCollector, null, true );
 		}
 
-		void AddToDataCollector( ref MasterNodeDataCollector dataCollector, TemplateIncludePragmaContainter nativesContainer, bool fromSF )
+		bool TestConditionals( TemplatePass pass, AdditionalDirectiveContainer directive )
+		{
+			// Version bounds: Min is inclusive while Max is exclusive, matching the UNITY_VERSION
+			// conditionals emitted by the Additional Directives node
+			bool isSRP = ASEPackageManagerHelper.CurrentSRPVersion > 0;
+			if ( isSRP && directive.VersionMin != 0 && ASEPackageManagerHelper.CurrentSRPVersion < directive.VersionMin )
+			{
+				return false;
+			}
+
+			if ( isSRP && directive.VersionMax != 0 && ASEPackageManagerHelper.CurrentSRPVersion >= directive.VersionMax )
+			{
+				return false;
+			}
+
+			if ( pass != null && !directive.AppliesToPass( pass ) )
+			{
+				return false;
+			}
+
+			return true;
+		}
+
+		void AddToDataCollector( ref MasterNodeDataCollector dataCollector, TemplatePass pass, TemplateIncludePragmaContainter nativesContainer, bool fromSF )
 		{
 			List<AdditionalDirectiveContainer> list = fromSF ? m_shaderFunctionDirectives : m_additionalDirectives;
 			int count = list.Count;
 			for( int i = 0; i < count; i++ )
 			{
+				AdditionalDirectiveContainer directive = list[ i ];
 				int orderIdx = fromSF ? 1 : ( i > m_nativeDirectivesIndex ? 1 : -1 );
-				switch( list[ i ].LineType )
+
+				if ( !TestConditionals( pass, directive ) )
+				{
+					continue;
+				}
+
+				switch( directive.LineType )
 				{
 					case AdditionalLineType.Include:
 					{
-						string value = list[ i ].Value;
+						string value = directive.Value;
 						if( !string.IsNullOrEmpty( value ) &&
 						  !nativesContainer.HasInclude( value ) )
 						{
-							dataCollector.AddToDirectives( list[ i ].FormattedValue, orderIdx );
+							dataCollector.AddToDirectives( directive.FormattedValue, orderIdx );
 						}
 					}
 					break;
 					case AdditionalLineType.Define:
 					{
-						if( !string.IsNullOrEmpty( list[ i ].LineValue ) &&
-						  !nativesContainer.HasDefine( list[ i ].LineValue ) )
+						if( !string.IsNullOrEmpty( directive.LineValue ) &&
+						  !nativesContainer.HasDefine( directive.LineValue ) )
 						{
-							dataCollector.AddToDirectives( list[ i ].FormattedValue, orderIdx );
+							dataCollector.AddToDirectives( directive.FormattedValue, orderIdx );
 						}
 					}
 					break;
 					case AdditionalLineType.Pragma:
 					{
-						if( !string.IsNullOrEmpty( list[ i ].LineValue ) &&
-						  !nativesContainer.HasPragma( list[ i ].LineValue ) )
+						if( !string.IsNullOrEmpty( directive.LineValue ) &&
+						  !nativesContainer.HasPragma( directive.LineValue ) )
 						{
-							dataCollector.AddToDirectives( list[ i ].FormattedValue, orderIdx );
+							dataCollector.AddToDirectives( directive.FormattedValue, orderIdx );
 						}
 					}
 					break;
 					default:
 					case AdditionalLineType.Custom:
-					dataCollector.AddToDirectives( list[ i ].LineValue, orderIdx );
-					break;
+					dataCollector.AddToDirectives( directive.LineValue, orderIdx );
+						break;
 				}
 			}
 		}
 
-		void AddToDataCollector( ref MasterNodeDataCollector dataCollector, bool fromSF )
+		void AddToDataCollector( ref MasterNodeDataCollector dataCollector, TemplatePass pass, bool fromSF )
 		{
 			List<AdditionalDirectiveContainer> list = fromSF ? m_shaderFunctionDirectives : m_additionalDirectives;
 			int orderIdx = 1;
 			int count = list.Count;
 			for( int i = 0; i < count; i++ )
 			{
-				switch( list[ i ].LineType )
+				AdditionalDirectiveContainer directive = list[ i ];
+
+				if ( !TestConditionals( pass, directive ) )
+				{
+					continue;
+				}
+
+				switch ( directive.LineType )
 				{
 					case AdditionalLineType.Include:
 					{
-						string value = list[ i ].FormattedValue;
+						string value = directive.FormattedValue;
 						if( !string.IsNullOrEmpty( value ) )
 						{
 							dataCollector.AddToDirectives( value, orderIdx );
@@ -634,23 +866,23 @@ namespace AmplifyShaderEditor
 					break;
 					case AdditionalLineType.Define:
 					{
-						if( !string.IsNullOrEmpty( list[ i ].LineValue ) )
+						if( !string.IsNullOrEmpty( directive.LineValue ) )
 						{
-							dataCollector.AddToDirectives( list[ i ].FormattedValue, orderIdx );
+							dataCollector.AddToDirectives( directive.FormattedValue, orderIdx );
 						}
 					}
 					break;
 					case AdditionalLineType.Pragma:
 					{
-						if( !string.IsNullOrEmpty( list[ i ].LineValue ) )
+						if( !string.IsNullOrEmpty( directive.LineValue ) )
 						{
-							dataCollector.AddToDirectives( list[ i ].FormattedValue, orderIdx );
+							dataCollector.AddToDirectives( directive.FormattedValue, orderIdx );
 						}
 					}
 					break;
 					default:
 					case AdditionalLineType.Custom:
-					dataCollector.AddToDirectives( list[ i ].LineValue, orderIdx );
+					dataCollector.AddToDirectives( directive.LineValue, orderIdx );
 					break;
 				}
 			}
@@ -670,7 +902,8 @@ namespace AmplifyShaderEditor
 					AdditionalDirectiveContainer newItem = ScriptableObject.CreateInstance<AdditionalDirectiveContainer>();
 					newItem.hideFlags = HideFlags.HideAndDontSave;
 					newItem.LineType = lineType;
-					newItem.LineValue = lineValue.Replace( Constants.SemiColonSeparator, ';' );
+					// legacy lines escaped semicolons as '@'; JSON lines carry the directive verbatim
+					newItem.LineValue = JsonGraphFormat.LastInstructionFromJson ? lineValue : lineValue.Replace( Constants.SemiColonSeparator, ';' );
 					if( UIUtils.CurrentShaderVersion() > 15607 )
 					{
 						newItem.GUIDToggle = Convert.ToBoolean( nodeParams[ index++ ] );
@@ -689,6 +922,21 @@ namespace AmplifyShaderEditor
 					{
 						origin = (AdditionalContainerOrigin)Enum.Parse( typeof( AdditionalContainerOrigin ), nodeParams[ index++ ] );
 						newItem.Origin = origin;
+					}
+					if ( UIUtils.CurrentShaderVersion() > 19103 )
+					{
+						newItem.ShowConditionals = Convert.ToBoolean( nodeParams[ index++ ] );
+						newItem.VersionMin = Convert.ToInt32( nodeParams[ index++ ] );
+						newItem.VersionMax = Convert.ToInt32( nodeParams[ index++ ] );
+						// Max version bounds were inclusive up to 1.9.9.9; advance by one so data
+						// saved with the old semantics keeps generating the intended code
+						if ( UIUtils.CurrentShaderVersion() < 19910 && newItem.VersionMax != 0 )
+						{
+							newItem.VersionMax++;
+						}
+						// Pass separators are kept as commas internally; the escaped separator is
+						// converted as well to heal data saved while semicolons were still allowed
+						newItem.Passes = nodeParams[ index++ ].Replace( Constants.SemiColonSeparator, ',' ).Replace( ';', ',' );
 					}
 
 					m_additionalDirectives.Add( newItem );
@@ -718,16 +966,23 @@ namespace AmplifyShaderEditor
 			for( int i = 0; i < m_additionalDirectives.Count; i++ )
 			{
 				IOUtils.AddFieldValueToString( ref nodeInfo, m_additionalDirectives[ i ].LineType );
-				IOUtils.AddFieldValueToString( ref nodeInfo, m_additionalDirectives[ i ].LineValue.Replace( ';', Constants.SemiColonSeparator ) );
+				IOUtils.AddFieldValueToString( ref nodeInfo, m_additionalDirectives[ i ].LineValue );
 				IOUtils.AddFieldValueToString( ref nodeInfo, m_additionalDirectives[ i ].GUIDToggle );
 				IOUtils.AddFieldValueToString( ref nodeInfo, m_additionalDirectives[ i ].GUIDValue );
 				IOUtils.AddFieldValueToString( ref nodeInfo, m_additionalDirectives[ i ].Origin );
+				IOUtils.AddFieldValueToString( ref nodeInfo, m_additionalDirectives[ i ].ShowConditionals );
+				IOUtils.AddFieldValueToString( ref nodeInfo, m_additionalDirectives[ i ].VersionMin );
+				IOUtils.AddFieldValueToString( ref nodeInfo, m_additionalDirectives[ i ].VersionMax );
+				IOUtils.AddFieldValueToString( ref nodeInfo, m_additionalDirectives[ i ].Passes.Replace( ';', ',' ) );
 			}
 		}
 
 		// read comment on m_directivesSaveItems declaration
 		public void UpdateSaveItemsFromDirectives()
 		{
+			// Anything written from here on uses the current exclusive Max semantics
+			m_versionMaxExclusive = true;
+
 			bool foundNull = false;
 			m_directivesSaveItems.Clear();
 			for( int i = 0; i < m_additionalDirectives.Count; i++ )
@@ -764,6 +1019,20 @@ namespace AmplifyShaderEditor
 		// read comment on m_directivesSaveItems declaration
 		public void UpdateDirectivesFromSaveItems()
 		{
+			if ( !m_versionMaxExclusive )
+			{
+				m_versionMaxExclusive = true;
+				// Max version bounds were inclusive up to 1.9.9.9; advance by one so shader
+				// functions saved with the old semantics keep their intended behavior
+				for ( int i = 0; i < m_directivesSaveItems.Count; i++ )
+				{
+					if ( m_directivesSaveItems[ i ].VersionMax != 0 )
+					{
+						m_directivesSaveItems[ i ].VersionMax++;
+					}
+				}
+			}
+
 			if( m_directivesSaveItems.Count > 0 )
 			{
 				for( int i = 0; i < m_additionalDirectives.Count; i++ )

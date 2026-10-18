@@ -34,38 +34,48 @@ namespace AmplifyShaderEditor
 		[SerializeField]
 		private bool m_active = true;
 
-        [SerializeField]
-        private InlineProperty m_reference = new InlineProperty();
+		private const int ReferenceDefaultValue = 0;
+		[SerializeField] private InlineProperty m_reference = new InlineProperty( ReferenceDefaultValue );
 
         // Read Mask
         private const int ReadMaskDefaultValue = 255;
-        [SerializeField]
-        private InlineProperty m_readMask = new InlineProperty( ReadMaskDefaultValue );
+        [SerializeField] private InlineProperty m_readMask = new InlineProperty( ReadMaskDefaultValue );
 
         //Write Mask
         private const int WriteMaskDefaultValue = 255;
-        [SerializeField]
-        private InlineProperty m_writeMask = new InlineProperty( WriteMaskDefaultValue );
+        [SerializeField] private InlineProperty m_writeMask = new InlineProperty( WriteMaskDefaultValue );
 
 		//Comparison Function
-		[NonSerialized] private int ComparisonDefaultValue;
+		[NonSerialized] private int ComparisonDefaultValue = 0;
         [SerializeField] private InlineProperty m_comparisonFunctionFrontIdx;
         [SerializeField] private InlineProperty m_comparisonFunctionBackIdx;
 
 		//Pass Stencil Op
-		[NonSerialized] private int PassStencilOpDefaultValue;
+		[NonSerialized] private int PassStencilOpDefaultValue = 0;
 		[SerializeField] private InlineProperty m_passStencilOpFrontIdx;
         [SerializeField] private InlineProperty m_passStencilOpBackIdx;
 
-        //Fail Stencil Op 
-        [NonSerialized] private int FailStencilOpDefaultValue;
+        //Fail Stencil Op
+        [NonSerialized] private int FailStencilOpDefaultValue = 0;
 		[SerializeField] private InlineProperty m_failStencilOpFrontIdx;
         [SerializeField] private InlineProperty m_failStencilOpBackIdx;
 
 		//ZFail Stencil Op
-		[NonSerialized] private int ZFailStencilOpDefaultValue;
+		[NonSerialized] private int ZFailStencilOpDefaultValue = 0;
 		[SerializeField] private InlineProperty m_zFailStencilOpFrontIdx;
         [SerializeField] private InlineProperty m_zFailStencilOpBackIdx;
+
+		private bool m_referenceDirty = false;
+		private bool m_readMaskDirty = false;
+		private bool m_writeMaskDirty = false;
+		private bool m_comparisonFrontDirty = false;
+		private bool m_comparisonBackDirty = false;
+		private bool m_passFrontDirty = false;
+		private bool m_passBackDirty = false;
+		private bool m_failFrontDirty = false;
+		private bool m_failBackDirty = false;
+		private bool m_zFailFrontDirty = false;
+		private bool m_zFailBackDirty = false;
 
         public TemplatesStencilBufferModule() : base("Stencil Buffer")
         {
@@ -79,17 +89,12 @@ namespace AmplifyShaderEditor
                 m_stencilOpsDict.Add( StencilBufferOpHelper.StencilOpsValues[ i ].ToLower(), i );
             }
 
-			ComparisonDefaultValue = m_comparisonDict[ "always" ];
-			PassStencilOpDefaultValue = m_stencilOpsDict[ "keep" ];
-			FailStencilOpDefaultValue = m_stencilOpsDict[ "keep" ];
-			ZFailStencilOpDefaultValue = m_stencilOpsDict[ "keep" ];
-
-	        m_comparisonFunctionFrontIdx = new InlineProperty( ComparisonDefaultValue );        
+	        m_comparisonFunctionFrontIdx = new InlineProperty( ComparisonDefaultValue );
 			m_comparisonFunctionBackIdx = new InlineProperty( ComparisonDefaultValue );
-		
-	        m_passStencilOpFrontIdx = new InlineProperty( PassStencilOpDefaultValue );        
+
+	        m_passStencilOpFrontIdx = new InlineProperty( PassStencilOpDefaultValue );
 		    m_passStencilOpBackIdx = new InlineProperty( PassStencilOpDefaultValue );
-        
+
 		    m_failStencilOpFrontIdx = new InlineProperty( FailStencilOpDefaultValue );
 	        m_failStencilOpBackIdx = new InlineProperty( FailStencilOpDefaultValue );
 
@@ -114,6 +119,80 @@ namespace AmplifyShaderEditor
 			m_failStencilOpBackIdx.CopyFrom( other.FailStencilOpBackIdx );
 			m_zFailStencilOpFrontIdx.CopyFrom( other.ZFailStencilOpIdx );
 			m_zFailStencilOpBackIdx.CopyFrom( other.ZFailStencilOpBackIdx );
+		}
+
+		// Copies only the stencil fields the user just edited, so untouched masks and ops keep the
+		// pass's own values.
+		public bool MirrorFrom( TemplatesStencilBufferModule other )
+		{
+			bool mirrored = false;
+			if ( other.ReferenceDirty )
+			{
+				m_reference.CopyFrom( other.Reference, true );
+				mirrored = true;
+			}
+
+			if ( other.ReadMaskDirty )
+			{
+				m_readMask.CopyFrom( other.ReadMask, true );
+				mirrored = true;
+			}
+
+			if ( other.WriteMaskDirty )
+			{
+				m_writeMask.CopyFrom( other.WriteMask, true );
+				mirrored = true;
+			}
+
+			if ( other.ComparisonFrontDirty )
+			{
+				m_comparisonFunctionFrontIdx.CopyFrom( other.ComparisonFunctionIdx, true );
+				mirrored = true;
+			}
+
+			if ( other.ComparisonBackDirty )
+			{
+				m_comparisonFunctionBackIdx.CopyFrom( other.ComparisonFunctionBackIdx, true );
+				mirrored = true;
+			}
+
+			if ( other.PassFrontDirty )
+			{
+				m_passStencilOpFrontIdx.CopyFrom( other.PassStencilOpIdx, true );
+				mirrored = true;
+			}
+
+			if ( other.PassBackDirty )
+			{
+				m_passStencilOpBackIdx.CopyFrom( other.PassStencilOpBackIdx, true );
+				mirrored = true;
+			}
+
+			if ( other.FailFrontDirty )
+			{
+				m_failStencilOpFrontIdx.CopyFrom( other.FailStencilOpIdx, true );
+				mirrored = true;
+			}
+
+			if ( other.FailBackDirty )
+			{
+				m_failStencilOpBackIdx.CopyFrom( other.FailStencilOpBackIdx, true );
+				mirrored = true;
+			}
+
+			if ( other.ZFailFrontDirty )
+			{
+				m_zFailStencilOpFrontIdx.CopyFrom( other.ZFailStencilOpIdx, true );
+				mirrored = true;
+			}
+
+			if ( other.ZFailBackDirty )
+			{
+				m_zFailStencilOpBackIdx.CopyFrom( other.ZFailStencilOpBackIdx, true );
+				mirrored = true;
+			}
+
+			return mirrored;
 		}
 
         public void ConfigureFromTemplateData( TemplateStencilData stencilData )
@@ -388,33 +467,76 @@ namespace AmplifyShaderEditor
 
 		void DrawBlock( UndoParentNode owner, CullMode cullMode )
 		{
+			// @diogo: per-field flags only describe the last draw, so the mirror can copy just what was touched
+			m_referenceDirty = false;
+			m_readMaskDirty = false;
+			m_writeMaskDirty = false;
+			m_comparisonFrontDirty = false;
+			m_comparisonBackDirty = false;
+			m_passFrontDirty = false;
+			m_passBackDirty = false;
+			m_failFrontDirty = false;
+			m_failBackDirty = false;
+			m_zFailFrontDirty = false;
+			m_zFailBackDirty = false;
+
 			bool guiEnabled = GUI.enabled;
 			GUI.enabled = m_active;
 			EditorGUI.BeginChangeCheck();
 			{
 				var cache = EditorGUIUtility.labelWidth;
 				EditorGUIUtility.labelWidth = EditorGUIUtility.labelWidth - 20;
+				EditorGUI.BeginChangeCheck();
 				m_reference.IntSlider( ref owner, ReferenceValueContent, 0, 255 );
+				m_referenceDirty = EditorGUI.EndChangeCheck();
+				EditorGUI.BeginChangeCheck();
 				m_readMask.IntSlider( ref owner, ReadMaskContent, 0, 255 );
+				m_readMaskDirty = EditorGUI.EndChangeCheck();
+				EditorGUI.BeginChangeCheck();
 				m_writeMask.IntSlider( ref owner, WriteMaskContent, 0, 255 );
+				m_writeMaskDirty = EditorGUI.EndChangeCheck();
 				if( cullMode == CullMode.Off )
 				{
+					EditorGUI.BeginChangeCheck();
 					m_comparisonFunctionFrontIdx.EnumTypePopup( ref owner, ComparisonFrontStr, StencilBufferOpHelper.StencilComparisonLabels );
+					m_comparisonFrontDirty = EditorGUI.EndChangeCheck();
+					EditorGUI.BeginChangeCheck();
 					m_passStencilOpFrontIdx.EnumTypePopup( ref owner, PassFrontStr, StencilBufferOpHelper.StencilOpsLabels );
+					m_passFrontDirty = EditorGUI.EndChangeCheck();
+					EditorGUI.BeginChangeCheck();
 					m_failStencilOpFrontIdx.EnumTypePopup( ref owner, FailFrontStr, StencilBufferOpHelper.StencilOpsLabels );
+					m_failFrontDirty = EditorGUI.EndChangeCheck();
+					EditorGUI.BeginChangeCheck();
 					m_zFailStencilOpFrontIdx.EnumTypePopup( ref owner, ZFailFrontStr, StencilBufferOpHelper.StencilOpsLabels );
+					m_zFailFrontDirty = EditorGUI.EndChangeCheck();
 					EditorGUILayout.Separator();
+					EditorGUI.BeginChangeCheck();
 					m_comparisonFunctionBackIdx.EnumTypePopup( ref owner, ComparisonBackStr, StencilBufferOpHelper.StencilComparisonLabels );
+					m_comparisonBackDirty = EditorGUI.EndChangeCheck();
+					EditorGUI.BeginChangeCheck();
 					m_passStencilOpBackIdx.EnumTypePopup( ref owner, PassBackStr, StencilBufferOpHelper.StencilOpsLabels );
+					m_passBackDirty = EditorGUI.EndChangeCheck();
+					EditorGUI.BeginChangeCheck();
 					m_failStencilOpBackIdx.EnumTypePopup( ref owner, FailBackStr, StencilBufferOpHelper.StencilOpsLabels );
+					m_failBackDirty = EditorGUI.EndChangeCheck();
+					EditorGUI.BeginChangeCheck();
 					m_zFailStencilOpBackIdx.EnumTypePopup( ref owner, ZFailBackStr, StencilBufferOpHelper.StencilOpsLabels );
+					m_zFailBackDirty = EditorGUI.EndChangeCheck();
 				}
 				else
 				{
+					EditorGUI.BeginChangeCheck();
 					m_comparisonFunctionFrontIdx.EnumTypePopup( ref owner, ComparisonStr, StencilBufferOpHelper.StencilComparisonLabels );
+					m_comparisonFrontDirty = EditorGUI.EndChangeCheck();
+					EditorGUI.BeginChangeCheck();
 					m_passStencilOpFrontIdx.EnumTypePopup( ref owner, PassFrontStr, StencilBufferOpHelper.StencilOpsLabels );
+					m_passFrontDirty = EditorGUI.EndChangeCheck();
+					EditorGUI.BeginChangeCheck();
 					m_failStencilOpFrontIdx.EnumTypePopup( ref owner, FailFrontStr, StencilBufferOpHelper.StencilOpsLabels );
+					m_failFrontDirty = EditorGUI.EndChangeCheck();
+					EditorGUI.BeginChangeCheck();
 					m_zFailStencilOpFrontIdx.EnumTypePopup( ref owner, ZFailFrontStr, StencilBufferOpHelper.StencilOpsLabels );
+					m_zFailFrontDirty = EditorGUI.EndChangeCheck();
 				}
 
 				EditorGUIUtility.labelWidth = cache;
@@ -517,6 +639,17 @@ namespace AmplifyShaderEditor
 			m_zFailStencilOpBackIdx = null;
 		}
 		public bool Active { get { return m_active; } }
+		public bool ReferenceDirty { get { return m_referenceDirty; } }
+		public bool ReadMaskDirty { get { return m_readMaskDirty; } }
+		public bool WriteMaskDirty { get { return m_writeMaskDirty; } }
+		public bool ComparisonFrontDirty { get { return m_comparisonFrontDirty; } }
+		public bool ComparisonBackDirty { get { return m_comparisonBackDirty; } }
+		public bool PassFrontDirty { get { return m_passFrontDirty; } }
+		public bool PassBackDirty { get { return m_passBackDirty; } }
+		public bool FailFrontDirty { get { return m_failFrontDirty; } }
+		public bool FailBackDirty { get { return m_failBackDirty; } }
+		public bool ZFailFrontDirty { get { return m_zFailFrontDirty; } }
+		public bool ZFailBackDirty { get { return m_zFailBackDirty; } }
 		public InlineProperty Reference { get { return m_reference; } }
 		public InlineProperty ReadMask { get { return m_readMask; } }
 		public InlineProperty WriteMask { get { return m_writeMask; } }

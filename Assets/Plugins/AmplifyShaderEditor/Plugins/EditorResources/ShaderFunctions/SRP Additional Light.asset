@@ -3,84 +3,281 @@
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 78b2425a2284af743826c689403a4924, type: 3}
   m_Name: SRP Additional Light
   m_EditorClassIdentifier: 
-  m_functionInfo: "// Made with Amplify Shader Editor\n// Available at the Unity Asset
-    Store - http://u3d.as/y3X \n/*ASEBEGIN\nVersion=18903\n-2306;98;1199;1062;1079.951;1299.86;1;True;False\nNode;AmplifyShaderEditor.CommentaryNode;67;-762.7209,462.2619;Inherit;False;1393.582;499.9396;;9;0;30;19;6;39;23;59;62;21;Main
-    Switch;1,1,1,1;0;0\nNode;AmplifyShaderEditor.CommentaryNode;66;-2609.233,465.7281;Inherit;False;581.5553;236.5492;;3;33;32;68;Shadow
-    Mask;1,1,1,1;0;0\nNode;AmplifyShaderEditor.CommentaryNode;65;-920.7385,-584.9739;Inherit;False;1591.506;791.9908;;11;55;49;18;14;15;27;61;13;16;63;64;Specular;1,1,1,1;0;0\nNode;AmplifyShaderEditor.CommentaryNode;60;-848.252,-1179.358;Inherit;False;1189.888;419.8453;;7;54;48;56;57;22;26;58;Half
-    Lambert;1,1,1,1;0;0\nNode;AmplifyShaderEditor.CommentaryNode;53;-2619.122,-57.4623;Inherit;False;1141.001;424.3999;;7;12;9;4;10;2;11;50;World
-    Normal;1,1,1,1;0;0\nNode;AmplifyShaderEditor.CommentaryNode;52;-2608.642,-424.6649;Inherit;False;467.4869;233;;2;44;3;World
-    Pos;1,1,1,1;0;0\nNode;AmplifyShaderEditor.CommentaryNode;40;-846.7464,-1664.293;Inherit;False;1082.843;405.3478;;7;38;25;41;51;47;37;5;Lambert;1,1,1,1;0;0\nNode;AmplifyShaderEditor.CommentaryNode;36;-844.4141,-2081.018;Inherit;False;987.3232;348.9314;;6;29;24;8;31;35;45;Flat;1,1,1,1;0;0\nNode;AmplifyShaderEditor.FunctionInput;18;-658.4189,-156.4711;Inherit;False;Smoothness;1;4;False;1;0;FLOAT;0.5;False;1;FLOAT;0\nNode;AmplifyShaderEditor.GetLocalVarNode;39;-702.373,659.6418;Inherit;False;38;lambertResult;1;0;OBJECT;;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.RegisterLocalVarNode;58;99.63594,-1021.087;Inherit;False;halfLambertResult;-1;True;1;0;FLOAT3;0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.GetLocalVarNode;55;-640.7715,-449.6685;Inherit;False;50;worldNormalValue;1;0;OBJECT;;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.GetLocalVarNode;64;-504.154,75.26627;Inherit;False;33;shadowMaskValue;1;0;OBJECT;;False;1;FLOAT4;0\nNode;AmplifyShaderEditor.GetLocalVarNode;30;-543.587,512.2619;Inherit;False;29;FlatResult;1;0;OBJECT;;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.FunctionInput;14;-658.4189,-236.4712;Inherit;False;Specular
-    Color;3;3;False;1;0;FLOAT3;1,1,1;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.GetLocalVarNode;49;-611.2431,-534.9739;Inherit;False;44;worldPosValue;1;0;OBJECT;;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.WorldNormalVector;4;-2409.121,153.5377;Inherit;False;False;1;0;FLOAT3;0,0,1;False;4;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3\nNode;AmplifyShaderEditor.FunctionSwitch;26;-137.4143,-1046.044;Inherit;False;Option;False;0;2;-1;In
-    0;In 1;Instance;24;9;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT;0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT;0;False;7;FLOAT;0;False;8;FLOAT;0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.GetLocalVarNode;59;-712.7209,760.9056;Inherit;False;58;halfLambertResult;1;0;OBJECT;;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.Vector3Node;10;-2569.122,-6.462288;Inherit;False;Constant;_Vector0;Vector
-    0;0;0;Create;True;0;0;0;False;0;False;0,0,1;0,0,0;0;4;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3\nNode;AmplifyShaderEditor.Vector3Node;21;-65.63779,774.2015;Inherit;False;Constant;_Vector1;Vector
-    1;0;0;Create;True;0;0;0;False;0;False;0,0,0;0,0,0;0;4;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3\nNode;AmplifyShaderEditor.FunctionSwitch;27;98.46796,-286.2599;Inherit;False;Option;False;0;2;-1;In
-    0;In 1;Instance;24;9;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT;0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT;0;False;7;FLOAT;0;False;8;FLOAT;0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.FunctionSwitch;9;-1991.121,55.53762;Inherit;False;Normal
-    Space;False;0;2;1;Tangent Space;World Space;Object;-1;9;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT;0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT;0;False;7;FLOAT;0;False;8;FLOAT;0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.RegisterLocalVarNode;33;-2241.678,522.2767;Inherit;False;shadowMaskValue;-1;True;1;0;FLOAT4;0,0,0,0;False;1;FLOAT4;0\nNode;AmplifyShaderEditor.GetLocalVarNode;48;-723.7242,-1129.357;Inherit;False;44;worldPosValue;1;0;OBJECT;;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.FunctionSwitchByPipeline;19;223.761,651.6014;Inherit;False;4;0;FLOAT3;0,0,0;False;3;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.CustomExpressionNode;37;-450.795,-1603.666;Inherit;False;float3
-    Color = 0@$#ifdef _ADDITIONAL_LIGHTS$int numLights = GetAdditionalLightsCount()@$for(int
-    i = 0@ i<numLights@i++)${$\tLight light = GetAdditionalLight(i, WorldPosition)@$\thalf3
-    AttLightColor = light.color *(light.distanceAttenuation * light.shadowAttenuation)@$\tColor
-    +=LightingLambert(AttLightColor, light.direction, WorldNormal)@$\t$}$#endif$return
-    Color@;3;Create;2;True;WorldPosition;FLOAT3;0,0,0;In;;Float;False;True;WorldNormal;FLOAT3;0,0,0;In;;Float;False;AdditionalLightsLambert;False;False;0;;False;2;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.FunctionSwitch;6;-110.1378,628.2015;Inherit;False;Lighting
-    Mode;False;0;3;0;Flat;Lambert;Specular;Object;-1;9;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT;0;False;7;FLOAT;0;False;8;FLOAT;0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.GetLocalVarNode;62;-418.3635,798.5036;Inherit;False;61;specularResult;1;0;OBJECT;;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.FunctionInput;15;-658.4189,-332.4712;Inherit;False;View
-    Dir;3;2;False;1;0;FLOAT3;0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.FunctionSwitch;24;-308.8937,-1977.931;Inherit;False;Use
-    Shadow Mask;True;0;2;3;In 0;In 1;Object;-1;9;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT;0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT;0;False;7;FLOAT;0;False;8;FLOAT;0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.GetLocalVarNode;57;-798.252,-875.5127;Inherit;False;33;shadowMaskValue;1;0;OBJECT;;False;1;FLOAT4;0\nNode;AmplifyShaderEditor.CustomExpressionNode;5;-472.2628,-1473.715;Inherit;False;float3
-    Color = 0@$#ifdef _ADDITIONAL_LIGHTS$int numLights = GetAdditionalLightsCount()@$for(int
-    i = 0@ i<numLights@i++)${$#if ASE_SRP_VERSION >= 100000$\tLight light = GetAdditionalLight(i,
-    WorldPosition, ShadowMask)@$#else$\tLight light = GetAdditionalLight(i, WorldPosition)@$#endif$\thalf3
-    AttLightColor = light.color *(light.distanceAttenuation * light.shadowAttenuation)@$\tColor
-    +=LightingLambert(AttLightColor, light.direction, WorldNormal)@$\t$}$#endif$return
-    Color@;3;Create;3;True;WorldPosition;FLOAT3;0,0,0;In;;Float;False;True;WorldNormal;FLOAT3;0,0,0;In;;Float;False;True;ShadowMask;FLOAT4;0,0,0,0;In;;Inherit;False;AdditionalLightsLambertMask;False;False;0;;False;3;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT4;0,0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.FunctionSwitch;25;-193.5493,-1609.208;Inherit;False;Option;False;0;2;-1;In
-    0;In 1;Instance;24;9;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT;0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT;0;False;7;FLOAT;0;False;8;FLOAT;0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.GetLocalVarNode;35;-820.8937,-1817.931;Inherit;False;33;shadowMaskValue;1;0;OBJECT;;False;1;FLOAT4;0\nNode;AmplifyShaderEditor.CustomExpressionNode;13;-191.7135,-336.9496;Inherit;False;float3
-    Color = 0@$#ifdef _ADDITIONAL_LIGHTS$Smoothness = exp2(10 * Smoothness + 1)@$int
-    numLights = GetAdditionalLightsCount()@$for(int i = 0@ i<numLights@i++)${$\tLight
-    light = GetAdditionalLight(i, WorldPosition)@$\thalf3 AttLightColor = light.color
-    *(light.distanceAttenuation * light.shadowAttenuation)@$\tColor += LightingSpecular(AttLightColor,
-    light.direction, WorldNormal, WorldView, half4(SpecColor, 0), Smoothness)@\t$}$#endif$return
-    Color@;3;Create;5;True;WorldPosition;FLOAT3;0,0,0;In;;Float;False;True;WorldNormal;FLOAT3;0,0,0;In;;Float;False;True;WorldView;FLOAT3;0,0,0;In;;Float;False;True;SpecColor;FLOAT3;0,0,0;In;;Float;False;True;Smoothness;FLOAT;0.5;In;;Float;False;AdditionalLightsSpecular;False;False;0;;False;5;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT3;0,0,0;False;4;FLOAT;0.5;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.GetLocalVarNode;51;-833.5493,-1481.208;Inherit;False;50;worldNormalValue;1;0;OBJECT;;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.FunctionInput;11;-2201.121,153.5377;Inherit;False;World
-    Normal;3;1;False;1;0;FLOAT3;0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.GetLocalVarNode;41;-833.5493,-1385.208;Inherit;False;33;shadowMaskValue;1;0;OBJECT;;False;1;FLOAT4;0\nNode;AmplifyShaderEditor.RegisterLocalVarNode;38;46.45073,-1609.208;Inherit;False;lambertResult;-1;True;1;0;FLOAT3;0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.WorldPosInputsNode;3;-2558.642,-374.6649;Inherit;False;0;4;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3\nNode;AmplifyShaderEditor.GetLocalVarNode;45;-820.8937,-2009.931;Inherit;False;44;worldPosValue;1;0;OBJECT;;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.RegisterLocalVarNode;61;314.5895,-289.8391;Inherit;False;specularResult;-1;True;1;0;FLOAT3;0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.WorldNormalVector;12;-2213.121,-7.462296;Inherit;False;False;1;0;FLOAT3;0,0,1;False;4;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3\nNode;AmplifyShaderEditor.RegisterLocalVarNode;50;-1697.1,29.00105;Inherit;False;worldNormalValue;-1;True;1;0;FLOAT3;0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.RegisterLocalVarNode;29;-68.89375,-1977.931;Inherit;False;FlatResult;-1;True;1;0;FLOAT3;0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.FunctionInput;32;-2409,520;Inherit;False;Shadow
-    Mask;4;5;False;1;0;FLOAT4;0,0,0,0;False;1;FLOAT4;0\nNode;AmplifyShaderEditor.FunctionSwitch;23;-414.5746,660.2781;Inherit;False;Half
-    Lambert;True;0;2;2;In 0;In 1;Object;-1;9;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT;0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT;0;False;7;FLOAT;0;False;8;FLOAT;0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.Vector4Node;68;-2563.697,518.9551;Inherit;False;Constant;_Vector2;Vector
-    2;0;0;Create;True;0;0;0;False;0;False;1,1,1,1;0,0,0,0;0;5;FLOAT4;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4\nNode;AmplifyShaderEditor.RegisterLocalVarNode;44;-2366.155,-370.2155;Inherit;False;worldPosValue;-1;True;1;0;FLOAT3;0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.CustomExpressionNode;8;-564.8937,-1993.931;Inherit;False;float3
-    Color = 0@$#ifdef _ADDITIONAL_LIGHTS$int numLights = GetAdditionalLightsCount()@$for(int
-    i = 0@ i<numLights@i++)${$\tLight light = GetAdditionalLight(i, WorldPosition)@$\tColor
-    += light.color *(light.distanceAttenuation * light.shadowAttenuation)@$\t$}$#endif$return
-    Color@;3;Create;1;True;WorldPosition;FLOAT3;0,0,0;In;;Float;False;AdditionalLightsFlat;False;False;0;;False;1;0;FLOAT3;0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.GetLocalVarNode;54;-750.6669,-996.535;Inherit;False;50;worldNormalValue;1;0;OBJECT;;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.GetLocalVarNode;47;-833.5493,-1609.208;Inherit;False;44;worldPosValue;1;0;OBJECT;;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.CustomExpressionNode;31;-564.8937,-1913.931;Inherit;False;float3
-    Color = 0@$#ifdef _ADDITIONAL_LIGHTS$int numLights = GetAdditionalLightsCount()@$for(int
-    i = 0@ i<numLights@i++)${$#if ASE_SRP_VERSION >= 100000$\tLight light = GetAdditionalLight(i,
-    WorldPosition, ShadowMask)@$#else$\tLight light = GetAdditionalLight(i, WorldPosition)@$#endif$\tColor
-    += light.color *(light.distanceAttenuation * light.shadowAttenuation)@$\t$}$#endif$return
-    Color@;3;Create;2;True;WorldPosition;FLOAT3;0,0,0;In;;Float;False;True;ShadowMask;FLOAT4;0,0,0,0;In;;Inherit;False;AdditionalLightsFlatMask;False;False;0;;False;2;0;FLOAT3;0,0,0;False;1;FLOAT4;0,0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.CustomExpressionNode;22;-428.3495,-1080.747;Inherit;False;float3
-    Color = 0@$#ifdef _ADDITIONAL_LIGHTS$int numLights = GetAdditionalLightsCount()@$for(int
-    i = 0@ i<numLights@i++)${$\tLight light = GetAdditionalLight(i, WorldPosition)@$\thalf3
-    AttLightColor = light.color *(light.distanceAttenuation * light.shadowAttenuation)@$\tColor
-    +=(dot(light.direction, WorldNormal)*0.5+0.5 )* AttLightColor@$\t$}$#endif$return
-    Color@;3;Create;2;True;WorldPosition;FLOAT3;0,0,0;In;;Float;False;True;WorldNormal;FLOAT3;0,0,0;In;;Float;False;AdditionalLightsHalfLambert;False;False;0;;False;2;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.FunctionInput;2;-2399.121,-6.462288;Inherit;False;Normal;3;0;False;1;0;FLOAT3;0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.CustomExpressionNode;63;-207.2385,-126.0936;Inherit;False;float3
-    Color = 0@$#ifdef _ADDITIONAL_LIGHTS$Smoothness = exp2(10 * Smoothness + 1)@$int
-    numLights = GetAdditionalLightsCount()@$for(int i = 0@ i<numLights@i++)${$#if
-    ASE_SRP_VERSION >= 100000$\tLight light = GetAdditionalLight(i, WorldPosition,
-    ShadowMask)@$#else$\tLight light = GetAdditionalLight(i, WorldPosition)@$#endif$\thalf3
-    AttLightColor = light.color *(light.distanceAttenuation * light.shadowAttenuation)@$\tColor
-    += LightingSpecular(AttLightColor, light.direction, WorldNormal, WorldView, half4(SpecColor,
-    0), Smoothness)@\t$}$#endif$return Color@;3;Create;6;True;WorldPosition;FLOAT3;0,0,0;In;;Float;False;True;WorldNormal;FLOAT3;0,0,0;In;;Float;False;True;WorldView;FLOAT3;0,0,0;In;;Float;False;True;SpecColor;FLOAT3;0,0,0;In;;Float;False;True;Smoothness;FLOAT;0.5;In;;Float;False;True;ShadowMask;FLOAT4;0,0,0,0;In;;Inherit;False;AdditionalLightsSpecularMask;False;False;0;;False;6;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT3;0,0,0;False;4;FLOAT;0.5;False;5;FLOAT4;0,0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.CustomExpressionNode;56;-433.6657,-942.9171;Inherit;False;float3
-    Color = 0@$#ifdef _ADDITIONAL_LIGHTS$int numLights = GetAdditionalLightsCount()@$for(int
-    i = 0@ i<numLights@i++)${$#if ASE_SRP_VERSION >= 100000$\tLight light = GetAdditionalLight(i,
-    WorldPosition, ShadowMask)@$#else$\tLight light = GetAdditionalLight(i, WorldPosition)@$#endif$\thalf3
-    AttLightColor = light.color *(light.distanceAttenuation * light.shadowAttenuation)@$\tColor
-    +=(dot(light.direction, WorldNormal)*0.5+0.5 )* AttLightColor@$\t$}$#endif$return
-    Color@;3;Create;3;True;WorldPosition;FLOAT3;0,0,0;In;;Float;False;True;WorldNormal;FLOAT3;0,0,0;In;;Float;False;True;ShadowMask;FLOAT4;0,0,0,0;In;;Inherit;False;AdditionalLightsHalfLambertMask;False;False;0;;False;3;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT4;0,0,0,0;False;1;FLOAT3;0\nNode;AmplifyShaderEditor.ViewDirInputsCoordNode;16;-870.7385,-332.9706;Inherit;False;World;False;0;4;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3\nNode;AmplifyShaderEditor.FunctionOutput;0;495.8608,669.8015;Inherit;False;True;-1;Out;0;False;1;0;FLOAT3;0,0,0;False;1;FLOAT3;0\nWireConnection;58;0;26;0\nWireConnection;26;0;22;0\nWireConnection;26;1;56;0\nWireConnection;27;0;13;0\nWireConnection;27;1;63;0\nWireConnection;9;0;12;0\nWireConnection;9;1;11;0\nWireConnection;33;0;32;0\nWireConnection;19;0;21;0\nWireConnection;19;3;21;0\nWireConnection;19;1;6;0\nWireConnection;19;2;21;0\nWireConnection;37;0;47;0\nWireConnection;37;1;51;0\nWireConnection;6;0;30;0\nWireConnection;6;1;23;0\nWireConnection;6;2;62;0\nWireConnection;15;0;16;0\nWireConnection;24;0;8;0\nWireConnection;24;1;31;0\nWireConnection;5;0;47;0\nWireConnection;5;1;51;0\nWireConnection;5;2;41;0\nWireConnection;25;0;37;0\nWireConnection;25;1;5;0\nWireConnection;13;0;49;0\nWireConnection;13;1;55;0\nWireConnection;13;2;15;0\nWireConnection;13;3;14;0\nWireConnection;13;4;18;0\nWireConnection;11;0;4;0\nWireConnection;38;0;25;0\nWireConnection;61;0;27;0\nWireConnection;12;0;2;0\nWireConnection;50;0;9;0\nWireConnection;29;0;24;0\nWireConnection;32;0;68;0\nWireConnection;23;0;39;0\nWireConnection;23;1;59;0\nWireConnection;44;0;3;0\nWireConnection;8;0;45;0\nWireConnection;31;0;45;0\nWireConnection;31;1;35;0\nWireConnection;22;0;48;0\nWireConnection;22;1;54;0\nWireConnection;2;0;10;0\nWireConnection;63;0;49;0\nWireConnection;63;1;55;0\nWireConnection;63;2;15;0\nWireConnection;63;3;14;0\nWireConnection;63;4;18;0\nWireConnection;63;5;64;0\nWireConnection;56;0;48;0\nWireConnection;56;1;54;0\nWireConnection;56;2;57;0\nWireConnection;0;0;19;0\nASEEND*/\n//CHKSM=172C975BC4B8265A7736E90F657433DCA22992AA"
+  m_functionInfo: "// Made with Amplify Shader Editor v1.9.9.13p6\n// Available at
+    the Unity Asset Store - http://u3d.as/y3X \n/*ASEBEGIN\nVersion=19913\n{\"type\":\"AmplifyShaderEditor.CommentaryNode,
+    AmplifyShaderEditor\",\"id\":241,\"pos\":[-1533.415,-288],\"params\":[\"Inherit\",\"False\",\"1312.925\",\"1177.808\",\"\",\"18\",\"327\",\"320\",\"321\",\"326\",\"345\",\"347\",\"346\",\"358\",\"357\",\"356\",\"355\",\"354\",\"353\",\"352\",\"325\",\"324\",\"323\",\"322\",\"Specular\",\"0.06603771,0.06603771,0.06603771,1\",\"0\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CommentaryNode,
+    AmplifyShaderEditor\",\"id\":242,\"pos\":[-1536,-2048],\"params\":[\"Inherit\",\"False\",\"1318.589\",\"824.2471\",\"\",\"11\",\"305\",\"304\",\"299\",\"303\",\"302\",\"301\",\"300\",\"298\",\"297\",\"296\",\"295\",\"Lambert\",\"0,0,0,1\",\"0\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CommentaryNode,
+    AmplifyShaderEditor\",\"id\":243,\"pos\":[-1536,-1136],\"params\":[\"Inherit\",\"False\",\"1316.341\",\"765.4545\",\"\",\"11\",\"317\",\"359\",\"312\",\"316\",\"315\",\"314\",\"313\",\"311\",\"310\",\"309\",\"308\",\"HalfLambert\",\"0,0,0,1\",\"0\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CommentaryNode,
+    AmplifyShaderEditor\",\"id\":244,\"pos\":[-1542.19,-2894.197],\"params\":[\"Inherit\",\"False\",\"1327.903\",\"744.9124\",\"\",\"9\",\"292\",\"269\",\"291\",\"278\",\"277\",\"276\",\"272\",\"271\",\"270\",\"Flat\",\"0,0,0,1\",\"0\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CommentaryNode,
+    AmplifyShaderEditor\",\"id\":246,\"pos\":[-2992,-1920],\"params\":[\"Inherit\",\"False\",\"686.7183\",\"284.0335\",\"\",\"3\",\"286\",\"285\",\"284\",\"Normalized
+    Screen  UV\",\"0.02830189,0.02830189,0.02830189,1\",\"0\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CommentaryNode,
+    AmplifyShaderEditor\",\"id\":247,\"pos\":[-2992,-2400],\"params\":[\"Inherit\",\"False\",\"1227.953\",\"372.3219\",\"\",\"7\",\"11\",\"2\",\"351\",\"283\",\"282\",\"280\",\"281\",\"World
+    Normal\",\"0.03773582,0.03773582,0.03773582,1\",\"0\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CommentaryNode,
+    AmplifyShaderEditor\",\"id\":248,\"pos\":[-2992,-1520],\"params\":[\"Inherit\",\"False\",\"686.7343\",\"227.7169\",\"\",\"2\",\"288\",\"287\",\"World
+    Position\",\"0,0,0,1\",\"0\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CommentaryNode,
+    AmplifyShaderEditor\",\"id\":249,\"pos\":[-2992,-2896],\"params\":[\"Inherit\",\"False\",\"1222.346\",\"428.4029\",\"\",\"4\",\"360\",\"343\",\"268\",\"32\",\"Shadow
+    Mask\",\"0,0,0,1\",\"0\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.StickyNoteNode,
+    AmplifyShaderEditor\",\"id\":268,\"pos\":[-2192,-2672],\"params\":[\"Inherit\",\"False\",\"317.7705\",\"166.8521\",\"Sample
+    Shadow Mask Node\",\"\",\"0,0,0,1\",\"Returns Shadow Mask based on input Lightmap
+    UV coordinates. \\n\\nDefault Lightmap UVs are Static. \\n\\nApplies only to
+    SRP 10 or greater.\",\"0\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":270,\"pos\":[-960,-2800],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":271,\"pos\":[-963.9961,-2654.197],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT2\",\"0,0\",\"False\",\"1\",\"FLOAT2\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":272,\"pos\":[-963.9961,-2510.197],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT4\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.WireNode,
+    AmplifyShaderEditor\",\"id\":273,\"pos\":[-147.9961,-2654.197],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.WireNode,
+    AmplifyShaderEditor\",\"id\":274,\"pos\":[-147.9961,-2574.197],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.WireNode,
+    AmplifyShaderEditor\",\"id\":275,\"pos\":[-147.9961,-2494.197],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":276,\"pos\":[-1283.996,-2798.197],\"params\":[\"Inherit\",\"False\",\"288\",\"WorldPosition\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":277,\"pos\":[-1251.996,-2654.197],\"params\":[\"Inherit\",\"False\",\"286\",\"ScreenUV\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT2\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":278,\"pos\":[-1283.996,-2510.197],\"params\":[\"Inherit\",\"False\",\"360\",\"ShadowMask\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT4\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionSubtitle,
+    AmplifyShaderEditor\",\"id\":331,\"pos\":[-67.99609,-2798.197],\"params\":[\"Inherit\",\"False\",\"Lighting
+    Mode Flat\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionSubtitle,
+    AmplifyShaderEditor\",\"id\":332,\"pos\":[-67.99609,-2718.197],\"params\":[\"Inherit\",\"False\",\"Lighting
+    Mode Lambert\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionSubtitle,
+    AmplifyShaderEditor\",\"id\":333,\"pos\":[-67.99609,-2638.197],\"params\":[\"Inherit\",\"False\",\"Lighting
+    Mode Lambert Half\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionSubtitle,
+    AmplifyShaderEditor\",\"id\":334,\"pos\":[-67.99609,-2558.197],\"params\":[\"Inherit\",\"False\",\"Lighting
+    Mode Specular\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionSwitch,
+    AmplifyShaderEditor\",\"id\":6,\"pos\":[512,-2800],\"params\":[\"Inherit\",\"False\",\"Lighting
+    Mode\",\"False\",\"0\",\"3\",\"0\",\"Flat\",\"Lambert\",\"Specular\",\"Object\",\"-1\",\"20\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0,0,0\",\"False\",\"2\",\"FLOAT3\",\"0,0,0\",\"False\",\"3\",\"FLOAT\",\"0\",\"False\",\"4\",\"FLOAT\",\"0\",\"False\",\"5\",\"FLOAT\",\"0\",\"False\",\"6\",\"FLOAT\",\"0\",\"False\",\"7\",\"FLOAT\",\"0\",\"False\",\"8\",\"FLOAT\",\"0\",\"False\",\"9\",\"FLOAT\",\"0\",\"False\",\"10\",\"FLOAT\",\"0\",\"False\",\"11\",\"FLOAT\",\"0\",\"False\",\"12\",\"FLOAT\",\"0\",\"False\",\"13\",\"FLOAT\",\"0\",\"False\",\"14\",\"FLOAT\",\"0\",\"False\",\"15\",\"FLOAT\",\"0\",\"False\",\"16\",\"FLOAT\",\"0\",\"False\",\"17\",\"FLOAT\",\"0\",\"False\",\"18\",\"FLOAT\",\"0\",\"False\",\"19\",\"FLOAT\",\"0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionSwitch,
+    AmplifyShaderEditor\",\"id\":23,\"pos\":[224,-2720],\"params\":[\"Inherit\",\"False\",\"Half
+    Lambert\",\"True\",\"0\",\"2\",\"2\",\"In 0\",\"In 1\",\"Object\",\"-1\",\"20\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0,0,0\",\"False\",\"2\",\"FLOAT\",\"0\",\"False\",\"3\",\"FLOAT\",\"0\",\"False\",\"4\",\"FLOAT\",\"0\",\"False\",\"5\",\"FLOAT\",\"0\",\"False\",\"6\",\"FLOAT\",\"0\",\"False\",\"7\",\"FLOAT\",\"0\",\"False\",\"8\",\"FLOAT\",\"0\",\"False\",\"9\",\"FLOAT\",\"0\",\"False\",\"10\",\"FLOAT\",\"0\",\"False\",\"11\",\"FLOAT\",\"0\",\"False\",\"12\",\"FLOAT\",\"0\",\"False\",\"13\",\"FLOAT\",\"0\",\"False\",\"14\",\"FLOAT\",\"0\",\"False\",\"15\",\"FLOAT\",\"0\",\"False\",\"16\",\"FLOAT\",\"0\",\"False\",\"17\",\"FLOAT\",\"0\",\"False\",\"18\",\"FLOAT\",\"0\",\"False\",\"19\",\"FLOAT\",\"0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.WireNode,
+    AmplifyShaderEditor\",\"id\":363,\"pos\":[432,-2576],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CustomExpressionNode,
+    AmplifyShaderEditor\",\"id\":291,\"pos\":[-800,-2800],\"params\":[\"Inherit\",\"False\",\"float3
+    Color = 0;\\n#if defined(_ADDITIONAL_LIGHTS)\\n\\t#define SUM_LIGHTFLAT(Light)\\\\\\n\\t\\tColor
+    += Light.color * ( Light.distanceAttenuation * Light.shadowAttenuation );\\n\\n\\tInputData
+    inputData = (InputData)0;\\n\\tinputData.normalizedScreenSpaceUV = ScreenUV;\\n\\tinputData.positionWS
+    = WorldPosition;\\n\\n\\tuint meshRenderingLayers = GetMeshRenderingLayer();\\n\\tuint
+    pixelLightCount = GetAdditionalLightsCount();\\t\\n\\n\\t#if USE_FORWARD_PLUS\\n\\tfor
+    (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS);
+    lightIndex++)\\n\\t{\\n\\t\\tFORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK\\n\\n\\t\\tLight
+    light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTFLAT(
+    light );\\n\\t\\t}\\n\\t}\\n\\t#endif\\n\\n\\tLIGHT_LOOP_BEGIN( pixelLightCount
+    )\\n\\t\\tLight light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTFLAT(
+    light );\\n\\t\\t}\\n\\tLIGHT_LOOP_END\\n#endif\\nreturn Color;\\n\",\"3\",\"Create\",\"3\",\"True\",\"WorldPosition\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"ScreenUV\",\"FLOAT2\",\"0,0\",\"In\",\"\",\"Inherit\",\"False\",\"True\",\"ShadowMask\",\"FLOAT4\",\"0,0,0,0\",\"In\",\"\",\"Inherit\",\"False\",\"AdditionalLightsFlatMask14x\",\"False\",\"False\",\"0\",\"\",\"False\",\"3\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT2\",\"0,0\",\"False\",\"2\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.SwitchBySRPVersionNode,
+    AmplifyShaderEditor\",\"id\":269,\"pos\":[-480,-2800],\"params\":[\"Inherit\",\"False\",\"4\",\"14.x\",\"140000\",\"150000\",\"1\",\"15.x\",\"150000\",\"160000\",\"2\",\"16.x\",\"160000\",\"170000\",\"3\",\"17.0\",\"170000\",\"2147483647\",\"4\",\"5\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0,0,0\",\"False\",\"2\",\"FLOAT3\",\"0,0,0\",\"False\",\"3\",\"FLOAT3\",\"0,0,0\",\"False\",\"4\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RegisterLocalVarNode,
+    AmplifyShaderEditor\",\"id\":360,\"pos\":[-1984,-2816],\"params\":[\"Inherit\",\"False\",\"ShadowMask\",\"-1\",\"True\",\"1\",\"0\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT4\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.WorldNormalVector,
+    AmplifyShaderEditor\",\"id\":280,\"pos\":[-2576,-2336],\"params\":[\"Inherit\",\"False\",\"True\",\"1\",\"0\",\"FLOAT3\",\"0,0,1\",\"False\",\"4\",\"FLOAT3\",\"0\",\"FLOAT\",\"1\",\"FLOAT\",\"2\",\"FLOAT\",\"3\"]}\n{\"type\":\"AmplifyShaderEditor.Vector3Node,
+    AmplifyShaderEditor\",\"id\":282,\"pos\":[-2944,-2336],\"params\":[\"Inherit\",\"False\",\"Constant\",\"_Vector3\",\"Vector
+    0\",\"0\",\"0\",\"Create\",\"True\",\"0\",\"0\",\"0\",\"False\",\"0\",\"False\",\"Object\",\"-1\",\"\",\"0,0,1\",\"0,0,0\",\"0\",\"4\",\"FLOAT3\",\"0\",\"FLOAT\",\"1\",\"FLOAT\",\"2\",\"FLOAT\",\"3\"]}\n{\"type\":\"AmplifyShaderEditor.WorldNormalVector,
+    AmplifyShaderEditor\",\"id\":283,\"pos\":[-2768,-2176],\"params\":[\"Inherit\",\"False\",\"True\",\"1\",\"0\",\"FLOAT3\",\"0,0,1\",\"False\",\"4\",\"FLOAT3\",\"0\",\"FLOAT\",\"1\",\"FLOAT\",\"2\",\"FLOAT\",\"3\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionSwitch,
+    AmplifyShaderEditor\",\"id\":351,\"pos\":[-2368,-2336],\"params\":[\"Inherit\",\"False\",\"Normal
+    Space\",\"False\",\"0\",\"2\",\"1\",\"Tangent Space\",\"World Space\",\"Object\",\"-1\",\"20\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0,0,0\",\"False\",\"2\",\"FLOAT\",\"0\",\"False\",\"3\",\"FLOAT\",\"0\",\"False\",\"4\",\"FLOAT\",\"0\",\"False\",\"5\",\"FLOAT\",\"0\",\"False\",\"6\",\"FLOAT\",\"0\",\"False\",\"7\",\"FLOAT\",\"0\",\"False\",\"8\",\"FLOAT\",\"0\",\"False\",\"9\",\"FLOAT\",\"0\",\"False\",\"10\",\"FLOAT\",\"0\",\"False\",\"11\",\"FLOAT\",\"0\",\"False\",\"12\",\"FLOAT\",\"0\",\"False\",\"13\",\"FLOAT\",\"0\",\"False\",\"14\",\"FLOAT\",\"0\",\"False\",\"15\",\"FLOAT\",\"0\",\"False\",\"16\",\"FLOAT\",\"0\",\"False\",\"17\",\"FLOAT\",\"0\",\"False\",\"18\",\"FLOAT\",\"0\",\"False\",\"19\",\"FLOAT\",\"0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionInput,
+    AmplifyShaderEditor\",\"id\":2,\"pos\":[-2736,-2352],\"params\":[\"Inherit\",\"False\",\"Normal\",\"3\",\"0\",\"False\",\"\",\"\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionInput,
+    AmplifyShaderEditor\",\"id\":11,\"pos\":[-2560,-2192],\"params\":[\"Inherit\",\"False\",\"World
+    Normal\",\"3\",\"1\",\"False\",\"\",\"\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":295,\"pos\":[-960,-1664],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT2\",\"0,0\",\"False\",\"1\",\"FLOAT2\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":296,\"pos\":[-960,-1520],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT4\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":297,\"pos\":[-960,-1952],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":298,\"pos\":[-960,-1808],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":300,\"pos\":[-1280,-1952],\"params\":[\"Inherit\",\"False\",\"288\",\"WorldPosition\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":301,\"pos\":[-1248,-1664],\"params\":[\"Inherit\",\"False\",\"286\",\"ScreenUV\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT2\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":302,\"pos\":[-1280,-1520],\"params\":[\"Inherit\",\"False\",\"360\",\"ShadowMask\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT4\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":303,\"pos\":[-1248,-1808],\"params\":[\"Inherit\",\"False\",\"281\",\"WorldNormal\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":308,\"pos\":[-976,-608],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT4\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":309,\"pos\":[-960,-752],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT2\",\"0,0\",\"False\",\"1\",\"FLOAT2\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":310,\"pos\":[-976,-1040],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":311,\"pos\":[-976,-896],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":313,\"pos\":[-1296,-1040],\"params\":[\"Inherit\",\"False\",\"288\",\"WorldPosition\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":314,\"pos\":[-1264,-752],\"params\":[\"Inherit\",\"False\",\"286\",\"ScreenUV\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT2\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":315,\"pos\":[-1296,-608],\"params\":[\"Inherit\",\"False\",\"360\",\"ShadowMask\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT4\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":316,\"pos\":[-1264,-896],\"params\":[\"Inherit\",\"False\",\"281\",\"WorldNormal\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":322,\"pos\":[-1296,-176],\"params\":[\"Inherit\",\"False\",\"288\",\"WorldPosition\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":323,\"pos\":[-1264,112],\"params\":[\"Inherit\",\"False\",\"286\",\"ScreenUV\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT2\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":324,\"pos\":[-1296,256],\"params\":[\"Inherit\",\"False\",\"360\",\"ShadowMask\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT4\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.GetLocalVarNode,
+    AmplifyShaderEditor\",\"id\":325,\"pos\":[-1264,-32],\"params\":[\"Inherit\",\"False\",\"281\",\"WorldNormal\",\"1\",\"0\",\"OBJECT\",\"\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.WireNode,
+    AmplifyShaderEditor\",\"id\":328,\"pos\":[-160,-304],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.WireNode,
+    AmplifyShaderEditor\",\"id\":329,\"pos\":[-144,-1168],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.WireNode,
+    AmplifyShaderEditor\",\"id\":330,\"pos\":[-144,-2016],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":352,\"pos\":[-960,-176],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":353,\"pos\":[-960,-32],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":354,\"pos\":[-960,112],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT2\",\"0,0\",\"False\",\"1\",\"FLOAT2\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":355,\"pos\":[-960,256],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT4\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":356,\"pos\":[-960,400],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":357,\"pos\":[-960,544],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RelayNode,
+    AmplifyShaderEditor\",\"id\":358,\"pos\":[-960,688],\"params\":[\"Inherit\",\"False\",\"1\",\"0\",\"FLOAT\",\"0\",\"False\",\"1\",\"FLOAT\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionInput,
+    AmplifyShaderEditor\",\"id\":346,\"pos\":[-1264,544],\"params\":[\"Inherit\",\"False\",\"Specular
+    Color\",\"3\",\"3\",\"False\",\"\",\"\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionInput,
+    AmplifyShaderEditor\",\"id\":347,\"pos\":[-1328,688],\"params\":[\"Inherit\",\"False\",\"Specular
+    Smoothness\",\"1\",\"4\",\"False\",\"\",\"\",\"1\",\"0\",\"FLOAT\",\"0.5\",\"False\",\"1\",\"FLOAT\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionInput,
+    AmplifyShaderEditor\",\"id\":345,\"pos\":[-1232,400],\"params\":[\"Inherit\",\"False\",\"View
+    Dir\",\"3\",\"2\",\"False\",\"\",\"\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.ViewDirInputsCoordNode,
+    AmplifyShaderEditor\",\"id\":326,\"pos\":[-1456,400],\"params\":[\"Inherit\",\"False\",\"World\",\"False\",\"0\",\"4\",\"FLOAT3\",\"0\",\"FLOAT\",\"1\",\"FLOAT\",\"2\",\"FLOAT\",\"3\"]}\n{\"type\":\"AmplifyShaderEditor.CustomExpressionNode,
+    AmplifyShaderEditor\",\"id\":321,\"pos\":[-800,-176],\"params\":[\"Inherit\",\"False\",\"float3
+    Color = 0;\\n#if defined(_ADDITIONAL_LIGHTS)\\n\\tSmoothness = exp2(10 * Smoothness
+    + 1);\\n\\t\\n#define SUM_LIGHTSPECULAR(Light)\\\\\\nhalf3 AttLightColor = light.color
+    * ( light.distanceAttenuation * light.shadowAttenuation );\\\\\\nColor += LightingSpecular(
+    AttLightColor, light.direction, WorldNormal, WorldView, half4( SpecColor, 0 ),
+    Smoothness );\\t\\n\\nInputData inputData = (InputData)0;\\ninputData.normalizedScreenSpaceUV
+    = ScreenUV;\\ninputData.positionWS = WorldPosition;\\n\\nuint meshRenderingLayers
+    = GetMeshRenderingLayer();\\t\\nuint pixelLightCount = GetAdditionalLightsCount();\\t\\n\\n#if
+    USE_FORWARD_PLUS\\nfor (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT,
+    MAX_VISIBLE_LIGHTS); lightIndex++)\\n{\\nFORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK\\n\\nLight
+    light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\n#ifdef
+    _LIGHT_LAYERS\\nif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n#endif\\n{\\nSUM_LIGHTSPECULAR(
+    light );\\n}\\n}\\n#endif\\n\\n\\tLIGHT_LOOP_BEGIN( pixelLightCount )\\n\\t\\tLight
+    light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTSPECULAR(
+    light );\\n\\t\\t}\\n\\tLIGHT_LOOP_END\\n#endif\\nreturn Color;\",\"3\",\"Create\",\"7\",\"True\",\"WorldPosition\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"ScreenUV\",\"FLOAT2\",\"0,0\",\"In\",\"\",\"Inherit\",\"False\",\"True\",\"WorldNormal\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"WorldView\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"SpecColor\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"Smoothness\",\"FLOAT\",\"0.5\",\"In\",\"\",\"Float\",\"False\",\"True\",\"ShadowMask\",\"FLOAT4\",\"0,0,0,0\",\"In\",\"\",\"Inherit\",\"False\",\"AdditionalLightsSpecularMask14x\",\"False\",\"False\",\"0\",\"\",\"False\",\"7\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT2\",\"0,0\",\"False\",\"2\",\"FLOAT3\",\"0,0,0\",\"False\",\"3\",\"FLOAT3\",\"0,0,0\",\"False\",\"4\",\"FLOAT3\",\"0,0,0\",\"False\",\"5\",\"FLOAT\",\"0.5\",\"False\",\"6\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.SwitchBySRPVersionNode,
+    AmplifyShaderEditor\",\"id\":359,\"pos\":[-448,-1040],\"params\":[\"Inherit\",\"False\",\"4\",\"14.x\",\"140000\",\"150000\",\"1\",\"15.x\",\"150000\",\"160000\",\"2\",\"16.x\",\"160000\",\"170000\",\"3\",\"17.0\",\"170000\",\"2147483647\",\"4\",\"5\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0,0,0\",\"False\",\"2\",\"FLOAT3\",\"0,0,0\",\"False\",\"3\",\"FLOAT3\",\"0,0,0\",\"False\",\"4\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.SwitchBySRPVersionNode,
+    AmplifyShaderEditor\",\"id\":320,\"pos\":[-464,-176],\"params\":[\"Inherit\",\"False\",\"4\",\"14.x\",\"140000\",\"150000\",\"1\",\"15.x\",\"150000\",\"160000\",\"2\",\"16.x\",\"160000\",\"170000\",\"3\",\"17.0\",\"170000\",\"2147483647\",\"4\",\"5\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0,0,0\",\"False\",\"2\",\"FLOAT3\",\"0,0,0\",\"False\",\"3\",\"FLOAT3\",\"0,0,0\",\"False\",\"4\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.SwitchBySRPVersionNode,
+    AmplifyShaderEditor\",\"id\":304,\"pos\":[-480,-1952],\"params\":[\"Inherit\",\"False\",\"4\",\"14.x\",\"140000\",\"150000\",\"1\",\"15.x\",\"150000\",\"160000\",\"2\",\"16.x\",\"160000\",\"170000\",\"3\",\"17.0\",\"170000\",\"2147483647\",\"4\",\"5\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0,0,0\",\"False\",\"2\",\"FLOAT3\",\"0,0,0\",\"False\",\"3\",\"FLOAT3\",\"0,0,0\",\"False\",\"4\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RegisterLocalVarNode,
+    AmplifyShaderEditor\",\"id\":281,\"pos\":[-1984,-2336],\"params\":[\"Inherit\",\"False\",\"WorldNormal\",\"-1\",\"True\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.ScreenPosInputsNode,
+    AmplifyShaderEditor\",\"id\":285,\"pos\":[-2944,-1840],\"params\":[\"Inherit\",\"False\",\"0\",\"False\",\"0\",\"5\",\"FLOAT4\",\"0\",\"FLOAT\",\"1\",\"FLOAT\",\"2\",\"FLOAT\",\"3\",\"FLOAT\",\"4\"]}\n{\"type\":\"AmplifyShaderEditor.WorldPosInputsNode,
+    AmplifyShaderEditor\",\"id\":287,\"pos\":[-2944,-1472],\"params\":[\"Inherit\",\"False\",\"0\",\"4\",\"FLOAT3\",\"0\",\"FLOAT\",\"1\",\"FLOAT\",\"2\",\"FLOAT\",\"3\"]}\n{\"type\":\"AmplifyShaderEditor.SwizzleNode,
+    AmplifyShaderEditor\",\"id\":284,\"pos\":[-2720,-1840],\"params\":[\"Inherit\",\"False\",\"FLOAT2\",\"0\",\"1\",\"2\",\"3\",\"1\",\"0\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT2\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RegisterLocalVarNode,
+    AmplifyShaderEditor\",\"id\":286,\"pos\":[-2560,-1840],\"params\":[\"Inherit\",\"False\",\"ScreenUV\",\"-1\",\"True\",\"1\",\"0\",\"FLOAT2\",\"0,0\",\"False\",\"1\",\"FLOAT2\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.RegisterLocalVarNode,
+    AmplifyShaderEditor\",\"id\":288,\"pos\":[-2736,-1472],\"params\":[\"Inherit\",\"False\",\"WorldPosition\",\"-1\",\"True\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CustomExpressionNode,
+    AmplifyShaderEditor\",\"id\":343,\"pos\":[-2544,-2816],\"params\":[\"Half\",\"False\",\"#if
+    defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)\\nhalf4 shadowMask = inputData.shadowMask;\\n#elif
+    !defined (LIGHTMAP_ON)\\nhalf4 shadowMask = unity_ProbesOcclusion;\\n#else\\nhalf4
+    shadowMask = half4(1, 1, 1, 1);\\n#endif\\n\\nreturn shadowMask;\\n\",\"4\",\"Create\",\"0\",\"Calculate
+    Shadow Mask\",\"True\",\"False\",\"0\",\"\",\"False\",\"0\",\"1\",\"FLOAT4\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionInput,
+    AmplifyShaderEditor\",\"id\":32,\"pos\":[-2272,-2816],\"params\":[\"Inherit\",\"False\",\"Shadow
+    Mask\",\"4\",\"5\",\"False\",\"\",\"\",\"1\",\"0\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT4\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CustomExpressionNode,
+    AmplifyShaderEditor\",\"id\":299,\"pos\":[-800,-1952],\"params\":[\"Inherit\",\"False\",\"float3
+    Color = 0;\\n#if defined(_ADDITIONAL_LIGHTS)\\n\\t#define SUM_LIGHTLAMBERT(Light)\\\\\\n\\t\\thalf3
+    AttLightColor = Light.color * ( Light.distanceAttenuation * Light.shadowAttenuation
+    );\\\\\\n\\t\\tColor += LightingLambert( AttLightColor, Light.direction, WorldNormal
+    );\\n\\n\\tInputData inputData = (InputData)0;\\n\\tinputData.normalizedScreenSpaceUV
+    = ScreenUV;\\n\\tinputData.positionWS = WorldPosition;\\n\\n\\tuint meshRenderingLayers
+    = GetMeshRenderingLayer();\\n\\tuint pixelLightCount = GetAdditionalLightsCount();\\t\\n\\n\\t#if
+    USE_FORWARD_PLUS\\n\\tfor (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT,
+    MAX_VISIBLE_LIGHTS); lightIndex++)\\n\\t{\\n\\t\\tFORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK\\n\\n\\t\\tLight
+    light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTLAMBERT(
+    light );\\n\\t\\t}\\n\\t}\\n\\t#endif\\n\\t\\n\\tLIGHT_LOOP_BEGIN( pixelLightCount
+    )\\n\\t\\tLight light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTLAMBERT(
+    light );\\n\\t\\t}\\n\\tLIGHT_LOOP_END\\n#endif\\nreturn Color;\",\"3\",\"Create\",\"4\",\"True\",\"WorldPosition\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"ScreenUV\",\"FLOAT2\",\"0,0\",\"In\",\"\",\"Inherit\",\"False\",\"True\",\"WorldNormal\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"ShadowMask\",\"FLOAT4\",\"0,0,0,0\",\"In\",\"\",\"Inherit\",\"False\",\"AdditionalLightsLambertMask14x\",\"False\",\"False\",\"0\",\"\",\"False\",\"4\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT2\",\"0,0\",\"False\",\"2\",\"FLOAT3\",\"0,0,0\",\"False\",\"3\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CustomExpressionNode,
+    AmplifyShaderEditor\",\"id\":327,\"pos\":[-800,48],\"params\":[\"Inherit\",\"False\",\"#if
+    ( UNITY_VERSION < 60010000 ) && !defined( USE_CLUSTER_LIGHT_LOOP )\\n\\t#define
+    USE_CLUSTER_LIGHT_LOOP USE_FORWARD_PLUS\\n#endif\\n#if ( UNITY_VERSION < 60010000
+    ) && !defined( CLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK )\\n\\t#define CLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK
+    FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK\\n#endif\\n\\nfloat3 Color = 0;\\n#if defined(_ADDITIONAL_LIGHTS)\\n\\tSmoothness
+    = exp2(10 * Smoothness + 1);\\n\\t\\n\\t#define SUM_LIGHTSPECULAR(Light)\\\\\\n\\thalf3
+    AttLightColor = light.color * ( light.distanceAttenuation * light.shadowAttenuation
+    );\\\\\\n\\tColor += LightingSpecular( AttLightColor, light.direction, WorldNormal,
+    WorldView, half4( SpecColor, 0 ), Smoothness );\\t\\n\\n\\tInputData inputData
+    = (InputData)0;\\n\\tinputData.normalizedScreenSpaceUV = ScreenUV;\\n\\tinputData.positionWS
+    = WorldPosition;\\n\\n\\tuint meshRenderingLayers = GetMeshRenderingLayer();\\t\\n\\tuint
+    pixelLightCount = GetAdditionalLightsCount();\\t\\n\\n\\t#if USE_CLUSTER_LIGHT_LOOP\\n\\t[loop]
+    for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS);
+    lightIndex++)\\n\\t{\\n\\t\\tCLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK\\n\\n\\t\\tLight
+    light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTSPECULAR(
+    light );\\n\\t\\t}\\n\\t}\\n\\t#endif\\n\\n\\tLIGHT_LOOP_BEGIN( pixelLightCount
+    )\\n\\t\\tLight light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTSPECULAR(
+    light );\\n\\t\\t}\\n\\tLIGHT_LOOP_END\\n#endif\\nreturn Color;\",\"3\",\"Create\",\"7\",\"True\",\"WorldPosition\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"ScreenUV\",\"FLOAT2\",\"0,0\",\"In\",\"\",\"Inherit\",\"False\",\"True\",\"WorldNormal\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"WorldView\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"SpecColor\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"Smoothness\",\"FLOAT\",\"0.5\",\"In\",\"\",\"Float\",\"False\",\"True\",\"ShadowMask\",\"FLOAT4\",\"0,0,0,0\",\"In\",\"\",\"Inherit\",\"False\",\"AdditionalLightsSpecularMask17x\",\"False\",\"False\",\"0\",\"\",\"False\",\"7\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT2\",\"0,0\",\"False\",\"2\",\"FLOAT3\",\"0,0,0\",\"False\",\"3\",\"FLOAT3\",\"0,0,0\",\"False\",\"4\",\"FLOAT3\",\"0,0,0\",\"False\",\"5\",\"FLOAT\",\"0.5\",\"False\",\"6\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CustomExpressionNode,
+    AmplifyShaderEditor\",\"id\":292,\"pos\":[-800,-2672],\"params\":[\"Inherit\",\"False\",\"#if
+    ( UNITY_VERSION < 60010000 ) && !defined( USE_CLUSTER_LIGHT_LOOP )\\n\\t#define
+    USE_CLUSTER_LIGHT_LOOP USE_FORWARD_PLUS\\n#endif\\n#if ( UNITY_VERSION < 60010000
+    ) && !defined( CLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK )\\n\\t#define CLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK
+    FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK\\n#endif\\n\\nfloat3 Color = 0;\\n#if defined(_ADDITIONAL_LIGHTS)\\n\\t#define
+    SUM_LIGHTFLAT(Light)\\\\\\n\\t\\tColor += Light.color * ( Light.distanceAttenuation
+    * Light.shadowAttenuation );\\n\\n\\tInputData inputData = (InputData)0;\\n\\tinputData.normalizedScreenSpaceUV
+    = ScreenUV;\\n\\tinputData.positionWS = WorldPosition;\\n\\n\\tuint meshRenderingLayers
+    = GetMeshRenderingLayer();\\n\\tuint pixelLightCount = GetAdditionalLightsCount();\\t\\n\\n\\t#if
+    USE_CLUSTER_LIGHT_LOOP\\n\\t[loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT,
+    MAX_VISIBLE_LIGHTS); lightIndex++)\\n\\t{\\n\\t\\tCLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK\\n\\n\\t\\tLight
+    light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTFLAT(
+    light );\\n\\t\\t}\\n\\t}\\n\\t#endif\\n\\n\\tLIGHT_LOOP_BEGIN( pixelLightCount
+    )\\n\\t\\tLight light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTFLAT(
+    light );\\n\\t\\t}\\n\\tLIGHT_LOOP_END\\n#endif\\nreturn Color;\\n\",\"3\",\"Create\",\"3\",\"True\",\"WorldPosition\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"ScreenUV\",\"FLOAT2\",\"0,0\",\"In\",\"\",\"Inherit\",\"False\",\"True\",\"ShadowMask\",\"FLOAT4\",\"0,0,0,0\",\"In\",\"\",\"Inherit\",\"False\",\"AdditionalLightsFlatMask17x\",\"False\",\"False\",\"0\",\"\",\"False\",\"3\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT2\",\"0,0\",\"False\",\"2\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CustomExpressionNode,
+    AmplifyShaderEditor\",\"id\":312,\"pos\":[-784,-1040],\"params\":[\"Inherit\",\"False\",\"float3
+    Color = 0;\\n#if defined(_ADDITIONAL_LIGHTS)\\n\\t#define SUM_LIGHTHALFLAMBERT(Light)\\\\\\n\\t\\thalf3
+    AttLightColor = Light.color * ( Light.distanceAttenuation * Light.shadowAttenuation
+    );\\\\\\n\\t\\tColor += ( dot( Light.direction, WorldNormal ) * 0.5 + 0.5 )*
+    AttLightColor;\\n\\n\\tInputData inputData = (InputData)0;\\n\\tinputData.normalizedScreenSpaceUV
+    = ScreenUV;\\n\\tinputData.positionWS = WorldPosition;\\n\\n\\tuint meshRenderingLayers
+    = GetMeshRenderingLayer();\\n\\tuint pixelLightCount = GetAdditionalLightsCount();\\t\\n\\n\\t#if
+    USE_FORWARD_PLUS\\n\\tfor (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT,
+    MAX_VISIBLE_LIGHTS); lightIndex++)\\n\\t{\\n\\t\\tFORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK\\n\\n\\t\\tLight
+    light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTHALFLAMBERT(
+    light );\\n\\t\\t}\\n\\t}\\n\\t#endif\\n\\n\\tLIGHT_LOOP_BEGIN( pixelLightCount
+    )\\n\\t\\tLight light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTHALFLAMBERT(
+    light );\\n\\t\\t}\\n\\tLIGHT_LOOP_END\\n#endif\\nreturn Color;\",\"3\",\"Create\",\"4\",\"True\",\"WorldPosition\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"ScreenUV\",\"FLOAT2\",\"0,0\",\"In\",\"\",\"Inherit\",\"False\",\"True\",\"WorldNormal\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"ShadowMask\",\"FLOAT4\",\"0,0,0,0\",\"In\",\"\",\"Inherit\",\"False\",\"AdditionalLightsHalfLambertMask14x\",\"False\",\"False\",\"0\",\"\",\"False\",\"4\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT2\",\"0,0\",\"False\",\"2\",\"FLOAT3\",\"0,0,0\",\"False\",\"3\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CustomExpressionNode,
+    AmplifyShaderEditor\",\"id\":317,\"pos\":[-784,-896],\"params\":[\"Inherit\",\"False\",\"#if
+    ( UNITY_VERSION < 60010000 ) && !defined( USE_CLUSTER_LIGHT_LOOP )\\n\\t#define
+    USE_CLUSTER_LIGHT_LOOP USE_FORWARD_PLUS\\n#endif\\n#if ( UNITY_VERSION < 60010000
+    ) && !defined( CLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK )\\n\\t#define CLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK
+    FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK\\n#endif\\n\\nfloat3 Color = 0;\\n#if defined(_ADDITIONAL_LIGHTS)\\n\\t#define
+    SUM_LIGHTHALFLAMBERT(Light)\\\\\\n\\t\\thalf3 AttLightColor = Light.color * (
+    Light.distanceAttenuation * Light.shadowAttenuation );\\\\\\n\\t\\tColor += (
+    dot( Light.direction, WorldNormal ) * 0.5 + 0.5 )* AttLightColor;\\n\\n\\tInputData
+    inputData = (InputData)0;\\n\\tinputData.normalizedScreenSpaceUV = ScreenUV;\\n\\tinputData.positionWS
+    = WorldPosition;\\n\\n\\tuint meshRenderingLayers = GetMeshRenderingLayer();\\n\\tuint
+    pixelLightCount = GetAdditionalLightsCount();\\t\\n\\n\\t#if USE_CLUSTER_LIGHT_LOOP\\n\\t[loop]
+    for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS);
+    lightIndex++)\\n\\t{\\n\\t\\tCLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK\\n\\n\\t\\tLight
+    light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTHALFLAMBERT(
+    light );\\n\\t\\t}\\n\\t}\\n\\t#endif\\n\\n\\tLIGHT_LOOP_BEGIN( pixelLightCount
+    )\\n\\t\\tLight light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTHALFLAMBERT(
+    light );\\n\\t\\t}\\n\\tLIGHT_LOOP_END\\n#endif\\nreturn Color;\",\"3\",\"Create\",\"4\",\"True\",\"WorldPosition\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"ScreenUV\",\"FLOAT2\",\"0,0\",\"In\",\"\",\"Inherit\",\"False\",\"True\",\"WorldNormal\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"ShadowMask\",\"FLOAT4\",\"0,0,0,0\",\"In\",\"\",\"Inherit\",\"False\",\"AdditionalLightsHalfLambertMask17x\",\"False\",\"False\",\"0\",\"\",\"False\",\"4\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT2\",\"0,0\",\"False\",\"2\",\"FLOAT3\",\"0,0,0\",\"False\",\"3\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.CustomExpressionNode,
+    AmplifyShaderEditor\",\"id\":305,\"pos\":[-800,-1808],\"params\":[\"Inherit\",\"False\",\"#if
+    ( UNITY_VERSION < 60010000 ) && !defined( USE_CLUSTER_LIGHT_LOOP )\\n\\t#define
+    USE_CLUSTER_LIGHT_LOOP USE_FORWARD_PLUS\\n#endif\\n#if ( UNITY_VERSION < 60010000
+    ) && !defined( CLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK )\\n\\t#define CLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK
+    FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK\\n#endif\\n\\nfloat3 Color = 0;\\n#if defined(_ADDITIONAL_LIGHTS)\\n\\t#define
+    SUM_LIGHTLAMBERT(Light)\\\\\\n\\t\\thalf3 AttLightColor = Light.color * ( Light.distanceAttenuation
+    * Light.shadowAttenuation );\\\\\\n\\t\\tColor += LightingLambert( AttLightColor,
+    Light.direction, WorldNormal );\\n\\n\\tInputData inputData = (InputData)0;\\n\\tinputData.normalizedScreenSpaceUV
+    = ScreenUV;\\n\\tinputData.positionWS = WorldPosition;\\n\\n\\tuint meshRenderingLayers
+    = GetMeshRenderingLayer();\\n\\tuint pixelLightCount = GetAdditionalLightsCount();\\t\\n\\n\\t#if
+    USE_CLUSTER_LIGHT_LOOP\\n\\t[loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT,
+    MAX_VISIBLE_LIGHTS); lightIndex++)\\n\\t{\\n\\t\\tCLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK\\n\\n\\t\\tLight
+    light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTLAMBERT(
+    light );\\n\\t\\t}\\n\\t}\\n\\t#endif\\n\\n\\tLIGHT_LOOP_BEGIN( pixelLightCount
+    )\\n\\t\\tLight light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);\\n\\t\\t#ifdef
+    _LIGHT_LAYERS\\n\\t\\tif (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))\\n\\t\\t#endif\\n\\t\\t{\\n\\t\\t\\tSUM_LIGHTLAMBERT(
+    light );\\n\\t\\t}\\n\\tLIGHT_LOOP_END\\n#endif\\nreturn Color;\",\"3\",\"Create\",\"4\",\"True\",\"WorldPosition\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"ScreenUV\",\"FLOAT2\",\"0,0\",\"In\",\"\",\"Inherit\",\"False\",\"True\",\"WorldNormal\",\"FLOAT3\",\"0,0,0\",\"In\",\"\",\"Float\",\"False\",\"True\",\"ShadowMask\",\"FLOAT4\",\"0,0,0,0\",\"In\",\"\",\"Inherit\",\"False\",\"AdditionalLightsLambertMask17x\",\"False\",\"False\",\"0\",\"\",\"False\",\"4\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT2\",\"0,0\",\"False\",\"2\",\"FLOAT3\",\"0,0,0\",\"False\",\"3\",\"FLOAT4\",\"0,0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionSwitchByPipeline,
+    AmplifyShaderEditor\",\"id\":19,\"pos\":[1488,-2848],\"params\":[\"Inherit\",\"False\",\"4\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"3\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0,0,0\",\"False\",\"2\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.Vector3Node,
+    AmplifyShaderEditor\",\"id\":21,\"pos\":[1248,-2656],\"params\":[\"Inherit\",\"False\",\"Constant\",\"_Vector1\",\"Vector
+    1\",\"0\",\"0\",\"Create\",\"True\",\"0\",\"0\",\"0\",\"False\",\"0\",\"False\",\"Object\",\"-1\",\"\",\"0,0,0\",\"0,0,0\",\"0\",\"4\",\"FLOAT3\",\"0\",\"FLOAT\",\"1\",\"FLOAT\",\"2\",\"FLOAT\",\"3\"]}\n{\"type\":\"AmplifyShaderEditor.BreakToComponentsNode,
+    AmplifyShaderEditor\",\"id\":371,\"pos\":[1792,-2592],\"params\":[\"Inherit\",\"False\",\"FLOAT3\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"16\",\"FLOAT\",\"0\",\"FLOAT\",\"1\",\"FLOAT\",\"2\",\"FLOAT\",\"3\",\"FLOAT\",\"4\",\"FLOAT\",\"5\",\"FLOAT\",\"6\",\"FLOAT\",\"7\",\"FLOAT\",\"8\",\"FLOAT\",\"9\",\"FLOAT\",\"10\",\"FLOAT\",\"11\",\"FLOAT\",\"12\",\"FLOAT\",\"13\",\"FLOAT\",\"14\",\"FLOAT\",\"15\"]}\n{\"type\":\"AmplifyShaderEditor.SimpleMaxOpNode,
+    AmplifyShaderEditor\",\"id\":370,\"pos\":[1936,-2592],\"params\":[\"Inherit\",\"False\",\"3\",\"3\",\"0\",\"FLOAT\",\"0\",\"False\",\"1\",\"FLOAT\",\"0\",\"False\",\"2\",\"FLOAT\",\"0\",\"False\",\"1\",\"FLOAT\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.SimpleAddOpNode,
+    AmplifyShaderEditor\",\"id\":372,\"pos\":[2096,-2656],\"params\":[\"Inherit\",\"False\",\"2\",\"2\",\"0\",\"FLOAT\",\"0\",\"False\",\"1\",\"FLOAT\",\"1E-07\",\"False\",\"1\",\"FLOAT\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.SimpleDivideOpNode,
+    AmplifyShaderEditor\",\"id\":374,\"pos\":[2256,-2712],\"params\":[\"Inherit\",\"False\",\"2\",\"2\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT\",\"0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionSwitch,
+    AmplifyShaderEditor\",\"id\":378,\"pos\":[1192,-2800],\"params\":[\"Inherit\",\"False\",\"Light
+    Cookies\",\"True\",\"0\",\"2\",\"-1\",\"In 0\",\"In 1\",\"Object\",\"-1\",\"20\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0,0,0\",\"False\",\"2\",\"FLOAT\",\"0\",\"False\",\"3\",\"FLOAT\",\"0\",\"False\",\"4\",\"FLOAT\",\"0\",\"False\",\"5\",\"FLOAT\",\"0\",\"False\",\"6\",\"FLOAT\",\"0\",\"False\",\"7\",\"FLOAT\",\"0\",\"False\",\"8\",\"FLOAT\",\"0\",\"False\",\"9\",\"FLOAT\",\"0\",\"False\",\"10\",\"FLOAT\",\"0\",\"False\",\"11\",\"FLOAT\",\"0\",\"False\",\"12\",\"FLOAT\",\"0\",\"False\",\"13\",\"FLOAT\",\"0\",\"False\",\"14\",\"FLOAT\",\"0\",\"False\",\"15\",\"FLOAT\",\"0\",\"False\",\"16\",\"FLOAT\",\"0\",\"False\",\"17\",\"FLOAT\",\"0\",\"False\",\"18\",\"FLOAT\",\"0\",\"False\",\"19\",\"FLOAT\",\"0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.AdditionalDirectivesNode,
+    AmplifyShaderEditor\",\"id\":376,\"pos\":[792,-2800],\"params\":[\"Inherit\",\"False\",\"8\",\"Pragma\",\"multi_compile
+    _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS\",\"False\",\"\",\"Custom\",\"True\",\"202220\",\"60070000\",\"Forward\",\"Pragma\",\"multi_compile
+    _ _ADDITIONAL_LIGHTS_VERTEX\",\"False\",\"\",\"Custom\",\"True\",\"60070000\",\"0\",\"Forward\",\"Pragma\",\"multi_compile_fragment
+    _ _ADDITIONAL_LIGHTS\",\"False\",\"\",\"Custom\",\"True\",\"60070000\",\"0\",\"Forward\",\"Pragma\",\"multi_compile_fragment
+    _ _ADDITIONAL_LIGHT_SHADOWS\",\"False\",\"\",\"Custom\",\"True\",\"0\",\"0\",\"Forward\",\"Pragma\",\"multi_compile
+    _ _LIGHT_LAYERS\",\"False\",\"\",\"Custom\",\"True\",\"202220\",\"0\",\"Forward\",\"Pragma\",\"multi_compile
+    _ _FORWARD_PLUS\",\"False\",\"\",\"Custom\",\"True\",\"202220\",\"60010000\",\"Forward\",\"Pragma\",\"multi_compile
+    _ _CLUSTER_LIGHT_LOOP\",\"False\",\"\",\"Custom\",\"True\",\"60010000\",\"60070000\",\"Forward,GBuffer\",\"Pragma\",\"multi_compile_fragment
+    _ _CLUSTER_LIGHT_LOOP\",\"False\",\"\",\"Custom\",\"True\",\"60070000\",\"0\",\"Forward,GBuffer\",\"False\",\"General\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.AdditionalDirectivesNode,
+    AmplifyShaderEditor\",\"id\":377,\"pos\":[1000,-2688],\"params\":[\"Inherit\",\"False\",\"1\",\"Pragma\",\"multi_compile_fragment
+    _ _LIGHT_COOKIES\",\"False\",\"\",\"Custom\",\"True\",\"0\",\"0\",\"Forward\",\"False\",\"Cookies\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionOutput,
+    AmplifyShaderEditor\",\"id\":369,\"pos\":[2456,-2592],\"params\":[\"Inherit\",\"False\",\"False\",\"-1\",\"Intensity\",\"2\",\"False\",\"1\",\"0\",\"FLOAT\",\"0\",\"False\",\"1\",\"FLOAT\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionOutput,
+    AmplifyShaderEditor\",\"id\":0,\"pos\":[2456,-2848],\"params\":[\"Inherit\",\"False\",\"True\",\"-1\",\"RGB\",\"0\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"type\":\"AmplifyShaderEditor.FunctionOutput,
+    AmplifyShaderEditor\",\"id\":368,\"pos\":[2456,-2712],\"params\":[\"Inherit\",\"False\",\"False\",\"-1\",\"Color\",\"1\",\"False\",\"1\",\"0\",\"FLOAT3\",\"0,0,0\",\"False\",\"1\",\"FLOAT3\",\"0\"]}\n{\"wire\":[270,0,276,0]}\n{\"wire\":[271,0,277,0]}\n{\"wire\":[272,0,278,0]}\n{\"wire\":[273,0,330,0]}\n{\"wire\":[274,0,329,0]}\n{\"wire\":[275,0,328,0]}\n{\"wire\":[331,0,269,0]}\n{\"wire\":[332,0,273,0]}\n{\"wire\":[333,0,274,0]}\n{\"wire\":[334,0,275,0]}\n{\"wire\":[6,0,331,0]}\n{\"wire\":[6,1,23,0]}\n{\"wire\":[6,2,363,0]}\n{\"wire\":[23,0,332,0]}\n{\"wire\":[23,1,333,0]}\n{\"wire\":[363,0,334,0]}\n{\"wire\":[291,0,270,0]}\n{\"wire\":[291,1,271,0]}\n{\"wire\":[291,2,272,0]}\n{\"wire\":[269,1,291,0]}\n{\"wire\":[269,2,291,0]}\n{\"wire\":[269,3,291,0]}\n{\"wire\":[269,4,292,0]}\n{\"wire\":[360,0,32,0]}\n{\"wire\":[280,0,2,0]}\n{\"wire\":[351,0,280,0]}\n{\"wire\":[351,1,11,0]}\n{\"wire\":[2,0,282,0]}\n{\"wire\":[11,0,283,0]}\n{\"wire\":[295,0,301,0]}\n{\"wire\":[296,0,302,0]}\n{\"wire\":[297,0,300,0]}\n{\"wire\":[298,0,303,0]}\n{\"wire\":[308,0,315,0]}\n{\"wire\":[309,0,314,0]}\n{\"wire\":[310,0,313,0]}\n{\"wire\":[311,0,316,0]}\n{\"wire\":[328,0,320,0]}\n{\"wire\":[329,0,359,0]}\n{\"wire\":[330,0,304,0]}\n{\"wire\":[352,0,322,0]}\n{\"wire\":[353,0,325,0]}\n{\"wire\":[354,0,323,0]}\n{\"wire\":[355,0,324,0]}\n{\"wire\":[356,0,345,0]}\n{\"wire\":[357,0,346,0]}\n{\"wire\":[358,0,347,0]}\n{\"wire\":[345,0,326,0]}\n{\"wire\":[321,0,352,0]}\n{\"wire\":[321,1,354,0]}\n{\"wire\":[321,2,353,0]}\n{\"wire\":[321,3,356,0]}\n{\"wire\":[321,4,357,0]}\n{\"wire\":[321,5,358,0]}\n{\"wire\":[321,6,355,0]}\n{\"wire\":[359,1,312,0]}\n{\"wire\":[359,2,312,0]}\n{\"wire\":[359,3,312,0]}\n{\"wire\":[359,4,317,0]}\n{\"wire\":[320,1,321,0]}\n{\"wire\":[320,2,321,0]}\n{\"wire\":[320,3,321,0]}\n{\"wire\":[320,4,327,0]}\n{\"wire\":[304,1,299,0]}\n{\"wire\":[304,2,299,0]}\n{\"wire\":[304,3,299,0]}\n{\"wire\":[304,4,305,0]}\n{\"wire\":[281,0,351,0]}\n{\"wire\":[284,0,285,0]}\n{\"wire\":[286,0,284,0]}\n{\"wire\":[288,0,287,0]}\n{\"wire\":[32,0,343,0]}\n{\"wire\":[299,0,297,0]}\n{\"wire\":[299,1,295,0]}\n{\"wire\":[299,2,298,0]}\n{\"wire\":[299,3,296,0]}\n{\"wire\":[327,0,352,0]}\n{\"wire\":[327,1,354,0]}\n{\"wire\":[327,2,353,0]}\n{\"wire\":[327,3,356,0]}\n{\"wire\":[327,4,357,0]}\n{\"wire\":[327,5,358,0]}\n{\"wire\":[327,6,355,0]}\n{\"wire\":[292,0,270,0]}\n{\"wire\":[292,1,271,0]}\n{\"wire\":[292,2,272,0]}\n{\"wire\":[312,0,310,0]}\n{\"wire\":[312,1,309,0]}\n{\"wire\":[312,2,311,0]}\n{\"wire\":[312,3,308,0]}\n{\"wire\":[317,0,310,0]}\n{\"wire\":[317,1,309,0]}\n{\"wire\":[317,2,311,0]}\n{\"wire\":[317,3,308,0]}\n{\"wire\":[305,0,297,0]}\n{\"wire\":[305,1,295,0]}\n{\"wire\":[305,2,298,0]}\n{\"wire\":[305,3,296,0]}\n{\"wire\":[19,0,21,0]}\n{\"wire\":[19,3,21,0]}\n{\"wire\":[19,1,378,0]}\n{\"wire\":[19,2,21,0]}\n{\"wire\":[371,0,19,0]}\n{\"wire\":[370,0,371,0]}\n{\"wire\":[370,1,371,1]}\n{\"wire\":[370,2,371,2]}\n{\"wire\":[372,0,370,0]}\n{\"wire\":[374,0,19,0]}\n{\"wire\":[374,1,372,0]}\n{\"wire\":[378,0,376,0]}\n{\"wire\":[378,1,377,0]}\n{\"wire\":[376,0,6,0]}\n{\"wire\":[377,0,376,0]}\n{\"wire\":[369,0,370,0]}\n{\"wire\":[0,0,19,0]}\n{\"wire\":[368,0,374,0]}\nASEEND*/\n//CHKSM=3B359026E92C16915513FA1D47FB739C9AA79E62"
   m_functionName: 
-  m_description: 'Returns SRP''s additional lights information calculated with the
-    selected lighting mode.
-
-    Shadow mask option only applied on SRP 10 or greater.'
+  m_description: "Returns SRP's additional lights information calculated with the
+    selected lighting mode. Shadow mask option only applied on SRP 14 or greater.
+    Forward rendering only.\n\nRGB: Returns the colored shade value (color * intensity)\n\n\rColor:
+    Returns the shade color\n\nIntensity: Returns the shade intensity"
   m_additionalIncludes:
     m_additionalIncludes: []
     m_outsideIncludes: []
@@ -93,25 +290,17 @@ MonoBehaviour:
     m_moduleName: ' Additional Directives'
     m_independentModule: 1
     m_customEdited: 0
-    m_additionalDirectives:
-    - {fileID: 0}
-    - {fileID: 0}
+    m_additionalDirectives: []
     m_shaderFunctionDirectives: []
     m_nativeDirectives: []
     m_nativeDirectivesIndex: -1
     m_nativeDirectivesFoldout: 0
-    m_directivesSaveItems:
-    - LineType: 2
-      LineValue: multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
-      GUIDToggle: 0
-      GUIDValue: 
-      Origin: 2
-    - LineType: 2
-      LineValue: multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
-      GUIDToggle: 0
-      GUIDValue: 
-      Origin: 2
+    m_directivesSaveItems: []
+    m_versionMaxExclusive: 1
   m_nodeCategory: 3
+  m_headerStyle: 1
+  m_headerColor: {r: 1, g: 0.4, b: 0, a: 1}
   m_customNodeCategory: 
   m_previewPosition: 0
   m_hidden: 0
+  m_url: 

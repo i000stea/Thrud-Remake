@@ -16,7 +16,7 @@ namespace AmplifyShaderEditor
 	}
 
 	[Serializable]
-	[NodeAttributes( "Template Parameter" , "Constants And Properties" , "Select and use one of the pre-existing properties given by the template" )]
+	[NodeAttributes( "Template Parameter" , "Template" , "Select and use one of the pre-existing properties given by the template", NodeAvailabilityFlags = (int)NodeAvailability.TemplateShader )]
 	public sealed class TemplateShaderPropertyNode : TemplateNodeParent
 	{
 		private const string CurrentScopeStr = "Scope";
@@ -297,85 +297,88 @@ namespace AmplifyShaderEditor
 				return;
 			}
 
-			Material currMat = m_containerGraph.CurrentMaterial;
-			if( currMat != null && currMat.HasProperty( m_propertyNameId ) )
-			{
-				switch( m_shaderProperties[ m_currentPropertyIdx ].PropertyDataType )
-				{
-					case WirePortDataType.INT:
-					{
-						int value = currMat.GetInt( m_propertyNameId );
-						SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , GenerateTitle( value ) ) );
-						PreviewMaterial.SetInt( IntPropertyId , value );
-					}
-					break;
-					case WirePortDataType.FLOAT:
-					{
-						float value = currMat.GetFloat( m_propertyNameId );
-						SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , GenerateTitle( value ) ) );
-						PreviewMaterial.SetFloat( FloatPropertyId , value );
-					}
-					break;
-					case WirePortDataType.FLOAT4:
-					{
-						Vector4 value = currMat.GetVector( m_propertyNameId );
-						SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , GenerateTitle( value.x , value.y , value.z , value.w ) ) );
-						PreviewMaterial.SetVector( VectorPropertyId , value );
-					}
-					break;
-					case WirePortDataType.COLOR:
-					{
-						Color value = currMat.GetColor( m_propertyNameId );
-						SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , GenerateTitle( value.r , value.g , value.b , value.a ) ) );
-						PreviewMaterial.SetColor( VectorPropertyId , value );
-					}
-					break;
-					case WirePortDataType.SAMPLER2D:
-					{
-						Texture value = currMat.GetTexture( m_propertyNameId );
-						if( value )
-							SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , value.name ) );
-						else
-							SetAdditonalTitleText( string.Empty );
-						PreviewMaterial.SetTexture( Sampler2DPropertyId , value );
-					}
-					break;
-					case WirePortDataType.SAMPLER3D:
-					{
-						Texture value = currMat.GetTexture( m_propertyNameId );
-						if( value )
-							SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , value.name ) );
-						else
-							SetAdditonalTitleText( string.Empty );
-						PreviewMaterial.SetTexture( Sampler3DPropertyId , value );
-					}
-					break;
-					case WirePortDataType.SAMPLERCUBE:
-					{
-						Texture value = currMat.GetTexture( m_propertyNameId );
-						if( value )
-							SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , value.name ) );
-						else
-							SetAdditonalTitleText( string.Empty );
-						PreviewMaterial.SetTexture( SamplerCubePropertyId , value );
-					}
-					break;
-					case WirePortDataType.SAMPLER2DARRAY:
-					{
-						Texture value = currMat.GetTexture( m_propertyNameId );
-						if( value )
-							SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , value.name ) );
-						else
-							SetAdditonalTitleText( string.Empty );
-						PreviewMaterial.SetTexture( SamplerCubePropertyId , value );
-					}
-					break;
-				}
-			}
-			else
-			{
-				SetAdditonalTitleText( string.Empty );
-			}
+			// @diogo: sacrificed material value display in order to have the node name in the title and property in subtitle
+			//Material currMat = m_containerGraph.CurrentMaterial;
+			//if( currMat != null && currMat.HasProperty( m_propertyNameId ) )
+			//{
+			//	switch( m_shaderProperties[ m_currentPropertyIdx ].PropertyDataType )
+			//	{
+			//		case WirePortDataType.INT:
+			//		{
+			//			int value = currMat.GetInt( m_propertyNameId );
+			//			SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , GenerateTitle( value ) ) );
+			//			PreviewMaterial.SetInt( IntPropertyId , value );
+			//		}
+			//		break;
+			//		case WirePortDataType.FLOAT:
+			//		{
+			//			float value = currMat.GetFloat( m_propertyNameId );
+			//			SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , GenerateTitle( value ) ) );
+			//			PreviewMaterial.SetFloat( FloatPropertyId , value );
+			//		}
+			//		break;
+			//		case WirePortDataType.FLOAT4:
+			//		{
+			//			Vector4 value = currMat.GetVector( m_propertyNameId );
+			//			SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , GenerateTitle( value.x , value.y , value.z , value.w ) ) );
+			//			PreviewMaterial.SetVector( VectorPropertyId , value );
+			//		}
+			//		break;
+			//		case WirePortDataType.COLOR:
+			//		{
+			//			Color value = currMat.GetColor( m_propertyNameId );
+			//			SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , GenerateTitle( value.r , value.g , value.b , value.a ) ) );
+			//			PreviewMaterial.SetColor( VectorPropertyId , value );
+			//		}
+			//		break;
+			//		case WirePortDataType.SAMPLER2D:
+			//		{
+			//			Texture value = currMat.GetTexture( m_propertyNameId );
+			//			if( value )
+			//				SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , value.name ) );
+			//			else
+			//				SetAdditonalTitleText( string.Empty );
+			//			PreviewMaterial.SetTexture( Sampler2DPropertyId , value );
+			//		}
+			//		break;
+			//		case WirePortDataType.SAMPLER3D:
+			//		{
+			//			Texture value = currMat.GetTexture( m_propertyNameId );
+			//			if( value )
+			//				SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , value.name ) );
+			//			else
+			//				SetAdditonalTitleText( string.Empty );
+			//			PreviewMaterial.SetTexture( Sampler3DPropertyId , value );
+			//		}
+			//		break;
+			//		case WirePortDataType.SAMPLERCUBE:
+			//		{
+			//			Texture value = currMat.GetTexture( m_propertyNameId );
+			//			if( value )
+			//				SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , value.name ) );
+			//			else
+			//				SetAdditonalTitleText( string.Empty );
+			//			PreviewMaterial.SetTexture( SamplerCubePropertyId , value );
+			//		}
+			//		break;
+			//		case WirePortDataType.SAMPLER2DARRAY:
+			//		{
+			//			Texture value = currMat.GetTexture( m_propertyNameId );
+			//			if( value )
+			//				SetAdditonalTitleText( string.Format( Constants.SubTitleValueFormatStr , value.name ) );
+			//			else
+			//				SetAdditonalTitleText( string.Empty );
+			//			PreviewMaterial.SetTexture( SamplerCubePropertyId , value );
+			//		}
+			//		break;
+			//	}
+			//}
+			//else
+			//{
+			//	SetAdditonalTitleText( string.Empty );
+			//}
+
+			SetAdditonalTitleText( m_propertyName );
 		}
 
 		public override void Draw( DrawInfo drawInfo )
@@ -466,7 +469,7 @@ namespace AmplifyShaderEditor
 						m_containerGraph.DeleteConnection( false , UniqueId , i , false , true );
 
 					m_headerColor = UIUtils.GetColorFromCategory( "Default" );
-					m_content.text = "None";
+					SetAdditonalTitleText( "<None>" );
 					m_additionalContent.text = string.Empty;
 					m_previewMaterialPassId = 1;
 					PreviewMaterial.SetFloat( FloatPropertyId , 0 );
@@ -504,6 +507,7 @@ namespace AmplifyShaderEditor
 					break;
 					default:
 					case WirePortDataType.OBJECT:
+					case WirePortDataType.FLOAT2x2:
 					case WirePortDataType.FLOAT3x3:
 					case WirePortDataType.FLOAT4x4:
 					m_outputPorts[ 0 ].ChangeProperties( "Out" , m_shaderProperties[ m_currentPropertyIdx ].PropertyDataType , false );
@@ -520,7 +524,7 @@ namespace AmplifyShaderEditor
 				ConfigurePorts();
 
 				m_propertyName = m_shaderProperties[ m_currentPropertyIdx ].PropertyName;
-				m_content.text = m_shaderProperties[ m_currentPropertyIdx ].PropertyInspectorName;
+				SetAdditonalTitleText( m_propertyName );
 				m_propertyNameId = Shader.PropertyToID( m_propertyName );
 				m_typeName = TypeLabelStr + m_shaderProperties[ m_currentPropertyIdx ].PropertyType.ToString();
 				if( m_shaderProperties[ m_currentPropertyIdx ].PropertyType != PropertyType.Global )
@@ -707,6 +711,18 @@ namespace AmplifyShaderEditor
 		{
 			base.RefreshExternalReferences();
 			CheckWarningState();
+		}
+
+		// True when the selected template property is declared as a legacy sampler
+		public bool IsLegacySampler
+		{
+			get
+			{
+				return m_shaderProperties != null &&
+					m_currentPropertyIdx >= 0 &&
+					m_currentPropertyIdx < m_shaderProperties.Count &&
+					m_shaderProperties[ m_currentPropertyIdx ].DeclaredAsLegacySampler;
+			}
 		}
 
 		public override void Destroy()

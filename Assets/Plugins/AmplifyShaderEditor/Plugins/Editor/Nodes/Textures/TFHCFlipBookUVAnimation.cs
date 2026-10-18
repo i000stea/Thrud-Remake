@@ -41,11 +41,17 @@ namespace AmplifyShaderEditor
 			AddInputPort( WirePortDataType.FLOAT, false, "Rows" );
 			AddInputPort( WirePortDataType.FLOAT, false, "Speed" );
 			AddInputPort( WirePortDataType.FLOAT, false, "Start Frame" );
-            AddInputPort( WirePortDataType.FLOAT, false, "Time" );
+			AddInputPort( WirePortDataType.FLOAT, false, "Time" );
+			AddInputPort( WirePortDataType.FLOAT, false, "Max Frame" );
 
-            AddOutputVectorPorts( WirePortDataType.FLOAT2, "UV" );
+			m_inputPorts[ 6 ].FloatInternalData = -1;
+
+			AddOutputVectorPorts( WirePortDataType.FLOAT2, "UV" );
 			m_outputPorts[ 1 ].Name = "U";
 			m_outputPorts[ 2 ].Name = "V";
+
+			AddOutputPort( WirePortDataType.INT, "Frame" );
+
 			m_textLabelWidth = 125;
 			m_useInternalPortData = true;
 			m_autoWrapProperties = true;
@@ -101,8 +107,8 @@ namespace AmplifyShaderEditor
 			//  round( fmod( x, y ) ) can be replaced with a faster
 			//  floor( frac( x / y ) * y + 0.5 ) => div can be muls with 1/y, almost always static/constant
 			//
-			if( m_outputPorts[ 0 ].IsLocalValue( dataCollector.PortCategory ) )
-				return GetOutputVectorItem( 0, outputId, m_outputPorts[ 0 ].LocalValue( dataCollector.PortCategory ) );
+			if ( m_outputPorts[ outputId ].IsLocalValue( dataCollector.PortCategory ) )
+				return m_outputPorts[ outputId ].LocalValue( dataCollector.PortCategory );
 
 			string uv = m_inputPorts[ 0 ].GeneratePortInstructions( ref dataCollector );
 			string columns = m_inputPorts[ 1 ].GeneratePortInstructions( ref dataCollector );
@@ -120,7 +126,17 @@ namespace AmplifyShaderEditor
 
 			string vcomment1 = "// *** BEGIN Flipbook UV Animation vars ***";
 			string vcomment2 = "// Total tiles of Flipbook Texture";
-			string vtotaltiles = "float fbtotaltiles" + OutputId + " = " + columns + " * " + rows + ";";
+			string vtotaltiles;
+			if ( m_inputPorts[ 6 ].IsConnected || m_inputPorts[ 6 ].FloatInternalData >= 0 ) // MaxFrame
+			{
+				string maxframe = m_inputPorts[ 6 ].GeneratePortInstructions( ref dataCollector );
+				vtotaltiles = "float fbtotaltiles" + OutputId + " = min( " + columns + " * " + rows + ", " + maxframe + " + 1 );";
+			}
+			else
+			{
+				vtotaltiles = "float fbtotaltiles" + OutputId + " = " + columns + " * " + rows + ";";
+			}
+
 			string vcomment3 = "// Offsets for cols and rows of Flipbook Texture";
 			string vcolsoffset = "float fbcolsoffset" + OutputId + " = 1.0f / " + columns + ";";
 			string vrowssoffset = "float fbrowsoffset" + OutputId + " = 1.0f / " + rows + ";";
@@ -132,7 +148,7 @@ namespace AmplifyShaderEditor
 			string vcomment6 = "// UV Offset - calculate current tile linear index, and convert it to (X * coloffset, Y * rowoffset)";
 			string vcomment7 = "// Calculate current tile linear index";
 			//float fbcurrenttileindex1 = round( fmod( fbspeed1 + _Float0, fbtotaltiles1 ) );
-			string vcurrenttileindex = "float fbcurrenttileindex" + OutputId + " = round( fmod( fbspeed" + OutputId + " + " + startframe + ", fbtotaltiles" + OutputId + ") );";
+			string vcurrenttileindex = "float fbcurrenttileindex" + OutputId + " = floor( fmod( fbspeed" + OutputId + " + " + startframe + ", fbtotaltiles" + OutputId + ") );";
 			string  vcurrenttileindex1 = "fbcurrenttileindex" + OutputId + " += ( fbcurrenttileindex" + OutputId + " < 0) ? fbtotaltiles" + OutputId + " : 0;";
 			//fbcurrenttileindex1 += ( fbcurrenttileindex1 < 0 ) ? fbtotaltiles1 : 0;
 			//string vcurrenttileindex = "int fbcurrenttileindex" + m_uniqueId + " = (int)fmod( fbspeed" + m_uniqueId + ", fbtotaltiles" + m_uniqueId + ") + " + startframe + ";";
@@ -187,7 +203,7 @@ namespace AmplifyShaderEditor
 			string voffset = "float2 fboffset" + OutputId + " = float2(fboffsetx" + OutputId + ", fboffsety" + OutputId + ");";
 			//string voffset = "float2 fboffset" + m_uniqueId + " = float2( ( ( (int)fmod( fbspeed" + m_uniqueId + " , fbtotaltiles" +  m_uniqueId + ") % (int)" + columns + " ) * fbcolsoffset" + m_OutputId + " ) , ( ( (int)" + rows + " - ( (int)( ( (int)fmod( fbspeed" + m_uniqueId + " , fbtotaltiles" + m_uniqueId + " ) - ( (int)fmod( fbspeed" + m_uniqueId + " , fbtotaltiles" + m_uniqueId + " ) % (int)" + columns + " ) ) / " + columns + " ) % (int)" + rows + " ) ) * fbrowsoffset" + m_uniqueId + " ) );";
 			string vcomment15 = "// Flipbook UV";
-			string vfbuv = "half2 fbuv" + OutputId + " = " + uv + " * fbtiling" + OutputId + " + fboffset" + OutputId + ";";
+			string vfbuv = "float2 fbuv" + OutputId + " = " + uv + " * fbtiling" + OutputId + " + fboffset" + OutputId + ";";
 			string vcomment16 = "// *** END Flipbook UV Animation vars ***";
 			string result = "fbuv" + OutputId;
 
@@ -229,10 +245,15 @@ namespace AmplifyShaderEditor
 			dataCollector.AddLocalVariable( UniqueId, vfbuv );
 			dataCollector.AddLocalVariable( UniqueId, vcomment16 );
 
+			string frame = "int flipbookFrame" + OutputId + " = ( ( int )fbcurrenttileindex" + OutputId + ");";
+			dataCollector.AddLocalVariable( UniqueId, frame );
+
 			m_outputPorts[ 0 ].SetLocalValue( result, dataCollector.PortCategory );
+			m_outputPorts[ 1 ].SetLocalValue( result + ".x", dataCollector.PortCategory );
+			m_outputPorts[ 2 ].SetLocalValue( result + ".y", dataCollector.PortCategory );
+			m_outputPorts[ 3 ].SetLocalValue( "flipbookFrame" + OutputId, dataCollector.PortCategory );
 
-			return GetOutputVectorItem( 0, outputId, result );
-
+			return m_outputPorts[ outputId ].LocalValue( dataCollector.PortCategory );
 		}
 	}
 }

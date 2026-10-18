@@ -2,9 +2,9 @@ Shader "Hidden/HSVToRGBNode"
 {
 	Properties
 	{
-		_A ( "_Hue",  2D ) = "white" {}
-		_B ( "_Saturation",  2D ) = "white" {}
-		_C ( "_Value",  2D ) = "white" {}
+		_A ( "_Hue",  2DArray ) = "white" {}
+		_B ( "_Saturation",  2DArray ) = "white" {}
+		_C ( "_Value",  2DArray ) = "white" {}
 	}
 
 	SubShader
@@ -13,12 +13,14 @@ Shader "Hidden/HSVToRGBNode"
 		{
 			CGPROGRAM
 			#include "UnityCG.cginc"
+			#include "Preview.cginc"
 			#pragma vertex vert_img
 			#pragma fragment frag
+			#pragma target 3.5
 
-			uniform sampler2D _A;
-			uniform sampler2D _B;
-			uniform sampler2D _C;
+			ASE_PORT( _A );
+			ASE_PORT( _B );
+			ASE_PORT( _C );
 
 			float3 HSVToRGB( float3 c )
 			{
@@ -29,9 +31,9 @@ Shader "Hidden/HSVToRGBNode"
 
 			float4 frag ( v2f_img i ) : SV_Target
 			{
-				float h = tex2D ( _A, i.uv ).r;
-				float s = tex2D ( _B, i.uv ).r;
-				float v = tex2D ( _C, i.uv ).r;
+				float h = ASE_SAMPLE_PORT( _A, i.uv ).r;
+				float s = ASE_SAMPLE_PORT( _B, i.uv ).r;
+				float v = ASE_SAMPLE_PORT( _C, i.uv ).r;
 
 				return float4( HSVToRGB(float3(h,s,v)), 1 );
 			}

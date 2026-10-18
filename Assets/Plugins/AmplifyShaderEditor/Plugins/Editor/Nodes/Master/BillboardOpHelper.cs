@@ -45,32 +45,23 @@ namespace AmplifyShaderEditor
 		public static readonly string[] BillboardRotIndependent = { "{0}.x *= length( unity_ObjectToWorld._m00_m10_m20 )",
 																	"{0}.y *= length( unity_ObjectToWorld._m01_m11_m21 )",
 																	"{0}.z *= length( unity_ObjectToWorld._m02_m12_m22 )",
-																	"{0} = mul( {0}, rotationCamMatrix )",
-																	"{0}.xyz += unity_ObjectToWorld._m03_m13_m23",
-																	"//Need to nullify rotation inserted by generated surface shader",
-																	"{0} = mul( unity_WorldToObject, {0} )"};
+																	"{0}.xyz = mul( float4( {0}.xyz, 0 ), rotationCamMatrix ).xyz",
+																	"{0}.xyz = mul( unity_WorldToObject, float4( {0}.xyz, 0 ) ).xyz"};
 
 
 
-		public static readonly string[] BillboardHDRotDependent = {   "//This unfortunately must be made to take non-uniform scaling into account",
+		public static readonly string[] BillboardSRPRotDependent = {   "//This unfortunately must be made to take non-uniform scaling into account",
 																	"//Transform to world coords, apply rotation and transform back to local",
 																	"{0} = mul( {1} , GetObjectToWorldMatrix() ){2}",
 																	"{0} = mul( {1} , rotationCamMatrix ){2}",
 																	"{0} = mul( {1} , GetWorldToObjectMatrix() ){2}"};
 
 
-		public static readonly string[] BillboardHDRotIndependent = { "{0}.x *= length( GetObjectToWorldMatrix()._m00_m10_m20 )",
+		public static readonly string[] BillboardSRPRotIndependent = { "{0}.x *= length( GetObjectToWorldMatrix()._m00_m10_m20 )",
 																	"{0}.y *= length( GetObjectToWorldMatrix()._m01_m11_m21 )",
 																	"{0}.z *= length( GetObjectToWorldMatrix()._m02_m12_m22 )",
-																	"{0} = mul( {0}, rotationCamMatrix )",
-																	//Comment this next one out in HDRP since it was moving the vertices to incorrect locations
-																	// Over HDRP the correct results are achievied without having to do this operation
-																	//This is because the vertex position variable is a float3 and an implicit cast is done to float4
-																	//with w set to 0, this makes the multiplication below only affects rotation and not translation
-																	//thus no adding the world translation is needed to counter the GetObjectToWorldMatrix() operation
-																	"{0}.xyz += GetObjectToWorldMatrix()._m03_m13_m23",
-																	"//Need to nullify rotation inserted by generated surface shader",
-																	"{0} = mul( GetWorldToObjectMatrix(), {0} )"};
+																	"{0}.xyz = mul( float4( {0}.xyz, 0 ), rotationCamMatrix ).xyz",
+																	"{0}.xyz = mul( GetWorldToObjectMatrix(), float4( {0}.xyz, 0 ) ).xyz"};
 
 
 		[SerializeField]
@@ -107,20 +98,6 @@ namespace AmplifyShaderEditor
 			if( m_isBillboard )
 			{
 				FillDataCollector( ref dataCollector, m_billboardType, m_rotationIndependent, "v.vertex", "v.normal","v.tangent", false, m_affectNormalTangent );
-			}
-		}
-
-		public static void CheckVertexPosition( ref string value , ref MasterNodeDataCollector dataCollector )
-		{
-			if( dataCollector.IsTemplate )
-			{
-				WirePortDataType vertexSize = dataCollector.TemplateDataCollectorInstance.GetVertexPositionDataType();
-				if( vertexSize != WirePortDataType.FLOAT4 )
-				{
-					// the {0}.xyz += GetObjectToWorldMatrix()._m03_m13_m23 must only be done over float4 vertices for the reason stated above for HDRP
-					// on all others can be commented out
-					value = "//" + value;
-				}
 			}
 		}
 
@@ -165,27 +142,18 @@ namespace AmplifyShaderEditor
 
 			if( rotationIndependent )
 			{
-				
+
 
 				for( int i = 0; i < BillboardRotIndependent.Length; i++ )
 				{
 					string value = string.Empty;
-					if( dataCollector.IsTemplate && dataCollector.TemplateDataCollectorInstance.CurrentSRPType != TemplateSRPType.BuiltIn )
+					if( dataCollector.IsTemplate && dataCollector.TemplateDataCollectorInstance.IsSRP )
 					{
-						value = ( i != 5 ) ? string.Format( BillboardHDRotIndependent[ i ], vertexPosValue ) : BillboardHDRotIndependent[ i ];
-						if( i == 4 )
-						{
-							CheckVertexPosition( ref value , ref dataCollector );
-						}
-
+						value = string.Format( BillboardSRPRotIndependent[ i ], vertexPosValue );
 					}
 					else
 					{
-						value = ( i != 5 ) ? string.Format( BillboardRotIndependent[ i ], vertexPosValue ) : BillboardRotIndependent[ i ];
-						if( i == 4 )
-						{
-							CheckVertexPosition( ref value , ref dataCollector );
-						}
+						value = string.Format( BillboardRotIndependent[ i ], vertexPosValue );
 					}
 					dataCollector.AddVertexInstruction( value + ( dataCollector.IsTemplate ? ";" : string.Empty ), -1, true );
 				}
@@ -196,9 +164,9 @@ namespace AmplifyShaderEditor
 				for( int i = 0; i < BillboardRotDependent.Length; i++ )
 				{
 					string value = string.Empty;
-					if( dataCollector.IsTemplate && dataCollector.TemplateDataCollectorInstance.CurrentSRPType == TemplateSRPType.HD )
+					if( dataCollector.IsTemplate && dataCollector.TemplateDataCollectorInstance.IsSRP )
 					{
-						value = ( i > 1 ) ? string.Format( BillboardHDRotDependent[ i ], vertexPosValue, vertexPosConverted, ( vertexIsFloat3 ? ".xyz" : string.Empty ) ) : BillboardHDRotDependent[ i ];
+						value = ( i > 1 ) ? string.Format( BillboardSRPRotDependent[ i ], vertexPosValue, vertexPosConverted, ( vertexIsFloat3 ? ".xyz" : string.Empty ) ) : BillboardSRPRotDependent[ i ];
 					}
 					else
 					{
