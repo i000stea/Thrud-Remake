@@ -1,12 +1,12 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-21T13:38:29.684Z",
+  "generatedAt": "2026-10-18T12:39:42.204Z",
   "scriptsRoot": "Assets/02_Scripts",
   "stats": {
     "assemblies": 9,
-    "files": 143,
-    "classes": 222,
-    "lines": 18344
+    "files": 145,
+    "classes": 224,
+    "lines": 18521
   },
   "assemblies": [
     {
@@ -2514,6 +2514,101 @@
         "target": "float",
         "speed": "float",
         "deltaTime": "float"
+      }
+    },
+    {
+      "id": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "name": "BattleEnemyActor",
+      "fullName": "TeaGame.BattleEnemyActor",
+      "namespace": "TeaGame",
+      "assembly": "TeaGame.Battle",
+      "kind": "class",
+      "files": [
+        {
+          "path": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+          "line": 16
+        }
+      ],
+      "methods": [
+        {
+          "name": "BattleEnemyActor",
+          "signature": "BattleEnemyActor(BattleEnemyEntity host, Transform blastRangeRing, GameObject blastRingPrefab)",
+          "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+          "line": 47
+        },
+        {
+          "name": "CacheBodyRenderer",
+          "signature": "CacheBodyRenderer()",
+          "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+          "line": 60
+        },
+        {
+          "name": "SetElement",
+          "signature": "SetElement(DamageElement element)",
+          "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+          "line": 74
+        },
+        {
+          "name": "RefreshVisual",
+          "signature": "RefreshVisual(int activeMask, DamageElement element)",
+          "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+          "line": 85
+        },
+        {
+          "name": "RefreshBaseBodyColor",
+          "signature": "RefreshBaseBodyColor(DamageElement element)",
+          "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+          "line": 96
+        },
+        {
+          "name": "ApplyVisualMask",
+          "signature": "ApplyVisualMask(int mask, DamageElement element)",
+          "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+          "line": 103
+        },
+        {
+          "name": "ShowDamageText",
+          "signature": "ShowDamageText(int amount, Color color, bool big)",
+          "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+          "line": 128
+        },
+        {
+          "name": "SyncBlastRangeRing",
+          "signature": "SyncBlastRangeRing(float radius)",
+          "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+          "line": 142
+        },
+        {
+          "name": "ShowBlastRing",
+          "signature": "ShowBlastRing(float radius)",
+          "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+          "line": 154
+        }
+      ],
+      "fields": {
+        "RangeRingPlaneSize": "float",
+        "mHost": "BattleEnemyEntity",
+        "mOwner": "Transform",
+        "mBlastRangeRing": "Transform",
+        "mBlastRingPrefab": "GameObject",
+        "mBodyRenderer": "Renderer",
+        "mBaseColor": "Color",
+        "mElementBodyColor": "Color",
+        "mLastVisualMask": "int",
+        "host": "BattleEnemyEntity",
+        "blastRangeRing": "Transform",
+        "blastRingPrefab": "GameObject",
+        "element": "DamageElement",
+        "activeMask": "int",
+        "mask": "int",
+        "color": "Color",
+        "amount": "int",
+        "big": "bool",
+        "controller": "var",
+        "radius": "float",
+        "diameter": "var",
+        "position": "var",
+        "ring": "var"
       }
     },
     {
@@ -5409,7 +5504,7 @@
       "files": [
         {
           "path": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 15
+          "line": 23
         }
       ],
       "methods": [
@@ -5417,127 +5512,97 @@
           "name": "AttachElementState",
           "signature": "AttachElementState(ElementStateEffect effect)",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 162
+          "line": 163
         },
         {
           "name": "NotifyElementVisualChanged",
           "signature": "NotifyElementVisualChanged()",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 168
+          "line": 169
         },
         {
           "name": "Awake",
           "signature": "Awake()",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 188
+          "line": 186
         },
         {
           "name": "Start",
           "signature": "Start()",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 204
+          "line": 202
         },
         {
           "name": "OnDestroy",
           "signature": "OnDestroy()",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 213
+          "line": 211
         },
         {
           "name": "Update",
           "signature": "Update()",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 222
-        },
-        {
-          "name": "ApplyVisualMask",
-          "signature": "ApplyVisualMask(int mask)",
-          "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 245
-        },
-        {
-          "name": "RefreshBaseBodyColor",
-          "signature": "RefreshBaseBodyColor()",
-          "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 267
+          "line": 220
         },
         {
           "name": "ApplyDamage",
           "signature": "ApplyDamage(float damage)",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 274
+          "line": 238
         },
         {
           "name": "ApplyElementalDamage",
           "signature": "ApplyElementalDamage(float damage, DamageElement attackElement)",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 287
+          "line": 251
         },
         {
           "name": "TakeDirectDamage",
           "signature": "TakeDirectDamage(float amount, Color color)",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 317
+          "line": 281
         },
         {
           "name": "ApplyDamageInternal",
           "signature": "ApplyDamageInternal(float amount, Color displayColor, bool counterBig)",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 322
-        },
-        {
-          "name": "IsVisibleInBattleCamera",
-          "signature": "IsVisibleInBattleCamera()",
-          "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 347
+          "line": 286
         },
         {
           "name": "FireBulletAt",
           "signature": "FireBulletAt(float yawOffsetDeg)",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 362
+          "line": 307
         },
         {
           "name": "DamagePlayerInRadius",
           "signature": "DamagePlayerInRadius(float radius, float damage)",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 386
+          "line": 331
         },
         {
           "name": "ShowDamageText",
           "signature": "ShowDamageText(int amount)",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 403
+          "line": 348
         },
         {
           "name": "ShowDamageText",
           "signature": "ShowDamageText(int amount, Color color, bool big)",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 411
-        },
-        {
-          "name": "SyncBlastRangeRing",
-          "signature": "SyncBlastRangeRing()",
-          "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 428
+          "line": 357
         },
         {
           "name": "ShowBlastRing",
           "signature": "ShowBlastRing(float radius)",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 440
-        },
-        {
-          "name": "CreateUiIfNeeded",
-          "signature": "CreateUiIfNeeded()",
-          "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 458
+          "line": 367
         },
         {
           "name": "Die",
           "signature": "Die()",
           "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-          "line": 476
+          "line": 377
         }
       ],
       "fields": {
@@ -5559,15 +5624,11 @@
         "blastDamage": "float",
         "blastRangeRing": "Transform",
         "blastRingPrefab": "GameObject",
-        "mBodyRenderer": "Renderer",
-        "mBaseColor": "Color",
-        "mElementBodyColor": "Color",
         "mElementState": "ElementStateEffect",
-        "mLastVisualMask": "int",
         "mCurrentHealth": "float",
         "mBehaviour": "IEnemyBehaviour",
-        "mUiInstance": "out",
-        "mOnCamera": "bool",
+        "mActor": "BattleEnemyActor",
+        "mViewBinder": "BattleEnemyViewBinder",
         "mDead": "bool",
         "mKilledByPlayer": "bool",
         "RootTransform": "Transform",
@@ -5591,8 +5652,6 @@
         "IsStunned": "bool",
         "ActiveStateMask": "int",
         "effect": "ElementStateEffect",
-        "mask": "int",
-        "color": "Color",
         "damage": "float",
         "attackElement": "DamageElement",
         "multiplier": "var",
@@ -5600,10 +5659,8 @@
         "isCounter": "var",
         "displayColor": "Color",
         "amount": "int",
+        "color": "Color",
         "counterBig": "bool",
-        "camera": "var",
-        "false": "return",
-        "screenPoint": "var",
         "yawOffsetDeg": "float",
         "player": "var",
         "bulletObject": "var",
@@ -5612,12 +5669,6 @@
         "sqrDistance": "var",
         "BattleEvent_PlayerDamaged": "new",
         "big": "bool",
-        "controller": "var",
-        "RangeRingPlaneSize": "float",
-        "diameter": "var",
-        "position": "var",
-        "ring": "var",
-        "uiObject": "var",
         "BattleEvent_EnemyKilled": "new"
       }
     },
@@ -5643,55 +5694,61 @@
           "name": "Awake",
           "signature": "Awake()",
           "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-          "line": 49
+          "line": 56
         },
         {
           "name": "Start",
           "signature": "Start()",
           "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-          "line": 64
+          "line": 71
         },
         {
           "name": "OnDestroy",
           "signature": "OnDestroy()",
           "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-          "line": 74
+          "line": 81
         },
         {
           "name": "LateUpdate",
           "signature": "LateUpdate()",
           "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-          "line": 85
+          "line": 92
+        },
+        {
+          "name": "RefreshHealthFromHost",
+          "signature": "RefreshHealthFromHost()",
+          "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
+          "line": 116
         },
         {
           "name": "RefreshHealth",
           "signature": "RefreshHealth(float healthPercent)",
           "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-          "line": 107
+          "line": 129
         },
         {
           "name": "RefreshSingIcon",
           "signature": "RefreshSingIcon()",
           "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-          "line": 130
+          "line": 152
         },
         {
           "name": "GetSignSprite",
           "signature": "GetSignSprite(DamageElement element)",
           "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-          "line": 159
+          "line": 181
         },
         {
           "name": "RefreshStatusText",
           "signature": "RefreshStatusText()",
           "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-          "line": 175
+          "line": 197
         },
         {
           "name": "BuildStatusText",
           "signature": "BuildStatusText(int mask)",
           "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-          "line": 201
+          "line": 223
         }
       ],
       "fields": {
@@ -5712,9 +5769,11 @@
         "mOpened": "bool",
         "mLastStatusMask": "int",
         "mLastElementId": "int",
+        "mLastHealthPercent": "float",
         "mCanvasRect": "RectTransform",
         "RectTransform": "as",
         "battleCamera": "var",
+        "percent": "var",
         "healthPercent": "float",
         "elementId": "var",
         "icon": "var",
@@ -7797,6 +7856,54 @@
         "sRingMaterials": "Dictionary",
         "material": "return",
         "color": "var"
+      }
+    },
+    {
+      "id": "TeaGame.Battle::TeaGame.BattleEnemyViewBinder",
+      "name": "BattleEnemyViewBinder",
+      "fullName": "TeaGame.BattleEnemyViewBinder",
+      "namespace": "TeaGame",
+      "assembly": "TeaGame.Battle",
+      "kind": "class",
+      "files": [
+        {
+          "path": "Assets/02_Scripts/03_Battle/UI/BattleEnemyViewBinder.cs",
+          "line": 18
+        }
+      ],
+      "methods": [
+        {
+          "name": "BattleEnemyViewBinder",
+          "signature": "BattleEnemyViewBinder(BattleEnemyEntity owner)",
+          "file": "Assets/02_Scripts/03_Battle/UI/BattleEnemyViewBinder.cs",
+          "line": 26
+        },
+        {
+          "name": "CreateHeadUi",
+          "signature": "CreateHeadUi(GameObject uiPrefab, float yOffset)",
+          "file": "Assets/02_Scripts/03_Battle/UI/BattleEnemyViewBinder.cs",
+          "line": 49
+        },
+        {
+          "name": "TickVisibility",
+          "signature": "TickVisibility()",
+          "file": "Assets/02_Scripts/03_Battle/UI/BattleEnemyViewBinder.cs",
+          "line": 69
+        }
+      ],
+      "fields": {
+        "mOwner": "BattleEnemyEntity",
+        "owner": "BattleEnemyEntity",
+        "IsOnCamera": "bool",
+        "set": "private",
+        "HeadUi": "Battle_EnemyUI",
+        "uiPrefab": "GameObject",
+        "yOffset": "float",
+        "uiObject": "var",
+        "ui": "Battle_EnemyUI",
+        "camera": "var",
+        "lockPoint": "var",
+        "screenPoint": "var"
       }
     },
     {
@@ -10702,6 +10809,15 @@
       "hash": "c444c6461fbd469c656f349936c8495dba77f2763d57d221673b9fdd0c001d5c"
     },
     {
+      "path": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "assembly": "TeaGame.Battle",
+      "lineCount": 168,
+      "types": [
+        "TeaGame.Battle::TeaGame.BattleEnemyActor"
+      ],
+      "hash": "24826533ebf2e13a36db08fd563f90591d9cd172e70d82182b8b42ada34d3d1e"
+    },
+    {
       "path": "Assets/02_Scripts/03_Battle/Actor/BattleMovementActor.cs",
       "assembly": "TeaGame.Battle",
       "lineCount": 52,
@@ -11050,11 +11166,11 @@
     {
       "path": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
       "assembly": "TeaGame.Battle",
-      "lineCount": 501,
+      "lineCount": 402,
       "types": [
         "TeaGame.Battle::TeaGame.BattleEnemyEntity"
       ],
-      "hash": "df7c547855a1dafb3810d8000966d96af1f372be0b22a6704e9de869da9bbcda"
+      "hash": "74b8f4b4ce714b61e99f159eb133139ad1ec170354447442227fd03de696a7e7"
     },
     {
       "path": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.Designer.cs",
@@ -11068,11 +11184,11 @@
     {
       "path": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
       "assembly": "TeaGame.Battle",
-      "lineCount": 212,
+      "lineCount": 234,
       "types": [
         "TeaGame.Battle::TeaGame.Battle_EnemyUI"
       ],
-      "hash": "dbf1474f63e6f4d747325127891946a812f6c3e8e175e744bd5b96416565a7d4"
+      "hash": "d5cd9ba83fa0262aedfff7ef0714cbad746dbb6eebb97b71b5f4c5a8b8dde5b8"
     },
     {
       "path": "Assets/02_Scripts/03_Battle/Enemy/EnemyBehaviour_GunTurret.cs",
@@ -11377,6 +11493,15 @@
         "TeaGame.Battle::TeaGame.BattleSkillEffect"
       ],
       "hash": "aac3207a6bec9ff6f1aa49932dda5d34cc8cd7c8f8b206ad06dede0f076e1762"
+    },
+    {
+      "path": "Assets/02_Scripts/03_Battle/UI/BattleEnemyViewBinder.cs",
+      "assembly": "TeaGame.Battle",
+      "lineCount": 86,
+      "types": [
+        "TeaGame.Battle::TeaGame.BattleEnemyViewBinder"
+      ],
+      "hash": "f813107190471ceed2f0dadc4699190c957ac4e841fe7873ecf1f807b5e24abb"
     },
     {
       "path": "Assets/02_Scripts/03_Battle/UI/BattleTeamHudView.cs",
@@ -15904,6 +16029,254 @@
       "method": "GachaUIItemData",
       "access": "read",
       "member": "itemPinyin"
+    },
+    {
+      "id": "aa31e692dc6e7f9e6879",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "kind": "class",
+      "label": "类型名引用候选",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 24,
+      "method": null
+    },
+    {
+      "id": "73ce1c97ec5072028c8d",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Data::TeaGame.DamageElement",
+      "kind": "class",
+      "label": "类型名引用候选",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 74,
+      "method": "SetElement"
+    },
+    {
+      "id": "0cae44f23325dd7264d8",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
+      "kind": "class",
+      "label": "类型名引用候选",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 76,
+      "method": "SetElement"
+    },
+    {
+      "id": "174916a842527305dd09",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Battle::TeaGame.BattleArchitecture",
+      "kind": "class",
+      "label": "类型名引用候选",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 130,
+      "method": "ShowDamageText"
+    },
+    {
+      "id": "e46eac806d4b485e190c",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Battle::TeaGame.BattleStateModel",
+      "kind": "class",
+      "label": "类型名引用候选",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 130,
+      "method": "ShowDamageText"
+    },
+    {
+      "id": "6217aeb88d3c829e3181",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Battle::TeaGame.BattleObjectPool",
+      "kind": "class",
+      "label": "类型名引用候选",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 159,
+      "method": "ShowBlastRing"
+    },
+    {
+      "id": "a96e3dd1ad5c5f1a9ac9",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "kind": "data",
+      "label": "读取 mHost.GetComponentInChildren",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 64,
+      "method": "CacheBodyRenderer",
+      "access": "read",
+      "member": "GetComponentInChildren"
+    },
+    {
+      "id": "3f24459a90c67356d1fd",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
+      "kind": "call",
+      "label": "调用 BattleElementBalance.GetElementColor",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 76,
+      "method": "SetElement",
+      "access": "call",
+      "member": "GetElementColor"
+    },
+    {
+      "id": "26a519723164dd0ceb05",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
+      "kind": "call",
+      "label": "调用 BattleElementBalance.GetElementColor",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 110,
+      "method": "ApplyVisualMask",
+      "access": "call",
+      "member": "GetElementColor"
+    },
+    {
+      "id": "bda2198b0c922ac3456b",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Data::TeaGame.DamageElement",
+      "kind": "data",
+      "label": "读取 DamageElement.Wind",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 110,
+      "method": "ApplyVisualMask",
+      "access": "read",
+      "member": "Wind"
+    },
+    {
+      "id": "825c3f27d41b764a1207",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
+      "kind": "call",
+      "label": "调用 BattleElementBalance.GetElementColor",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 111,
+      "method": "ApplyVisualMask",
+      "access": "call",
+      "member": "GetElementColor"
+    },
+    {
+      "id": "2563d892e1b7d8050d16",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Data::TeaGame.DamageElement",
+      "kind": "data",
+      "label": "读取 DamageElement.Ice",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 111,
+      "method": "ApplyVisualMask",
+      "access": "read",
+      "member": "Ice"
+    },
+    {
+      "id": "1403b05b631ff57cd753",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
+      "kind": "call",
+      "label": "调用 BattleElementBalance.GetElementColor",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 112,
+      "method": "ApplyVisualMask",
+      "access": "call",
+      "member": "GetElementColor"
+    },
+    {
+      "id": "d5596d9ca0ad69f6471f",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Data::TeaGame.DamageElement",
+      "kind": "data",
+      "label": "读取 DamageElement.Fire",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 112,
+      "method": "ApplyVisualMask",
+      "access": "read",
+      "member": "Fire"
+    },
+    {
+      "id": "059fcdd71c0e59c762ba",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
+      "kind": "call",
+      "label": "调用 BattleElementBalance.GetElementColor",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 113,
+      "method": "ApplyVisualMask",
+      "access": "call",
+      "member": "GetElementColor"
+    },
+    {
+      "id": "340f9240533c6c900e73",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Data::TeaGame.DamageElement",
+      "kind": "data",
+      "label": "读取 DamageElement.Wind",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 113,
+      "method": "ApplyVisualMask",
+      "access": "read",
+      "member": "Wind"
+    },
+    {
+      "id": "0b58ba161e87180f2257",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
+      "kind": "call",
+      "label": "调用 BattleElementBalance.GetElementColor",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 114,
+      "method": "ApplyVisualMask",
+      "access": "call",
+      "member": "GetElementColor"
+    },
+    {
+      "id": "b0623267d95aaf45215a",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Data::TeaGame.DamageElement",
+      "kind": "data",
+      "label": "读取 DamageElement.Electric",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 114,
+      "method": "ApplyVisualMask",
+      "access": "read",
+      "member": "Electric"
+    },
+    {
+      "id": "ca6d2abd08e7c228ab0b",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Battle::TeaGame.BattleObjectPool",
+      "kind": "call",
+      "label": "调用 BattleObjectPool.Spawn",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 159,
+      "method": "ShowBlastRing",
+      "access": "call",
+      "member": "Spawn"
+    },
+    {
+      "id": "7bef8784bf0d4b00d1a5",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "target": "TeaGame.Battle::TeaGame.BattleObjectPool",
+      "kind": "call",
+      "label": "调用 BattleObjectPool.ReturnAfter",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Actor/BattleEnemyActor.cs",
+      "line": 164,
+      "method": "ShowBlastRing",
+      "access": "call",
+      "member": "ReturnAfter"
     },
     {
       "id": "c3fb6a0d7ea6e23a1033",
@@ -22496,673 +22869,608 @@
       "member": "Despawn"
     },
     {
-      "id": "8eae1242bf7b802d7789",
+      "id": "3517003851014c161446",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Data::TeaGame.DamageElement",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 18,
+      "line": 26,
       "method": null
     },
     {
-      "id": "2f30bcebc39d6859c04b",
+      "id": "14436f2214034f504e71",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.EnemyKind",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 36,
+      "line": 44,
       "method": null
     },
     {
-      "id": "1e0c0022d7d39e0ae88b",
+      "id": "5915af63532f7d1adfe8",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.ElementStateEffect",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 75,
+      "line": 74,
       "method": null
     },
     {
-      "id": "70a6468893346d6a6b25",
+      "id": "824aae2a2d419fe86c20",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.IEnemyBehaviour",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 84,
+      "line": 80,
       "method": null
     },
     {
-      "id": "b89d8eda63d05e820dfd",
+      "id": "f5658869138d4c84b60c",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyActor",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 87,
+      "line": 83,
       "method": null
     },
     {
-      "id": "9418bfb2376d3adb953c",
+      "id": "971bdb2e44cd8735a3cf",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyViewBinder",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 139,
+      "line": 86,
       "method": null
     },
     {
-      "id": "a217241e11079153a1cc",
+      "id": "08f539d9b94b6faf45d9",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.EnemyBehaviourFactory",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 191,
+      "line": 189,
       "method": "Awake"
     },
     {
-      "id": "e9a7d237bb3854b2770e",
+      "id": "6c4123acecbae711e00e",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.BattleEnemyRegistry",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 206,
+      "line": 204,
       "method": "Start"
     },
     {
-      "id": "abc09c55be72a116d83e",
+      "id": "e0e7b21994ce379ee2e8",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
+      "kind": "class",
+      "label": "类型名引用候选",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
+      "line": 253,
+      "method": "ApplyElementalDamage"
+    },
+    {
+      "id": "6e2da4a41712e24fbc95",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "target": "TeaGame.Battle::TeaGame.BattlePlayerRegistry",
+      "kind": "class",
+      "label": "类型名引用候选",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
+      "line": 309,
+      "method": "FireBulletAt"
+    },
+    {
+      "id": "3eaa2a2e5006f9423dfd",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "target": "TeaGame.Battle::TeaGame.BattleObjectPool",
+      "kind": "class",
+      "label": "类型名引用候选",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
+      "line": 312,
+      "method": "FireBulletAt"
+    },
+    {
+      "id": "4924fa4a6c6be3224e6c",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.BattleArchitecture",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 349,
-      "method": "IsVisibleInBattleCamera"
+      "line": 339,
+      "method": "DamagePlayerInRadius"
     },
     {
-      "id": "f3179bdc3807b0f82022",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Battle::TeaGame.BattleStateModel",
-      "kind": "class",
-      "label": "类型名引用候选",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 349,
-      "method": "IsVisibleInBattleCamera"
-    },
-    {
-      "id": "165290ca69459da7fce9",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Battle::TeaGame.BattlePlayerRegistry",
-      "kind": "class",
-      "label": "类型名引用候选",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 364,
-      "method": "FireBulletAt"
-    },
-    {
-      "id": "bf9eba3806b0c95bf529",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Battle::TeaGame.BattleObjectPool",
-      "kind": "class",
-      "label": "类型名引用候选",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 367,
-      "method": "FireBulletAt"
-    },
-    {
-      "id": "49a89663f6959ca32831",
+      "id": "eaa2c01798f40984979b",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.BattleEvent_PlayerDamaged",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 394,
+      "line": 339,
       "method": "DamagePlayerInRadius"
     },
     {
-      "id": "35a00b7c4059881df8df",
+      "id": "17d3e38f832767c3d52f",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.BattleEvent_EnemyKilled",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 489,
+      "line": 390,
       "method": "Die"
     },
     {
-      "id": "ec9efc8a6ef6b8fcb40a",
+      "id": "e45b6084536970db0d6e",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.BattleEvent_PlayerDamaged",
       "kind": "event",
       "label": "发布 BattleEvent_PlayerDamaged",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 394,
+      "line": 339,
       "method": "DamagePlayerInRadius",
       "role": "publish"
     },
     {
-      "id": "16c8ea7421b016ee170d",
+      "id": "15afa6509b02d868716a",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.BattleEvent_EnemyKilled",
       "kind": "event",
       "label": "发布 BattleEvent_EnemyKilled",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 489,
+      "line": 390,
       "method": "Die",
       "role": "publish"
     },
     {
-      "id": "d8c9ecb93a470e47aa88",
+      "id": "4916f55ae6c357ecf6cf",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Data::TeaGame.DamageElement",
       "kind": "data",
       "label": "读取 DamageElement.none",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 18,
+      "line": 26,
       "method": null,
       "access": "read",
       "member": "none"
     },
     {
-      "id": "900dd0405e84c5d96047",
+      "id": "af3c445e32f7c79d69c5",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.EnemyKind",
       "kind": "data",
       "label": "读取 EnemyKind.Patrol",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 36,
+      "line": 44,
       "method": null,
       "access": "read",
       "member": "Patrol"
     },
     {
-      "id": "410411b5712df48ff536",
+      "id": "d5ba8677f5bbd92ca61f",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
-      "kind": "call",
-      "label": "调用 BattleElementBalance.GetElementColor",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyViewBinder",
+      "kind": "data",
+      "label": "读取 mViewBinder.IsOnCamera",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 139,
+      "line": 111,
       "method": null,
-      "access": "call",
-      "member": "GetElementColor"
+      "access": "read",
+      "member": "IsOnCamera"
     },
     {
-      "id": "ac1967a276dddcb2d12c",
+      "id": "a0d0b0cad0f1ad6b8524",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.ElementStateEffect",
       "kind": "data",
       "label": "读取 mElementState.IsStunned",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 150,
+      "line": 151,
       "method": null,
       "access": "read",
       "member": "IsStunned"
     },
     {
-      "id": "828bb9fb0907bdc1a8ee",
+      "id": "4f54da95377f405f6fc8",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.ElementStateEffect",
       "kind": "data",
       "label": "读取 mElementState.SpeedFactor",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 151,
+      "line": 152,
       "method": null,
       "access": "read",
       "member": "SpeedFactor"
     },
     {
-      "id": "c8fd00940d6ea23bec68",
+      "id": "4998120316cdd8949dc4",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.ElementStateEffect",
       "kind": "data",
       "label": "读取 mElementState.IsStunned",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 156,
+      "line": 157,
       "method": null,
       "access": "read",
       "member": "IsStunned"
     },
     {
-      "id": "7376b36a3578072ccaad",
+      "id": "f8b69c711f5314e3fb58",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "kind": "call",
+      "label": "调用 mActor.RefreshVisual",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
+      "line": 175,
+      "method": "NotifyElementVisualChanged",
+      "access": "call",
+      "member": "RefreshVisual"
+    },
+    {
+      "id": "65052999530b42ba67c8",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.ElementStateEffect",
       "kind": "data",
       "label": "读取 mElementState.ActiveMask",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 172,
+      "line": 175,
       "method": "NotifyElementVisualChanged",
       "access": "read",
       "member": "ActiveMask"
     },
     {
-      "id": "2007d0e8f7dfe1c2ead9",
+      "id": "1c98e7d573485dfe9be2",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "kind": "call",
+      "label": "调用 mActor.RefreshBaseBodyColor",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
+      "line": 179,
+      "method": "NotifyElementVisualChanged",
+      "access": "call",
+      "member": "RefreshBaseBodyColor"
+    },
+    {
+      "id": "51437f31771a470c09b8",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.EnemyBehaviourFactory",
       "kind": "call",
       "label": "调用 EnemyBehaviourFactory.Create",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 191,
+      "line": 189,
       "method": "Awake",
       "access": "call",
       "member": "Create"
     },
     {
-      "id": "086c9e2f920e727e55a7",
+      "id": "69eb95ef30d3442eab57",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "kind": "call",
+      "label": "调用 mActor.CacheBodyRenderer",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
+      "line": 195,
+      "method": "Awake",
+      "access": "call",
+      "member": "CacheBodyRenderer"
+    },
+    {
+      "id": "d4f4e841625636ae6e98",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "kind": "call",
+      "label": "调用 mActor.SyncBlastRangeRing",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
+      "line": 196,
+      "method": "Awake",
+      "access": "call",
+      "member": "SyncBlastRangeRing"
+    },
+    {
+      "id": "f6473c71a5f5ca508c8c",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.BattleEnemyRegistry",
       "kind": "data",
       "label": "订阅状态 BattleEnemyRegistry.Register",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 206,
+      "line": 204,
       "method": "Start",
       "access": "subscribe",
       "member": "Register"
     },
     {
-      "id": "227836d4d4e7e3359aee",
+      "id": "f6506bba75ac8a7bdac2",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyViewBinder",
+      "kind": "call",
+      "label": "调用 mViewBinder.CreateHeadUi",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
+      "line": 205,
+      "method": "Start",
+      "access": "call",
+      "member": "CreateHeadUi"
+    },
+    {
+      "id": "94931f2148e2b8abbb87",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.BattleEnemyRegistry",
       "kind": "call",
       "label": "调用 BattleEnemyRegistry.UnRegister",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 215,
+      "line": 213,
       "method": "OnDestroy",
       "access": "call",
       "member": "UnRegister"
     },
     {
-      "id": "65ee2363b85de4f3db2c",
+      "id": "1f06249c71b29e6e55e6",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyViewBinder",
+      "kind": "call",
+      "label": "调用 mViewBinder.TickVisibility",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
+      "line": 222,
+      "method": "Update",
+      "access": "call",
+      "member": "TickVisibility"
+    },
+    {
+      "id": "fd4cffe138bfa4586045",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyActor",
+      "kind": "call",
+      "label": "调用 mActor.RefreshVisual",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
+      "line": 228,
+      "method": "Update",
+      "access": "call",
+      "member": "RefreshVisual"
+    },
+    {
+      "id": "824918bd5264de65a57e",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.ElementStateEffect",
       "kind": "data",
       "label": "读取 mElementState.ActiveMask",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 230,
+      "line": 228,
       "method": "Update",
       "access": "read",
       "member": "ActiveMask"
     },
     {
-      "id": "a30195a3e0f7983c9d87",
+      "id": "5a6bd992b7783ee54c00",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.ElementStateEffect",
       "kind": "data",
       "label": "读取 mElementState.IsStunned",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 237,
+      "line": 230,
       "method": "Update",
       "access": "read",
       "member": "IsStunned"
     },
     {
-      "id": "fc135ddbfd2e18322826",
+      "id": "b5ee413bbfd8dc0ec759",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.IEnemyBehaviour",
       "kind": "call",
       "label": "调用 mBehaviour.TickMove",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 240,
+      "line": 233,
       "method": "Update",
       "access": "call",
       "member": "TickMove"
     },
     {
-      "id": "1174a409667ed1644bd7",
+      "id": "5e337ef5bb3e076e170b",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.IEnemyBehaviour",
       "kind": "call",
       "label": "调用 mBehaviour.TickAttack",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 241,
+      "line": 234,
       "method": "Update",
       "access": "call",
       "member": "TickAttack"
     },
     {
-      "id": "45e8da3174a7c4202e2d",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
-      "kind": "call",
-      "label": "调用 BattleElementBalance.GetElementColor",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 252,
-      "method": "ApplyVisualMask",
-      "access": "call",
-      "member": "GetElementColor"
-    },
-    {
-      "id": "508ffdb4c769df7d757e",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Data::TeaGame.DamageElement",
-      "kind": "data",
-      "label": "读取 DamageElement.Wind",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 252,
-      "method": "ApplyVisualMask",
-      "access": "read",
-      "member": "Wind"
-    },
-    {
-      "id": "2d606f18ac9a5c6d1da9",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
-      "kind": "call",
-      "label": "调用 BattleElementBalance.GetElementColor",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 253,
-      "method": "ApplyVisualMask",
-      "access": "call",
-      "member": "GetElementColor"
-    },
-    {
-      "id": "f1fc7386dfc68cb9cdf8",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Data::TeaGame.DamageElement",
-      "kind": "data",
-      "label": "读取 DamageElement.Ice",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 253,
-      "method": "ApplyVisualMask",
-      "access": "read",
-      "member": "Ice"
-    },
-    {
-      "id": "8daca5cf217850ee65ab",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
-      "kind": "call",
-      "label": "调用 BattleElementBalance.GetElementColor",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 254,
-      "method": "ApplyVisualMask",
-      "access": "call",
-      "member": "GetElementColor"
-    },
-    {
-      "id": "89a203dfcb014d51e312",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Data::TeaGame.DamageElement",
-      "kind": "data",
-      "label": "读取 DamageElement.Fire",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 254,
-      "method": "ApplyVisualMask",
-      "access": "read",
-      "member": "Fire"
-    },
-    {
-      "id": "9972408b4b39198bf792",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
-      "kind": "call",
-      "label": "调用 BattleElementBalance.GetElementColor",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 255,
-      "method": "ApplyVisualMask",
-      "access": "call",
-      "member": "GetElementColor"
-    },
-    {
-      "id": "aa29d83156913d7a136c",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Data::TeaGame.DamageElement",
-      "kind": "data",
-      "label": "读取 DamageElement.Wind",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 255,
-      "method": "ApplyVisualMask",
-      "access": "read",
-      "member": "Wind"
-    },
-    {
-      "id": "1086142d16a2f7175f20",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
-      "kind": "call",
-      "label": "调用 BattleElementBalance.GetElementColor",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 256,
-      "method": "ApplyVisualMask",
-      "access": "call",
-      "member": "GetElementColor"
-    },
-    {
-      "id": "33c19384a862af49e54e",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Data::TeaGame.DamageElement",
-      "kind": "data",
-      "label": "读取 DamageElement.Electric",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 256,
-      "method": "ApplyVisualMask",
-      "access": "read",
-      "member": "Electric"
-    },
-    {
-      "id": "39f5300ef86bf2bc1baf",
+      "id": "1b14ee8ae1e0e358c42d",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Data::TeaGame.DamageElement",
       "kind": "data",
       "label": "读取 DamageElement.none",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 276,
+      "line": 240,
       "method": "ApplyDamage",
       "access": "read",
       "member": "none"
     },
     {
-      "id": "b0309239c13a1e56fcc0",
+      "id": "fa40169d79acdc9a8762",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
       "kind": "call",
       "label": "调用 BattleElementBalance.GetMultiplier",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 289,
+      "line": 253,
       "method": "ApplyElementalDamage",
       "access": "call",
       "member": "GetMultiplier"
     },
     {
-      "id": "d9de89a311ee8d8b2724",
+      "id": "913ff4119654f664b697",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.ElementStateEffect",
       "kind": "data",
       "label": "读取 mElementState.IncomingMultiplier",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 292,
+      "line": 256,
       "method": "ApplyElementalDamage",
       "access": "read",
       "member": "IncomingMultiplier"
     },
     {
-      "id": "8fde7ce88abb8c6af0d8",
+      "id": "f4e902740534dc3ac1f4",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Data::TeaGame.DamageElement",
       "kind": "data",
       "label": "读取 DamageElement.none",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 296,
+      "line": 260,
       "method": "ApplyElementalDamage",
       "access": "read",
       "member": "none"
     },
     {
-      "id": "0c275f4fb3c43780a35c",
+      "id": "bc85a136411da9f039fa",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
       "kind": "call",
       "label": "调用 BattleElementBalance.IsCounter",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 297,
+      "line": 261,
       "method": "ApplyElementalDamage",
       "access": "call",
       "member": "IsCounter"
     },
     {
-      "id": "c8153cd7d4a1b2087938",
+      "id": "5142b12683b6ba2d2ed3",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Data::TeaGame.DamageElement",
       "kind": "data",
       "label": "读取 DamageElement.none",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 299,
+      "line": 263,
       "method": "ApplyElementalDamage",
       "access": "read",
       "member": "none"
     },
     {
-      "id": "f428408d32a15ba06071",
+      "id": "a89c09435693a0fa4573",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
       "kind": "call",
       "label": "调用 BattleElementBalance.GetElementColor",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 301,
+      "line": 265,
       "method": "ApplyElementalDamage",
       "access": "call",
       "member": "GetElementColor"
     },
     {
-      "id": "a3492d1c5d5f474bbe1a",
+      "id": "c9022cb27c5ebb732170",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.ElementStateEffect",
       "kind": "call",
       "label": "调用 ElementStateEffect.GetOrAdd",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 308,
+      "line": 272,
       "method": "ApplyElementalDamage",
       "access": "call",
       "member": "GetOrAdd"
     },
     {
-      "id": "9ba53ae1fe30c97f0846",
+      "id": "6aeba6cd9e78ceb25d64",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.BattlePlayerRegistry",
       "kind": "data",
       "label": "读取 BattlePlayerRegistry.CurrentTransform",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 364,
+      "line": 309,
       "method": "FireBulletAt",
       "access": "read",
       "member": "CurrentTransform"
     },
     {
-      "id": "923d3c6d88962215fd07",
+      "id": "23854e6ef2c154af5438",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.BattleObjectPool",
       "kind": "call",
       "label": "调用 BattleObjectPool.Spawn",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 367,
+      "line": 312,
       "method": "FireBulletAt",
       "access": "call",
       "member": "Spawn"
     },
     {
-      "id": "9235bfc2b4303c22170b",
+      "id": "1891eb81fb29b15abec5",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.BattlePlayerRegistry",
       "kind": "data",
       "label": "读取 BattlePlayerRegistry.CurrentTransform",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 388,
+      "line": 333,
       "method": "DamagePlayerInRadius",
       "access": "read",
       "member": "CurrentTransform"
     },
     {
-      "id": "3c766618822538f4827e",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Battle::TeaGame.BattleObjectPool",
-      "kind": "call",
-      "label": "调用 BattleObjectPool.Spawn",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 445,
-      "method": "ShowBlastRing",
-      "access": "call",
-      "member": "Spawn"
-    },
-    {
-      "id": "bdf9e303387c81e0859f",
-      "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
-      "target": "TeaGame.Battle::TeaGame.BattleObjectPool",
-      "kind": "call",
-      "label": "调用 BattleObjectPool.ReturnAfter",
-      "confidence": "candidate",
-      "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 450,
-      "method": "ShowBlastRing",
-      "access": "call",
-      "member": "ReturnAfter"
-    },
-    {
-      "id": "527c5c4afb7cf8b70a24",
+      "id": "549bed6fac63cf8878c1",
       "source": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "target": "TeaGame.Battle::TeaGame.IEnemyBehaviour",
       "kind": "call",
       "label": "调用 mBehaviour.OnBeforeDestroy",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/BattleEnemyEntity.cs",
-      "line": 483,
+      "line": 384,
       "method": "Die",
       "access": "call",
       "member": "OnBeforeDestroy"
@@ -23179,253 +23487,266 @@
       "method": null
     },
     {
-      "id": "c8e85c3cb9ba8e6611c3",
+      "id": "3d07f13896b3a99ea811",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Battle::TeaGame.BattleArchitecture",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 44,
+      "line": 51,
       "method": null
     },
     {
-      "id": "4fb82c1078b8479b274f",
+      "id": "e4cb470a2eeca74a99aa",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Battle::TeaGame.BattleStateModel",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 87,
+      "line": 94,
       "method": "LateUpdate"
     },
     {
-      "id": "27b220161033f117b981",
+      "id": "359dcf0ef25431375707",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Data::TeaGame.DamageElement",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 137,
+      "line": 159,
       "method": "RefreshSingIcon"
     },
     {
-      "id": "b0d067b2b680a52bb584",
+      "id": "cddec8d5465e20edc2f3",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
       "kind": "class",
       "label": "类型名引用候选",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 152,
+      "line": 174,
       "method": "RefreshSingIcon"
     },
     {
-      "id": "82554ffcfb83261fe48f",
+      "id": "43195670a80388d75ecf",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Battle::TeaGame.BattleArchitecture",
       "kind": "data",
       "label": "读取 BattleArchitecture.Interface",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 44,
+      "line": 51,
       "method": null,
       "access": "read",
       "member": "Interface"
     },
     {
-      "id": "2d277214d3edb378cd72",
+      "id": "150d89f4c65505bf0f3f",
+      "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "kind": "data",
+      "label": "读取 mHost.HealthRatio",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
+      "line": 118,
+      "method": "RefreshHealthFromHost",
+      "access": "read",
+      "member": "HealthRatio"
+    },
+    {
+      "id": "9bd45747895abf7dbe2d",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "kind": "data",
       "label": "读取 mHost.Element",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 132,
+      "line": 154,
       "method": "RefreshSingIcon",
       "access": "read",
       "member": "Element"
     },
     {
-      "id": "1e94a6e2e4eac818e9c7",
+      "id": "401c95700fe453af394c",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "kind": "data",
       "label": "读取 mHost.Element",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 137,
+      "line": 159,
       "method": "RefreshSingIcon",
       "access": "read",
       "member": "Element"
     },
     {
-      "id": "499a7014ea885270b8e6",
+      "id": "f1fa7f5fcfbeff742021",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Data::TeaGame.DamageElement",
       "kind": "data",
       "label": "读取 DamageElement.none",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 137,
+      "line": 159,
       "method": "RefreshSingIcon",
       "access": "read",
       "member": "none"
     },
     {
-      "id": "578dc39b4d4d7c98748b",
+      "id": "cf173aa22110baf23b4f",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "kind": "data",
       "label": "读取 mHost.Element",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 144,
+      "line": 166,
       "method": "RefreshSingIcon",
       "access": "read",
       "member": "Element"
     },
     {
-      "id": "4a7a45794798e0e70c44",
+      "id": "8fc7ba326233b303c4df",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
       "kind": "call",
       "label": "调用 BattleElementBalance.GetElementColor",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 152,
+      "line": 174,
       "method": "RefreshSingIcon",
       "access": "call",
       "member": "GetElementColor"
     },
     {
-      "id": "2eb1b42c0ea9fd5adbbb",
+      "id": "4f809f3d3b62084f55ef",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "kind": "data",
       "label": "读取 mHost.Element",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 152,
+      "line": 174,
       "method": "RefreshSingIcon",
       "access": "read",
       "member": "Element"
     },
     {
-      "id": "a1bdd59050f0a2fdf06b",
+      "id": "1fb7a6d58c82dca4f91b",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
       "kind": "data",
       "label": "读取 mHost.ActiveStateMask",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 177,
+      "line": 199,
       "method": "RefreshStatusText",
       "access": "read",
       "member": "ActiveStateMask"
     },
     {
-      "id": "09bfbbc3287c25fb65d1",
+      "id": "db861cc3734a50086a0d",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
       "kind": "call",
       "label": "调用 BattleElementBalance.GetElementColor",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 191,
+      "line": 213,
       "method": "RefreshStatusText",
       "access": "call",
       "member": "GetElementColor"
     },
     {
-      "id": "a7fde8996492182c581b",
+      "id": "4b84dd1315e4a3476965",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Data::TeaGame.DamageElement",
       "kind": "data",
       "label": "读取 DamageElement.Ice",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 191,
+      "line": 213,
       "method": "RefreshStatusText",
       "access": "read",
       "member": "Ice"
     },
     {
-      "id": "ad2fc18e346ffdc82f18",
+      "id": "377a4dcc26525e5ed3be",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
       "kind": "call",
       "label": "调用 BattleElementBalance.GetElementColor",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 192,
+      "line": 214,
       "method": "RefreshStatusText",
       "access": "call",
       "member": "GetElementColor"
     },
     {
-      "id": "e76edd7bdd605fc127e4",
+      "id": "99870425d658628598a5",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Data::TeaGame.DamageElement",
       "kind": "data",
       "label": "读取 DamageElement.Fire",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 192,
+      "line": 214,
       "method": "RefreshStatusText",
       "access": "read",
       "member": "Fire"
     },
     {
-      "id": "d6f17ee005d1bfb14b9a",
+      "id": "607291478eba41cadc23",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
       "kind": "call",
       "label": "调用 BattleElementBalance.GetElementColor",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 193,
+      "line": 215,
       "method": "RefreshStatusText",
       "access": "call",
       "member": "GetElementColor"
     },
     {
-      "id": "a6304f785789dc162047",
+      "id": "bd41173e657b0720c25c",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Data::TeaGame.DamageElement",
       "kind": "data",
       "label": "读取 DamageElement.Electric",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 193,
+      "line": 215,
       "method": "RefreshStatusText",
       "access": "read",
       "member": "Electric"
     },
     {
-      "id": "a60ae21292dd27a3c732",
+      "id": "0fd849c3669146f7cfdb",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Battle::TeaGame.BattleElementBalance",
       "kind": "call",
       "label": "调用 BattleElementBalance.GetElementColor",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 194,
+      "line": 216,
       "method": "RefreshStatusText",
       "access": "call",
       "member": "GetElementColor"
     },
     {
-      "id": "69992b5cecbbd6938e24",
+      "id": "44b5734a5c8cf66a1a6f",
       "source": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
       "target": "TeaGame.Data::TeaGame.DamageElement",
       "kind": "data",
       "label": "读取 DamageElement.Wind",
       "confidence": "candidate",
       "file": "Assets/02_Scripts/03_Battle/Enemy/Battle_EnemyUI.cs",
-      "line": 194,
+      "line": 216,
       "method": "RefreshStatusText",
       "access": "read",
       "member": "Wind"
@@ -28254,6 +28575,63 @@
       "method": "ShowImpactRing",
       "access": "call",
       "member": "ReturnAfter"
+    },
+    {
+      "id": "b756d7b28f5b636d2800",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyViewBinder",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "kind": "class",
+      "label": "类型名引用候选",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/UI/BattleEnemyViewBinder.cs",
+      "line": 20,
+      "method": null
+    },
+    {
+      "id": "cc414e3ff849055addef",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyViewBinder",
+      "target": "TeaGame.Battle::TeaGame.Battle_EnemyUI",
+      "kind": "class",
+      "label": "类型名引用候选",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/UI/BattleEnemyViewBinder.cs",
+      "line": 40,
+      "method": null
+    },
+    {
+      "id": "9e40978d430f7cf53140",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyViewBinder",
+      "target": "TeaGame.Battle::TeaGame.BattleArchitecture",
+      "kind": "class",
+      "label": "类型名引用候选",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/UI/BattleEnemyViewBinder.cs",
+      "line": 71,
+      "method": "TickVisibility"
+    },
+    {
+      "id": "42398c0fba88631cb464",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyViewBinder",
+      "target": "TeaGame.Battle::TeaGame.BattleStateModel",
+      "kind": "class",
+      "label": "类型名引用候选",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/UI/BattleEnemyViewBinder.cs",
+      "line": 71,
+      "method": "TickVisibility"
+    },
+    {
+      "id": "9afaea310438b5892e3f",
+      "source": "TeaGame.Battle::TeaGame.BattleEnemyViewBinder",
+      "target": "TeaGame.Battle::TeaGame.BattleEnemyEntity",
+      "kind": "data",
+      "label": "读取 mOwner.transform",
+      "confidence": "candidate",
+      "file": "Assets/02_Scripts/03_Battle/UI/BattleEnemyViewBinder.cs",
+      "line": 53,
+      "method": "CreateHeadUi",
+      "access": "read",
+      "member": "transform"
     },
     {
       "id": "d4aa859f83d77f84c671",

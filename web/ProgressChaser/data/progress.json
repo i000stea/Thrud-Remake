@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "Thrud Remake 进度监控表",
-    "updatedAt": "2026-09-17T10:37:54.787Z",
-    "source": "Docs/99_下一步行动/README.md + Docs/03_专项设计与重构/16_热更新方案选型与落地计划.md（2026-09-15 人工重排）",
-    "taskCount": 78,
-    "note": "本文件已按 P1A→P1B→P1C→P2→P3 人工重排；直接跑 web/sync-doc-tasks.js 会整体覆写它。"
+    "updatedAt": "2026-10-18T12:39:15Z",
+    "source": "Docs/99_下一步行动/README.md + Docs/03_专项设计与重构/16_热更新方案选型与落地计划.md（2026-09-15 人工重排）；2026-10-18 按 09-18~09-21 的 17/19/21/22/20 文档与 git 工作区实况手工同步",
+    "taskCount": 99,
+    "note": "本文件按 P1A→P1B→P1C→P2→P3 人工整理，2026-10-18 手工同步（新增已完成卡与 B2–B6、R0.x、R2/R3/R4 卡）；直接跑 web/ProgressChaser/sync-doc-tasks.js 会整体覆写它，不要跑。"
   },
   "tasks": [
     {
@@ -20,58 +20,58 @@
     },
     {
       "id": "p1a-2",
-      "title": "【P1A】边读边写一份代码现状地图",
+      "title": "【已完成】边读边写一份代码现状地图",
       "taskType": "文档整理",
-      "status": "未开始",
+      "status": "已完成",
       "priority": "高",
-      "sortOrder": 2,
-      "description": "这轮的正式交付物，不是“随便翻翻代码”。要产出一份 Docs/03_专项设计与重构/17_代码现状地图.md：每个模块实际是什么、入口在哪、谁依赖谁；03_Battle 那 72 个文件的骨架；生命周期真相（谁是 Singleton、谁在 Update 里跑）；配置表到存档的数据流。读完你要能回答“我想改 X 功能该动哪几个文件、会影响谁”。",
+      "sortOrder": 5,
+      "description": "这轮的正式交付物，不是“随便翻翻代码”。要产出一份 Docs/03_专项设计与重构/17_代码现状地图.md：每个模块实际是什么、入口在哪、谁依赖谁；03_Battle 那 72 个文件的骨架；生命周期真相（谁是 Singleton、谁在 Update 里跑）；配置表到存档的数据流。读完你要能回答“我想改 X 功能该动哪几个文件、会影响谁”。 【2026-10-18 同步：17_代码现状地图.md 已于 09-18 产出（09-19 追加目录树增量与实测依赖边），正文含域边界、依赖边、契约层口径、搬迁回退表】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "p1a-3",
-      "title": "【P1A】把每个模块归 AOT 还是归热更，一次定死",
+      "title": "【已完成】把每个模块归 AOT 还是归热更，一次定死",
       "taskType": "模块开发",
-      "status": "未开始",
+      "status": "已完成",
       "priority": "高",
-      "sortOrder": 2,
-      "description": "这轮唯一的架构决策点，也是你“掌控方向”的核心。要产出：Tea.Framework(AOT) / Tea.Game / Tea.Data(热更) 各自收哪些现有模块；Before 旧代码的最终归属；现有目录到 Assets/Game|Engine 的映射表。决策时必须带着 HybridCLR 的约束做（热更程序集里不许出现 UnityEditor、小心 AOT 泛型、别跨边界摸静态单例），否则 P1C 拆程序集要返工。",
+      "sortOrder": 5,
+      "description": "这轮唯一的架构决策点，也是你“掌控方向”的核心。要产出：Tea.Framework(AOT) / Tea.Game / Tea.Data(热更) 各自收哪些现有模块；Before 旧代码的最终归属；现有目录到 Assets/Game|Engine 的映射表。决策时必须带着 HybridCLR 的约束做（热更程序集里不许出现 UnityEditor、小心 AOT 泛型、别跨边界摸静态单例），否则 P1C 拆程序集要返工。 【2026-10-18 同步：09-18 两轮定稿：AOT 只有 TeaGame.App，其余 6 个域全部热更；TeaBaseButton 下沉到 00_App/Tools 后 TeaGame.Tools 回到热更；实测 App 无任何项目内引用】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "p1a-4",
-      "title": "【P1A】判定 PlayerControl / Bullet_Base 这两条“疑似失效路径”到底是死是活",
+      "title": "【已完成】判定 PlayerControl / Bullet_Base 这两条“疑似失效路径”到底是死是活",
       "taskType": "Bug修复",
-      "status": "未开始",
+      "status": "已完成",
       "priority": "高",
-      "sortOrder": 2,
-      "description": "实测发现这两个旧类型没有被任何场景/预制体挂载，但新代码还在用：Weapon_ObjectComponent 会读 PlayerControl.I.config，BattleWeaponRuntime 和 SkillEffect 会 TryGetComponent(out Bullet_Base)。也就是说这两条路运行时很可能是空的。涉及武器与子弹结算，别急着删，先判定清楚再决定删还是补。",
+      "sortOrder": 5,
+      "description": "实测发现这两个旧类型没有被任何场景/预制体挂载，但新代码还在用：Weapon_ObjectComponent 会读 PlayerControl.I.config，BattleWeaponRuntime 和 SkillEffect 会 TryGetComponent(out Bullet_Base)。也就是说这两条路运行时很可能是空的。涉及武器与子弹结算，别急着删，先判定清楚再决定删还是补。 【2026-10-18 同步：09-19 落定：PlayerControl / Bullet_Base 两个类型全工程 0 处定义与引用（Before/ 已整体删除）；legacy 武器路径 Weapon_ObjectComponent、LegacyBattleWeaponViewAdapter 同日删除】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "p1a-5",
-      "title": "【P1A】切断新代码对旧代码的三处依赖",
+      "title": "【已完成】切断新代码对旧代码的三处依赖",
       "taskType": "Bug修复",
-      "status": "未开始",
+      "status": "已完成",
       "priority": "高",
-      "sortOrder": 2,
-      "description": "就是这三处：Weapon_ObjectComponent 读 PlayerControl.I.config.LockEnemySpeed；BattleCombatTypes 遍历 EnemyControl.enemys；BattleWeaponRuntime / SkillEffect 在运行时把同挂载的 Bullet_Base 禁掉来避免双重结算。这三处不清掉，程序集没法安全拆分（热更 DLL 引用 AOT 静态单例会直接出问题），也正是 09 交接里“双重结算”隐患的老窝。",
+      "sortOrder": 5,
+      "description": "就是这三处：Weapon_ObjectComponent 读 PlayerControl.I.config.LockEnemySpeed；BattleCombatTypes 遍历 EnemyControl.enemys；BattleWeaponRuntime / SkillEffect 在运行时把同挂载的 Bullet_Base 禁掉来避免双重结算。这三处不清掉，程序集没法安全拆分（热更 DLL 引用 AOT 静态单例会直接出问题），也正是 09 交接里“双重结算”隐患的老窝。 【2026-10-18 同步：09-19 三处纠缠全部切断：PlayerControl.I、Bullet_Base、EnemyControl.enemys 现在只剩注释，代码路径 0 命中】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "p1a-6",
-      "title": "【P1A】把旧脚本从场景和预制体上摘干净（先摘组件、后删脚本）",
+      "title": "【已完成】把旧脚本从场景和预制体上摘干净（先摘组件、后删脚本）",
       "taskType": "模块开发",
-      "status": "未开始",
+      "status": "已完成",
       "priority": "高",
-      "sortOrder": 2,
-      "description": "铁律是先摘组件再删脚本，反了就会在场景里留下 Missing (Mono Script)，既得不到“只留美术”的目标，也继续制造“这是什么”的阅读干扰。抓人的是两类里的第二类：MainCityControl 挂在 2MainScene（enabled=1 的主路径场景）、DevMessageDisplay 挂在 LoadingGroup.prefab（活预制体）——这两个必须进 Editor 手动摘，靠删文件收不干净。",
+      "sortOrder": 5,
+      "description": "铁律是先摘组件再删脚本，反了就会在场景里留下 Missing (Mono Script)，既得不到“只留美术”的目标，也继续制造“这是什么”的阅读干扰。抓人的是两类里的第二类：MainCityControl 挂在 2MainScene（enabled=1 的主路径场景）、DevMessageDisplay 挂在 LoadingGroup.prefab（活预制体）——这两个必须进 Editor 手动摘，靠删文件收不干净。 【2026-10-18 同步：复核：全工程 .unity/.prefab 已无 m_Script fileID:0（无 Missing Script）；EnemyControl / EnvEffectControl / StoreBattleRoleData / EnemyUIData 类型 0 命中；2MainScene 的 MainCityControl 已摘除】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "p1a-7",
@@ -97,25 +97,25 @@
     },
     {
       "id": "p1a-9",
-      "title": "【P1A】删掉判定为死的旧脚本和那个旧敌人数据资产",
+      "title": "【已完成】删掉判定为死的旧脚本和那个旧敌人数据资产",
       "taskType": "Bug修复",
-      "status": "未开始",
+      "status": "已完成",
       "priority": "中",
-      "sortOrder": 2,
-      "description": "24 个旧脚本没被任何资产挂载，其中 LoginControl / MainCityControl 的兄弟类 / Gacha_CoreOperation 与 UIOperation / P_* 七个模块 / WepMode_* 五个 / InputValue / StaticExpansion 这类连代码引用都没有。删除前必须再跑一次 GUID 挂载复核，别把挂在场景上的东西删了。Battle EnemyUIData.asset 是数据资产，随它的脚本一起删，删之前先解除三个禁用场景对它的引用。",
+      "sortOrder": 5,
+      "description": "24 个旧脚本没被任何资产挂载，其中 LoginControl / MainCityControl 的兄弟类 / Gacha_CoreOperation 与 UIOperation / P_* 七个模块 / WepMode_* 五个 / InputValue / StaticExpansion 这类连代码引用都没有。删除前必须再跑一次 GUID 挂载复核，别把挂在场景上的东西删了。Battle EnemyUIData.asset 是数据资产，随它的脚本一起删，删之前先解除三个禁用场景对它的引用。 【2026-10-18 同步：死代码已清：EnemyUIData 资产与类型、EnemyEntity_Main、BattleLegacyRuntimeDataAdapter、两个技能事件均 0 命中】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "p1a-10",
-      "title": "【P1A】gacha 代码挪进隔离目录，附一份 README 说明状态",
+      "title": "【已完成】gacha 代码挪进隔离目录，附一份 README 说明状态",
       "taskType": "文档整理",
-      "status": "未开始",
+      "status": "已完成",
       "priority": "中",
-      "sortOrder": 2,
-      "description": "Gacha_MainControl 只挂在 3GachaScene，Gacha_CoreOperation 和 Gacha_UIOperation 连挂载和代码引用都没有。既然场景只留美术、组件要摘掉，“保留 gacha 代码”就等于纯参考实现——挪进 Assets/Legacy/Gacha/ 并标注“M2 抽卡参考实现，未迁移，不参与运行时”。注意：不要“封装”它，封装意味着长期维护接口，对沉默的死代码是纯负担。",
+      "sortOrder": 5,
+      "description": "Gacha_MainControl 只挂在 3GachaScene，Gacha_CoreOperation 和 Gacha_UIOperation 连挂载和代码引用都没有。既然场景只留美术、组件要摘掉，“保留 gacha 代码”就等于纯参考实现——挪进 Assets/Legacy/Gacha/ 并标注“M2 抽卡参考实现，未迁移，不参与运行时”。注意：不要“封装”它，封装意味着长期维护接口，对沉默的死代码是纯负担。 【2026-10-18 同步：09-18 完成：02_Gacha/Legacy/ 三个脚本从 git 原样还原（GUID 保留）+ README 标注「M2 参考实现，不参与运行时」】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "p1a-11",
@@ -141,14 +141,14 @@
     },
     {
       "id": "p1a-13",
-      "title": "【P1A】确认 03_Module 到底是代码目录还是资源目录",
+      "title": "【已完成】确认 03_Module 到底是代码目录还是资源目录",
       "taskType": "文档整理",
-      "status": "未开始",
+      "status": "已完成",
       "priority": "低",
-      "sortOrder": 2,
-      "description": "实测 03_Module 下面只有 Battle / Gacha / MainCity / Materials / Role / ShipScene / SkyBox / Weapon 这些资源目录，一个 .cs 都没有，但文档一直把它当玩法代码目录。定下来它是什么，然后改文档，避免继续误导以后的阅读。",
+      "sortOrder": 5,
+      "description": "实测 03_Module 下面只有 Battle / Gacha / MainCity / Materials / Role / ShipScene / SkyBox / Weapon 这些资源目录，一个 .cs 都没有，但文档一直把它当玩法代码目录。定下来它是什么，然后改文档，避免继续误导以后的阅读。 【2026-10-18 同步：09-18 核实：03_Module 下 0 个 .cs，纯资源目录；AGENTS.md 已修正（01 架构文档同步仍挂）】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "p1b-1",
@@ -284,14 +284,14 @@
     },
     {
       "id": "p1c-1",
-      "title": "【P1C】按 P1A 定好的边界拆程序集",
+      "title": "【已完成】按 P1A 定好的边界拆程序集",
       "taskType": "模块开发",
-      "status": "未开始",
+      "status": "已完成",
       "priority": "高",
-      "sortOrder": 6,
-      "description": "拆成 Tea.Framework(AOT) / Tea.Game / Tea.Data(热更) + Tea.EditorTools（Editor-only，绝不能进运行时程序集）。现在整工程是 159 个 .cs 全在一个 TeaGame.asmdef 里。拆完要能编译通过、主链路不回退，并把 Tea.Game / Tea.Data 两个 asmdef 登记进 HybridCLR 的热更程序集列表。",
+      "sortOrder": 5,
+      "description": "拆成 Tea.Framework(AOT) / Tea.Game / Tea.Data(热更) + Tea.EditorTools（Editor-only，绝不能进运行时程序集）。现在整工程是 159 个 .cs 全在一个 TeaGame.asmdef 里。拆完要能编译通过、主链路不回退，并把 Tea.Game / Tea.Data 两个 asmdef 登记进 HybridCLR 的热更程序集列表。 【2026-10-18 同步：09-18 已按域拆完 9 个 asmdef（App/Menu/Gacha/Battle/Battle.Contracts/Battle.Editor/Data/Tools/Tools.Editor），编译 0 error；三层命名归并另立卡「p1c-naming」】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "p1c-2",
@@ -603,14 +603,14 @@
     },
     {
       "id": "2f23bf3a",
-      "title": "【真机资源】确认角色编目已标成 battle_characters 并重打过 AB",
+      "title": "【已完成】确认角色编目已标成 battle_characters 并重打过 AB",
       "taskType": "测试验证",
-      "status": "未开始",
+      "status": "已完成",
       "priority": "高",
-      "sortOrder": 3,
-      "description": "只标 Assets/Data/BattleTeamCatalog.asset 一个根资产，角色/武器 SO、模型 prefab、贴图作为依赖闭包会自动入包——不要逐个标，也不要给 Assets/Data/BattleLevels/ 打标，更不要用 QFramework 自带的按目录名当 bundle 名的标记工具。另外走 Inspector 的 AssetBundle 下拉“New…”会生成默认名（<资产名小写>_<扩展名>），跟代码常量脱钩且只有真机会暴露，统一走 Thrud/Demo/Characters/1 那条菜单。",
+      "sortOrder": 5,
+      "description": "只标 Assets/Data/BattleTeamCatalog.asset 一个根资产，角色/武器 SO、模型 prefab、贴图作为依赖闭包会自动入包——不要逐个标，也不要给 Assets/Data/BattleLevels/ 打标，更不要用 QFramework 自带的按目录名当 bundle 名的标记工具。另外走 Inspector 的 AssetBundle 下拉“New…”会生成默认名（<资产名小写>_<扩展名>），跟代码常量脱钩且只有真机会暴露，统一走 Thrud/Demo/Characters/1 那条菜单。 【2026-10-18 同步：09-19 21:49 已重建：battle_characters.manifest 的 Script 段指向新组件 GUID 9bf98401…，Android 平台包清单 10 个且不含 battleteamcatalog_asset】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "4ca4f7aa",
@@ -658,14 +658,14 @@
     },
     {
       "id": "09a044d8",
-      "title": "【真机资源】顺手清掉没调用者的旧运行时适配器",
+      "title": "【已完成】顺手清掉没调用者的旧运行时适配器",
       "taskType": "Bug修复",
-      "status": "未开始",
+      "status": "已完成",
       "priority": "低",
-      "sortOrder": 3,
-      "description": "BattleLegacyRuntimeDataAdapter（旧版 EntityBattleData 适配器）已经没有任何调用者，确认后删掉。",
+      "sortOrder": 5,
+      "description": "BattleLegacyRuntimeDataAdapter（旧版 EntityBattleData 适配器）已经没有任何调用者，确认后删掉。 【2026-10-18 同步：BattleLegacyRuntimeDataAdapter 全工程 0 命中，已随 legacy 清理删除】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "7aee7bff",
@@ -746,14 +746,14 @@
     },
     {
       "id": "4fe919b0",
-      "title": "【文档收尾】确认旧的 BattleTeamSelectPanel 资源到底删没删",
+      "title": "【已完成】确认旧的 BattleTeamSelectPanel 资源到底删没删",
       "taskType": "测试验证",
-      "status": "未开始",
+      "status": "已完成",
       "priority": "低",
-      "sortOrder": 9,
-      "description": "M1_TeamSelect 文档 D8 承诺验收后删除，之前核实过工程内已不存在——再确认一次，顺便记进文档。",
+      "sortOrder": 5,
+      "description": "M1_TeamSelect 文档 D8 承诺验收后删除，之前核实过工程内已不存在——再确认一次，顺便记进文档。 【2026-10-18 同步：已核实：Resources/Panels/BattleTeamSelectPanel 工程内不存在，旧的 M1_MainHub / M1_TeamSelect 场景也已删除】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "1fe8da61",
@@ -795,9 +795,9 @@
       "status": "已完成",
       "priority": "高",
       "sortOrder": 5,
-      "description": "Android 平台配置（IL2CPP + ARM64、MinSdk 28、包名 com.i000stea.thrudremark）与 Thrud/Demo/Android/ 一键构建都已经跑通，APK 已产出。",
+      "description": "Android 平台配置（IL2CPP + ARM64、MinSdk 28、包名 com.i000stea.thrudremark）与 Thrud/Demo/Android/ 一键构建都已经跑通，APK 已产出。 【2026-10-18 同步：历史记录：09-09/09-12 的 alpha.0.44–0.47 与根目录 a047.apk；均早于 09-19 AB 重建与 09-18 之后的代码改动，当前代码需重新出包】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "f13c7dda",
@@ -806,9 +806,9 @@
       "status": "已完成",
       "priority": "中",
       "sortOrder": 5,
-      "description": "debug 签名 APK 已外发给试玩测试（正式签名后补）。",
+      "description": "debug 签名 APK 已外发给试玩测试（正式签名后补）。 【2026-10-18 同步：历史记录：debug 签名包外发于 09-12；当前代码已超出该包（AB 与脚本都比包新），再次外发前须重新出包】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "2519b010",
@@ -834,14 +834,14 @@
     },
     {
       "id": "fbd604f0",
-      "title": "【已完成】把真机主流程跑通（登录→主菜单→选关→编队→进关出 rig）",
+      "title": "【Demo线】把真机主流程跑通（登录→主菜单→选关→编队→进关出 rig）",
       "taskType": "测试验证",
-      "status": "已完成",
+      "status": "进行中",
       "priority": "高",
-      "sortOrder": 5,
-      "description": "最小链路已随试玩包外发。若测试反馈有阻塞级问题，优先处理并单独提交，不混进结构收敛的改动里。",
+      "sortOrder": 3,
+      "description": "最小链路已随试玩包外发。若测试反馈有阻塞级问题，优先处理并单独提交，不混进结构收敛的改动里。 【2026-10-18 同步：09-10 真机首测只跑到「进战斗装配」就暴露 D1 引擎剥离 / D2 teamCatalog 未挂 / D4 滞后文案；此后所有 APK 都早于 09-19 的 AB 重建，P0 修复从未进包 → 状态改回进行中，重新出包后重验】",
       "owner": "Tea",
-      "updatedAt": "2026-09-17T09:37:40.409Z"
+      "updatedAt": "2026-10-18T12:39:15Z"
     },
     {
       "id": "p1a-done-1",
@@ -853,6 +853,248 @@
       "description": "Enemy_0Base.prefab 及其 Variant（Enemy_Test-Ele / Enemy_Test-Fire）已删除。删除前已实测确认 EnemyCatalog 引用的 21 个 guid 是 20 个 typed 敌人 prefab + EnemyCatalog.cs 自身，不含被删对象，所以活敌人生成链路未受影响。",
       "owner": "Tea",
       "updatedAt": "2026-09-17T09:37:40.409Z"
+    },
+    {
+      "id": "b1-verify",
+      "title": "【Battle MVC】B1 收尾：Play 回归 8 项",
+      "taskType": "测试验证",
+      "status": "进行中",
+      "priority": "高",
+      "sortOrder": 1,
+      "description": "22 文档 §12.2。代码与两个新 .cs.meta 已于 2026-10-18 提交（c469d184，与文档混在同一个提交里），离线整程序集编译 editor/player 两配置各 0 error：新增 Actor/BattleEnemyActor.cs + UI/BattleEnemyViewBinder.cs，BattleEnemyEntity 415 → 332 非空行，敌人类不再引用 Battle_EnemyUI / WorldToViewportPoint / EnvironmentEffects，20 个敌人 prefab 零改动。**只剩 Play 回归 8 项**：头顶 UI 出现且 billboard 正、血条首次受伤才展开、元素着色优先级 电>火>冰>风、死亡无残留 UI 与 DOTween 报错、仅视口内敌人可锁定、出屏不可锁、地雷/导弹感应圈与范围提示环、伤害飘字位置颜色不变。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:40:35.079Z"
+    },
+    {
+      "id": "r0-play-baseline",
+      "title": "【R0】Play 回归基线：21 §8.5 十项 + 19 的 HUD/武器/接管清单",
+      "taskType": "测试验证",
+      "status": "未开始",
+      "priority": "高",
+      "sortOrder": 2,
+      "description": "R0.1/R0.2。把「现在到底能不能跑」钉死，再动引擎。21 §8.5 的 10 项（含出生点传送由 Awake 推到 Start、会话关卡与本场景不符时的回落路径）+ 19 的清单（主 HUD 能否打开、技能行/血条/弹药读数、切人与阵亡显隐、武器朝向、枪口火焰、翻滚冲刺手感）+ 全队阵亡与关卡终局两条接管路径。任何一项失败就地修，不要带进 R1。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "r0-ab-rebuild",
+      "title": "【R0】rig prefab 摘旧 HUD → 重跑 CodeGen → 重打 AB → AB 名改回常量",
+      "taskType": "模块开发",
+      "status": "未开始",
+      "priority": "中",
+      "sortOrder": 2,
+      "description": "R0.4/R0.5。rig prefab（Assets/04_Prefabs/03Battle/Battle_PlayerControl.prefab）身上仍挂着 Cross_LockEnemy / Health_Main / Health_Value / SkillHud* 一整套旧 HUD 对象，会与 Battle_MainPanel 撞成两个 HUD → 摘掉后重跑 CodeGen、重建 AB，再把 Battle_MainPanel 里硬编码的 AB 名改回 QAssetBundle 常量。（2MainScene 的 MainCityControl Missing Script 与两个 Enemy_Test Variant 孤儿已核实清理完毕，不用再做。）",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "r0-repackage",
+      "title": "【R0】用当前代码与 AB 重新出包并真机验收",
+      "taskType": "测试验证",
+      "status": "未开始",
+      "priority": "高",
+      "sortOrder": 3,
+      "description": "R0.6。现有最新包是根目录 a047.apk（09-12 15:58），早于 09-19 21:49 的 AB 重建与 09-18 之后全部代码改动 → 真机验收必须用新包。流程：菜单 0（前置检查）→ 7（清孤儿产物）→ 1（打 AB）→ 5（Build All），然后按 15 文档 §6 的 A–H / S 逐项走，重点是面板不空屏、角色出现不粉、重开后再进关触摸层仍在。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "b2-director",
+      "title": "【Battle MVC】B2 关卡导演职责收口",
+      "taskType": "模块开发",
+      "status": "未开始",
+      "priority": "中",
+      "sortOrder": 2,
+      "description": "22 文档 B2 批次。关卡导演职责收口（拆波次生成与站点标记表现，顺带处理 BattleGraybox 里两个重复的 BattleStageDirector 与站点卡死 / Prepare 期超时两处已记录问题）。纪律：每批独立提交、动 prefab/scene/AB 必须单独记录、无 Editor 时标注未验证。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "b3-weapon-runtime",
+      "title": "【Battle MVC】B3 武器运行时拆分",
+      "taskType": "模块开发",
+      "status": "未开始",
+      "priority": "中",
+      "sortOrder": 2,
+      "description": "22 文档 B3 批次。武器运行时拆分（BattleWeaponRuntime 的规则 / 表现适配 / 弹道生成三层分开）。纪律：每批独立提交、动 prefab/scene/AB 必须单独记录、无 Editor 时标注未验证。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "b4-aim-sink",
+      "title": "【Battle MVC】B4 瞄准数据下沉",
+      "taskType": "模块开发",
+      "status": "未开始",
+      "priority": "中",
+      "sortOrder": 2,
+      "description": "22 文档 B4 批次。瞄准数据下沉（Canvas 投影搬进 Battle_MainPanel.TickForBattle，System 侧只留 LockEnemy / LockSpeedMultiplier；动手前先确认 FindLockEnemy 世界距离与屏幕距离量纲混用是否为 bug）。纪律：每批独立提交、动 prefab/scene/AB 必须单独记录、无 Editor 时标注未验证。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "b5-panel-entry",
+      "title": "【Battle MVC】B5 战斗 UI 入口收口",
+      "taskType": "模块开发",
+      "status": "未开始",
+      "priority": "中",
+      "sortOrder": 2,
+      "description": "22 文档 B5 批次。战斗 UI 入口收口（以统一入口收掉 BattleSceneRuntimeHost 里的 Panel 管理）。纪律：每批独立提交、动 prefab/scene/AB 必须单独记录、无 Editor 时标注未验证。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "b6-file-tidy",
+      "title": "【Battle MVC】B6 文件整理与收尾",
+      "taskType": "模块开发",
+      "status": "未开始",
+      "priority": "低",
+      "sortOrder": 2,
+      "description": "22 文档 B6 批次。文件整理与收尾（拆 BattleSystems.cs、清死代码、刷新 18 调用链文档的目录与行号）。纪律：每批独立提交、动 prefab/scene/AB 必须单独记录、无 Editor 时标注未验证。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "p1c-naming",
+      "title": "【P1C】9 个程序集归并成 Tea.Framework / Tea.Game / Tea.Data 三层命名",
+      "taskType": "模块开发",
+      "status": "未开始",
+      "priority": "中",
+      "sortOrder": 6,
+      "description": "只改名与归并，不需要重新划边界（边界由 P1A S3 定死）。同时决定 Assets/Game、Assets/Engine 顶层目录是否落地。开工前先读 17 文档 §7 的映射建议。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "r2-data-base",
+      "title": "【R2】数据地基：Save / Profile / Bag / Economy + 结算回写",
+      "taskType": "模块开发",
+      "status": "未开始",
+      "priority": "高",
+      "sortOrder": 7,
+      "description": "22 文档 R2，原排期缺失、必须插在菜单与抽卡之前的地基。R2.1 数据模型定版 → R2.2 Save（JSON + ISaveMigration + 备份回滚 + 写入时机）→ R2.3 Profile 只读门面 → R2.4 Bag（统一 Consume 接口）→ R2.5 Economy（货币 / 价格 / 掉落）→ R2.6 配置 SO 归入 config 热更组 → R2.7 结算系统（原 T3.4，评价 + 掉落写 Bag/Profile）→ R2.8 战斗回写闭环（正式推翻 M1 的「战后不回写」）。验收：打一关 → 结算给奖励 → 退出重进，背包/货币/进度三者保持。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "r3-menu-matrix",
+      "title": "【R3】主页入口矩阵：Main_MenuPanel 存量按钮逐个定性",
+      "taskType": "文档整理",
+      "status": "未开始",
+      "priority": "中",
+      "sortOrder": 7,
+      "description": "22 文档 R3.1。Main_MenuPanel.prefab 是原版完整主界面，Designer 里有 8 个按钮字段但只有 btn_Test 接了代码。要产出一张表（不是一段话）：每个存量按钮保留 / 置灰 / 删除 + 目标页 + 解锁条件 + 依赖模块。建议清单见 22 §3，运营向按钮（首充 / 赛季 / 活动 / 月卡 / 邮件）单机重制版可删。原则：不做「先摆设、以后再接」。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "r4-presentation-base",
+      "title": "【R4】战斗表现基建：音频系统 / 演出编排层 / 打击反馈收口",
+      "taskType": "模块开发",
+      "status": "未开始",
+      "priority": "中",
+      "sortOrder": 7,
+      "description": "22 文档 R4，原排期缺失。R4.1 音频（分类 + 音量总线 + 池化 + 设置页联动；库里已有 1180 个音频资产，全工程 0 行音频代码）；R4.2 演出编排层（Timeline 已在包内，或 DOTween 序列统一封装：预热/播放/可跳过/可中断/结果先行落档，抽卡与技能演出都依赖它）；R4.3 命中受击反馈（停帧、击中音效、闪白、震屏、飘字分级）。R5 内容收口与 R6 抽卡演出都排在它后面。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "done-0918-domain-split",
+      "title": "【已完成】代码域拆分：9 个程序集 + Battle.Contracts 契约层",
+      "taskType": "模块开发",
+      "status": "已完成",
+      "priority": "高",
+      "sortOrder": 5,
+      "description": "P1A 的 S2/S3 交付物，09-18 落地并编译通过。02_Scripts 按业务域拆成 App / Menu / Gacha / Battle + 共享层 Data / Tools + 契约层 Battle.Contracts（含两个 Editor 只读程序集），约 19 组 .cs 与 .meta 成对搬迁且 GUID 全部保留；menu ↔ battle 互相引用收口为 0；热更层 UnityEditor 命中仅 1 处且有 #if 保护。产出 17_代码现状地图.md。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "done-0919-actor-layer",
+      "title": "【已完成】表现层分层：System 脱 View + 模型平铺 + UI/ 纯化 + Health 合并",
+      "taskType": "模块开发",
+      "status": "已完成",
+      "priority": "高",
+      "sortOrder": 5,
+      "description": "19 文档的四步全部落地（09-19）。BattleRoleActor 自持订阅、BattleMovementSystem 只返回力；BattleHudState 删除，HUD 量合并为单一 BindableProperty 并重命名 Current* 系列、装填改原始 0..1 进度 + View 侧节流；BattleUiSystem 移到 Core/，UI/ 成为纯 View 层；BattleHealthSystem 合并进 BattleRoleSystem（partial）。静态断言：System 侧 View 字段 0 处。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "done-0919-host-slim",
+      "title": "【已完成】战斗宿主瘦身：BattleSceneRuntimeHost 559 → 314 行",
+      "taskType": "模块开发",
+      "status": "已完成",
+      "priority": "高",
+      "sortOrder": 5,
+      "description": "21 文档五步 + 两次收尾全部落地（09-19，commit 9b4e7e69 / a77eb347 / 69f851ab / 50e509b5 / 821547ae / fcb43173 / 248df6ca）。数据解析搬到 Core/BattleSetupSystem，装配搬到 Actor/BattleSceneAssembler，每帧中间量内聚进各 Actor，控制接管改事件化；System 注册 9 → 10；离线整程序集编译 editor / player 两配置各 0 error。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "done-0919-bridge-retire",
+      "title": "【已完成】BattleRuntimeBridge 整类退役 → BattlePlayerRegistry",
+      "taskType": "模块开发",
+      "status": "已完成",
+      "priority": "中",
+      "sortOrder": 5,
+      "description": "56c249bf。新增 IBattlePlayerTarget + BattlePlayerRegistry（与敌人侧同形），rig 自己在 Awake/OnDestroy 注册反注册，8 处读者改读 CurrentTransform；宿主与装配器的 SyncRuntimeBridge 一并删除，Data/BattleRuntimeBridge.cs 与其 .meta 删除。文档里记的「7 处读者」实测更正为 8 处 / 6 文件。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "done-0919-legacy-weapon",
+      "title": "【已完成】legacy 武器路径整体删除 + Wep-Base 枪口火焰补回 + AB 重建",
+      "taskType": "Bug修复",
+      "status": "已完成",
+      "priority": "高",
+      "sortOrder": 5,
+      "description": "09-19 晚。两道闸门核实后执行：① Wep-Base.prefab 的 muzzleFireEffect 用同一 fileID 补回（旧字段名 eff_MuzzleFire 无法按名映射导致引用被清空）；② AB 21:49:16 重建，manifest 指向新组件 GUID。随后删除 Weapon_ObjectComponent.cs(+meta)、LegacyBattleWeaponViewAdapter、BattleWeaponViewFactory 的 legacy 回退分支，删后全工程零引用。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "done-0919-ammo-publish",
+      "title": "【已完成】弹药读数改「变更点发布」",
+      "taskType": "Bug修复",
+      "status": "已完成",
+      "priority": "中",
+      "sortOrder": 5,
+      "description": "3fdb3417。发布权交还生产者 BattleWeaponSystem（TickReload / StartReload / PressTrigger / OnRoleSwitched 四处变更点 + 仅装填期间按帧发进度），宿主 Update 删掉原每帧 PublishAmmo。顺带修掉真问题：原先在 WeaponSystem.Tick 之前发布，开火/换弹结果慢一帧进 Model → HUD 滞后一帧。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "done-0919-code-atlas",
+      "title": "【已完成】代码知识图谱 K0–K5（Cytoscape + ELK Worker）",
+      "taskType": "模块开发",
+      "status": "已完成",
+      "priority": "中",
+      "sortOrder": 5,
+      "description": "20 文档 K0–K5 落地（09-19）：Cytoscape.js Canvas 渲染、ELK 在真 Web Worker 中布局、两类视图、LOD 与一跳两跳、三类 JSON 契约 + 409 冲突 + .bak 回滚；npm test 10 项通过，layout 迁移到 schemaVersion 2。K6 的浏览器视觉验收仍待人工做。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "done-0920-roadmap",
+      "title": "【已完成】R0–R9 后续开发总排期 + 06 里程碑验收状态修正",
+      "taskType": "文档整理",
+      "status": "已完成",
+      "priority": "高",
+      "sortOrder": 5,
+      "description": "09-20。新增 01_里程碑与执行/22_后续开发总排期.md（四条排序原则、阶段总表、R0–R9 明细、主页存量按钮处置建议、与 T/P/S 旧编号的对照表、红旗清单）；同时把 06 里全表误勾的 [x] 改成 ✅/🟡/⬜ 状态标记。后续顺序一律以 R 编号为准。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
+    },
+    {
+      "id": "done-0921-b0",
+      "title": "【已完成】B0 Battle MVC 重构基线",
+      "taskType": "文档整理",
+      "status": "已完成",
+      "priority": "中",
+      "sortOrder": 5,
+      "description": "09-21，22 文档 §12.1。79 文件 / 10630 行、跨程序集依赖与静态扫描基线、六条入口行为、prefab 与场景资产基线、回滚锚点 e731fd62，另记 13 处范围偏差与 13 条待定项（含 FindLockEnemy 世界距离 vs 屏幕距离量纲混用、BattleGraybox 两个重复的 BattleStageDirector）。",
+      "owner": "Tea",
+      "updatedAt": "2026-10-18T12:39:15Z"
     }
   ]
 }

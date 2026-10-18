@@ -122,6 +122,7 @@ node scripts/verify-layout-roundtrip.js   # 布局读写与冲突拒绝闭环
 - 单图超过约 1,000 节点 / 5,000 聚合边时，若 Cytoscape 经降级后仍无法满足交互目标，再评估 WebGL 渲染器（见设计文档 §2.3 / §11）；
 - 页面视觉与帧率需按设计文档 §10.3 由用户人工验收；
 - `sync-doc-tasks.js` 是整体覆写式生成器，`data/progress.json` 已人工整理，勿直接运行（见下）。
+- `npm test`（即 `node --test`）在**受限 shell / 沙箱**里会报 `spawn EPERM`：它需要把每个测试文件的 stdout 走管道，而受限环境禁止命名管道。此时改为逐文件执行 `node atlas.test.js`、`node atlas-schema.test.js`、`node atlas-view.test.js`、`node atlas-elk.test.js`（共 11 项），结果一致。
 
 ## ⚠️ 与 `sync-doc-tasks.js` 的关系（重要）
 
