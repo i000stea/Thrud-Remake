@@ -122,8 +122,8 @@
 
 ### 3.2A Battle MVC 职责收口（来源：`../03_专项设计与重构/22_Battle_MVC职责收口_分批推进方案.md`）
 
-- [ ] **B0**：建立 Battle MVC 重构基线，记录编译、调用链、敌人/UI、波次、武器和瞄准行为。
-- [ ] **B1**：收口 `BattleEnemyEntity`，拆出敌人 Actor 与头顶 UI Binder。
+- [x] **B0**：建立 Battle MVC 重构基线（2026-09-21 完成，见 22 §12.1：79 文件/10630 行、依赖与静态扫描基线、六条入口行为、prefab/场景资产基线、回滚锚点 `e731fd62`）。**Editor 编译与 Play 未验证**。
+- [x] **B1**：收口 `BattleEnemyEntity`，拆出敌人 Actor 与头顶 UI Binder（2026-09-21 代码完成，见 22 §12.2：新增 `Actor/BattleEnemyActor.cs` + `UI/BattleEnemyViewBinder.cs`，实体 415→332 非空行，对外 API 28 项无破坏，**离线整程序集编译 0 error/0 warning**）。待办：① Unity 刷新后提交 2 个新 `.cs.meta`；② Play 回归 8 项清单。
 - [ ] **B2**：收口 `BattleStageDirector`，拆出波次生成和站点标记表现。
 - [ ] **B3**：拆分 `BattleWeaponRuntime.cs` 的规则、表现适配和弹道生成职责。
 - [ ] **B4**：将 Canvas/UI 空间瞄准数据从 Model 下沉到 `Battle_MainPanel`。

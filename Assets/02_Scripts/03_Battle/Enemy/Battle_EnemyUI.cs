@@ -38,6 +38,13 @@ namespace TeaGame
 		/// <summary>上一次元素 id（避免每帧改色/开关）。</summary>
 		private int mLastElementId = -1;
 
+		/// <summary>
+		/// 上一次读取到的血量比例（自读宿主时的变更检测）。
+		/// 初值为 1：敌人生成时血量为满，**首次变化必然是受伤**，因此血条只在首次受伤时展开
+		/// （与迁移前"由宿主伤害结算推送才展开"的行为一致）。
+		/// </summary>
+		private float mLastHealthPercent = 1f;
+
 		/// <summary>世界 Canvas 的 RectTransform（血条宽度动画目标）。</summary>
 		private RectTransform mCanvasRect;
 
@@ -97,12 +104,27 @@ namespace TeaGame
 
 			if (mHost == null) return;
 
+			RefreshHealthFromHost();
 			RefreshSingIcon();
 			RefreshStatusText();
 		}
 
 		/// <summary>
-		/// 血量刷新（由宿主伤害结算调用）。首次调用展开血条。
+		/// 自读宿主血量（B1 2026-09-21）：血条不再由 BattleEnemyEntity 反向推送，
+		/// 改由本 View 每帧拉取 <see cref="BattleEnemyEntity.HealthRatio"/>，仅在变化时应用。
+		/// </summary>
+		private void RefreshHealthFromHost()
+		{
+			var percent = mHost.HealthRatio;
+			if (Mathf.Approximately(percent, mLastHealthPercent)) return;
+
+			mLastHealthPercent = percent;
+			RefreshHealth(percent);
+		}
+
+		/// <summary>
+		/// 血量刷新。首次受伤（比例 &lt; 1）展开血条。
+		/// B1 起唯一调用者是本类自读路径；保留为公开入口以兼容外部/预制体调用。
 		/// </summary>
 		public void RefreshHealth(float healthPercent)
 		{

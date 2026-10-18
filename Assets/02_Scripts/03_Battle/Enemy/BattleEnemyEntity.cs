@@ -6,10 +6,18 @@ using UnityEngine.UI;
 namespace TeaGame
 {
    /// <summary>
-   /// 新版敌人实体（T2.1 2026-09-03 需求变更后）。
-   /// 该组件负责敌人的可见性检测、受击、血量、UI、注册到锁敌系统，
-   /// 以及把「移动 / 攻击 / 销毁前回调」委托给 <see cref="IEnemyBehaviour"/> 策略。
-   /// 策略由 <see cref="kind"/> 在 Awake 时经 <see cref="EnemyBehaviourFactory"/> 创建。
+   /// 新版敌人实体（T2.1 2026-09-03 需求变更后；B1 2026-09-21 职责收口）。
+   ///
+   /// **本类只保留战斗事实与规则**：血量、元素与状态、受击结算、死亡、目标接口（锁敌）、生命周期，
+   /// 以及把「移动 / 攻击 / 销毁前回调」委托给 <see cref="IEnemyBehaviour"/> 策略
+   /// （策略由 <see cref="kind"/> 在 Awake 时经 <see cref="EnemyBehaviourFactory"/> 创建）。
+   ///
+   /// **表现已外移**（B1）：
+   /// - 头顶 UI 创建与屏幕可见性投影 → <see cref="BattleEnemyViewBinder"/>；
+   /// - 身体着色 / 伤害飘字 / 自爆范围环 → <see cref="BattleEnemyActor"/>。
+   /// 两者均为纯 C# 类，实体只在 Awake 组装、在 Update/Notify 处转发；本类不再直接创建 GameObject、
+   /// 不直接做相机投影、也不直接取 <see cref="BattleStateModel"/> 的相机与特效控制器。
+   ///
    /// 规格：纯弹幕/爆炸伤害、固定姿态移动、无护盾/近战/召唤。
    /// </summary>
    public class BattleEnemyEntity : MonoBehaviour, IBattleEnemyTarget
@@ -62,20 +70,8 @@ namespace TeaGame
 
       // ---------- T2.3 元素（敌人自身元素 + 状态表现） ----------
 
-      /// <summary>身体渲染器缓存（元素/状态着色，Awake 一次性获取）。</summary>
-      private Renderer mBodyRenderer;
-
-      /// <summary>身体原始色（prefab/工具给的类型色；恢复用）。</summary>
-      private Color mBaseColor = Color.white;
-
-      /// <summary>自身元素色（敌人带元素时；无元素为白=不使用）。</summary>
-      private Color mElementBodyColor = Color.white;
-
       /// <summary>当前挂载的元素状态组件（Apply 时创建）。</summary>
       private ElementStateEffect mElementState;
-
-      /// <summary>上次应用的身体着色掩码（避免每帧重涂）。</summary>
-      private int mLastVisualMask = -1;
 
       /// <summary>当前生命值。</summary>
       private float mCurrentHealth;
@@ -83,11 +79,11 @@ namespace TeaGame
       /// <summary>当前行为策略（Awake 依据 kind 创建；纯 C#，不序列化）。</summary>
       private IEnemyBehaviour mBehaviour;
 
-      /// <summary>敌人头顶 UI 实例（T2.3 起为 QFramework View：Battle_EnemyUI）。</summary>
-      private Battle_EnemyUI mUiInstance;
+      /// <summary>表现 Actor：身体着色 / 伤害飘字 / 自爆范围环（B1 外移）。</summary>
+      private BattleEnemyActor mActor;
 
-      /// <summary>当前是否在摄像机视野中（锁敌过滤）。</summary>
-      private bool mOnCamera;
+      /// <summary>头顶 UI 与可见性绑定器（B1 外移）。</summary>
+      private BattleEnemyViewBinder mViewBinder;
 
       /// <summary>是否已进入销毁流程（防重复结算/二次爆炸）。</summary>
       private bool mDead;
@@ -107,7 +103,12 @@ namespace TeaGame
       public Transform LockPoint => lockPoint ? lockPoint : transform;
 
       /// <inheritdoc />
-      public bool CanBeLocked => isActiveAndEnabled && gameObject.activeInHierarchy && mOnCamera;
+      /// <remarks>
+      /// B1：视口可见性改由 <see cref="BattleEnemyViewBinder.IsOnCamera"/> 提供（每帧投影结果），
+      /// 「组件启用 + GameObject 激活 + 在视口内」这条合成规则仍留在本类。
+      /// </remarks>
+      public bool CanBeLocked => isActiveAndEnabled && gameObject.activeInHierarchy
+                                 && mViewBinder != null && mViewBinder.IsOnCamera;
 
       // ---------- 行为只读参数 ----------
 
@@ -136,7 +137,7 @@ namespace TeaGame
          {
             if (element == value) return;
             element = value;
-            mElementBodyColor = value == DamageElement.none ? Color.white : BattleElementBalance.GetElementColor(value);
+            mActor?.SetElement(value);
             NotifyElementVisualChanged();
          }
       }
@@ -167,18 +168,15 @@ namespace TeaGame
       /// <summary>通知宿主刷新身体着色（状态增/减/到期）。</summary>
       public void NotifyElementVisualChanged()
       {
+         if (mActor == null) return;
+
          if (mElementState != null)
          {
-            var mask = mElementState.ActiveMask;
-            if (mask != mLastVisualMask)
-            {
-               mLastVisualMask = mask;
-               ApplyVisualMask(mask);
-            }
+            mActor.RefreshVisual(mElementState.ActiveMask, element);
          }
          else
          {
-            RefreshBaseBodyColor();
+            mActor.RefreshBaseBodyColor(element);
          }
       }
 
@@ -189,22 +187,22 @@ namespace TeaGame
       {
          mCurrentHealth = Mathf.Max(1f, baseHealth);
          mBehaviour = EnemyBehaviourFactory.Create(kind);
-         SyncBlastRangeRing();
 
-         mBodyRenderer = GetComponentInChildren<Renderer>();
-         if (mBodyRenderer)
-         {
-            mBaseColor = mBodyRenderer.material.color;
-         }
+         // B1：表现层组装（纯 C#，不新增 MonoBehaviour、不改 prefab 序列化字段）
+         mActor = new BattleEnemyActor(this, blastRangeRing, blastRingPrefab);
+         mViewBinder = new BattleEnemyViewBinder(this);
+
+         mActor.CacheBodyRenderer();
+         mActor.SyncBlastRangeRing(BlastRadius);
       }
 
       /// <summary>
-      /// 注册敌人并创建 UI。
+      /// 注册敌人并创建头顶 UI。
       /// </summary>
       private void Start()
       {
          BattleEnemyRegistry.Register(this);
-         CreateUiIfNeeded();
+         mViewBinder.CreateHeadUi(uiPrefab, uiYOffset);
       }
 
       /// <summary>
@@ -221,53 +219,19 @@ namespace TeaGame
       /// </summary>
       private void Update()
       {
-         mOnCamera = IsVisibleInBattleCamera();
+         mViewBinder.TickVisibility();
 
          if (mBehaviour == null) return;
 
          if (mElementState != null)
          {
-            var mask = mElementState.ActiveMask;
-            if (mask != mLastVisualMask)
-            {
-               mLastVisualMask = mask;
-               ApplyVisualMask(mask);
-            }
+            mActor.RefreshVisual(mElementState.ActiveMask, element);
 
             if (mElementState.IsStunned) return;
          }
 
          mBehaviour.TickMove(this);
          mBehaviour.TickAttack(this);
-      }
-
-      /// <summary>把当前激活状态/元素/基础色按优先级应用到身体颜色。</summary>
-      private void ApplyVisualMask(int mask)
-      {
-         if (!mBodyRenderer) return;
-
-         if (mask != 0)
-         {
-            // 优先级：电 > 火 > 冰 > 风
-            var color = BattleElementBalance.GetElementColor(DamageElement.Wind);
-            if ((mask & 1) != 0) color = BattleElementBalance.GetElementColor(DamageElement.Ice);
-            if ((mask & 2) != 0) color = BattleElementBalance.GetElementColor(DamageElement.Fire);
-            if ((mask & 8) != 0) color = BattleElementBalance.GetElementColor(DamageElement.Wind);
-            if ((mask & 4) != 0) color = BattleElementBalance.GetElementColor(DamageElement.Electric);
-            mBodyRenderer.material.color = color;
-            return;
-         }
-
-         RefreshBaseBodyColor();
-      }
-
-      /// <summary>
-      /// 恢复到"基础身体色"（优先敌人自身元素色，否则 prefab 类型色）。
-      /// </summary>
-      private void RefreshBaseBodyColor()
-      {
-         if (!mBodyRenderer) return;
-         mBodyRenderer.material.color = element == DamageElement.none ? mBaseColor : mElementBodyColor;
       }
 
       /// <inheritdoc />
@@ -325,11 +289,7 @@ namespace TeaGame
          mCurrentHealth = Mathf.Max(0f, mCurrentHealth);
 
          ShowDamageText(Mathf.RoundToInt(amount), displayColor, counterBig);
-
-         if (mUiInstance)
-         {
-            mUiInstance.RefreshHealth(HealthRatio);
-         }
+         // B1：头顶 UI 的血条改由 Battle_EnemyUI 自读宿主 HealthRatio，实体不再反向推 View。
 
          if (mCurrentHealth <= 0f)
          {
@@ -338,21 +298,6 @@ namespace TeaGame
             mKilledByPlayer = true;
             Die();
          }
-      }
-
-      /// <summary>
-      /// 判断敌人是否位于当前战斗相机的可视范围内。
-      /// 相机取自 Model 的派生只读属性 `BattleStateModel.BattleCamera`。
-      /// </summary>
-      private bool IsVisibleInBattleCamera()
-      {
-         var camera = BattleArchitecture.Interface.GetModel<BattleStateModel>().BattleCamera;
-         if (!camera || !LockPoint) return false;
-
-         var screenPoint = camera.WorldToViewportPoint(LockPoint.position);
-         return screenPoint.z > 0f
-                && screenPoint.x >= 0f && screenPoint.x <= 1f
-                && screenPoint.y >= 0f && screenPoint.y <= 1f;
       }
 
       /// <summary>
@@ -407,65 +352,21 @@ namespace TeaGame
 
       /// <summary>
       /// 生成伤害飘字（T2.3：元素色 / 克制金色放大）。
+      /// 实现已外移到 <see cref="BattleEnemyActor"/>（B1）。
       /// </summary>
       public void ShowDamageText(int amount, Color color, bool big)
       {
-         var controller = BattleArchitecture.Interface.GetModel<BattleStateModel>().EnvironmentEffects;
-         if (!controller) return;
-         controller.CreateDamageText(transform.position, amount, color, big);
-      }
-
-      /// <summary>
-      /// 爆炸范围环的基准面尺寸约定：内置 Plane 网格原始尺寸为 10×10，
-      /// 故半径 <paramref name="radius"/> 对应 x/z 缩放 = radius*2/10。
-      /// </summary>
-      private const float RangeRingPlaneSize = 10f;
-
-      /// <summary>
-      /// 把常驻范围环（子对象，Mine 感应圈）的直径同步为当前 BlastRadius。
-      /// 在 Awake 调用一次；Mine prefab 子环使用 Plane 网格。
-      /// </summary>
-      private void SyncBlastRangeRing()
-      {
-         if (!blastRangeRing) return;
-
-         var diameter = BlastRadius * 2f;
-         blastRangeRing.localScale = new Vector3(diameter / RangeRingPlaneSize, 1f, diameter / RangeRingPlaneSize);
+         mActor?.ShowDamageText(amount, color, big);
       }
 
       /// <summary>
       /// 爆炸瞬间显示一次范围提示环（对象池，短暂后自动回池），供灰盒确认自爆伤害半径。
-      /// 环贴地面（y=0.02）展开。
+      /// 实现已外移到 <see cref="BattleEnemyActor"/>（B1）；本方法保留为对外入口
+      /// （<see cref="EnemyBehaviour_Mine"/> / <see cref="EnemyBehaviour_Missile"/> 调用）。
       /// </summary>
       public void ShowBlastRing(float radius)
       {
-         if (!blastRingPrefab) return;
-
-         var position = new Vector3(transform.position.x, 0.02f, transform.position.z);
-         var ring = BattleObjectPool.Spawn(blastRingPrefab, position, Quaternion.identity);
-         if (!ring) return;
-
-         var diameter = Mathf.Max(0.2f, radius) * 2f;
-         ring.transform.localScale = new Vector3(diameter / RangeRingPlaneSize, 1f, diameter / RangeRingPlaneSize);
-         BattleObjectPool.ReturnAfter(ring, 0.55f);
-      }
-
-      /// <summary>
-      /// 根据配置创建敌人头顶 UI（QFramework View：Battle_EnemyUI）。
-      /// 若缺少 uiPrefab 引用则跳过，不影响敌人基础行为。
-      /// UI 数据改为自读宿主（元素/状态/血量），无需额外 Setup。
-      /// </summary>
-      private void CreateUiIfNeeded()
-      {
-         if (!uiPrefab) return;
-
-         var uiObject = Instantiate(uiPrefab, transform);
-         uiObject.transform.localPosition = Vector3.up * uiYOffset;
-
-         if (!uiObject.TryGetComponent(out mUiInstance))
-         {
-            Debug.LogWarning($"敌人 {name} 生成的 UI 预制体上缺少 Battle_EnemyUI 组件。");
-         }
+         mActor?.ShowBlastRing(radius);
       }
 
       /// <summary>
