@@ -398,7 +398,7 @@ namespace TeaGame
       {
          if (bulletTransform.TryGetComponent(out Rigidbody rigidbody))
          {
-            rigidbody.velocity = bulletTransform.forward * BulletVelocity;
+            rigidbody.linearVelocity = bulletTransform.forward * BulletVelocity;
          }
       }
 

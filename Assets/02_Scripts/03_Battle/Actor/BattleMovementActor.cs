@@ -22,7 +22,7 @@ namespace TeaGame
       public Vector3 Forward => yaw ? yaw.forward : Vector3.forward;
       public Vector3 Position => root ? root.position : Vector3.zero;
       public Vector2 AnimationVelocity => body && yaw
-         ? new Vector2(Vector3.Dot(body.velocity, yaw.forward), Vector3.Dot(body.velocity, yaw.right)) / 4f
+         ? new Vector2(Vector3.Dot(body.linearVelocity, yaw.forward), Vector3.Dot(body.linearVelocity, yaw.right)) / 4f
          : Vector2.zero;
 
       public Vector3 ResolveDirection(float side, float depth, float forward, bool followView, bool worldDepth)
@@ -45,7 +45,7 @@ namespace TeaGame
          if (!body) return;
          body.position = position;
          body.rotation = rotation;
-         if (clearVelocity) { body.velocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
+         if (clearVelocity) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
       }
    }
 }
