@@ -427,3 +427,59 @@ scene_0002_main AssetBundle
 | `5BattleScene-Test1` | `scene_0007_battle_test1` | disabled |
 
 **文档里的旧名未批量替换**：历史日结/存档按当时事实保留，操作类文档按本表换算。代码、资产、Build Settings 已无旧名字面量（仅注释中仍以旧名指代场景，属阅读性表述）。
+
+### 10.6 追加：内容发布工具 + 登录进度条（同日）
+
+| 提交 | 内容 |
+|---|---|
+| `d7ee2f61` | 登录场景资源更新进度条 + OTA 拆成「启动应用缓存」/「登录联网检查」 |
+| `5ed6eb70` | `Thrud/HotUpdate/3. 发布 OTA 内容到局域网服务目录`（镜像产物 + 生成 `manifest.json`） |
+| `f6fd1583` | 重新 `CompileDll` 并导出热更 DLL 基线（S1/S3–S6 改过 `TeaGame.Battle.Contracts`） |
+| `b9f6fc6c` | 补提交 S3 遗漏的 `EditorBuildSettings.asset`（Unity 在提交前重新序列化覆盖了暂存） |
+| `298d71de` | `.gitignore` 忽略 `/Screenshots/` |
+
+**4.1 一条设计变更：OTA 从「启动时联网」改为「登录时联网」**
+
+原实现把联网检查放在 `AppBootstrapper.Start()`，结果是「启动变慢 + 进度不可见」。现在拆成两段：
+
+- `HotUpdateOtaService.ApplyCachedContentAtBoot()`：启动时**不联网**，只清残留 `.part`、读缓存状态、
+  决定 ResKit 读哪套 AB 清单。位置仍在 `HotUpdateLoader.LoadAll()` / `ResKit.InitAsync()` 之前（落点顺序不能反）。
+- `HotUpdateOtaService.RunCheck()`：由登录场景触发，负责取清单、比对、下载、校验、提交状态，
+  过程中持续写 `Status`（Stage/Message/Progress/版本/文件数/Error），进度**按字节加权**。
+
+这不只是 UI 需要，也符合既有分工：`LoginSystem.StartHotUpdateCheck` 本来就是「登录场景承担热更检查」的占位。
+代价写清楚：登录阶段下到的新 AB **清单**要下次启动才生效（`ResKit.InitAsync` 启动时已定型），
+但**单个 bundle 是逐文件解析的**，本会话后续场景加载即刻命中。
+
+**4.2 发布工具**
+
+`Assets/02_Scripts/Tools/Editor/OtaContentPublisher.cs`：把 `StreamingAssets/AssetBundles/<Platform>/` 与
+`StreamingAssets/HotUpdate/` 镜像到 `web/LanOtaServer/content/<channel>/<platform>/`（目标目录先清空），
+逐文件算 size/sha256，写 `schemaVersion=1` 清单，`contentVersion = bundleVersion+时间戳`，发布完整集合时
+`abSetComplete=true`。跳过 `.meta` / `*.manifest` / 与平台同名的 manifest bundle。
+实测：28 个文件 / 154.9 MB（AB 149.8 MB），抽查 `asset_bundle_config.bin` 与 `TeaGame.Battle.Contracts.dll`
+的 size+sha256 与清单一致；服务端 `manifest.json`、`HotUpdate/hotfix.json`、`AssetBundles/main_scene_0002_main` 全 200。
+
+**4.3 登录场景进度条**
+
+`scene_0001_login` 的 `MainCanvas` 下新增 `OTA_ResourcePanel`：状态文案、版本对比（本地 → 服务器）、进度条，
+挂 `LoginOtaProgressView`。它只读 `HotUpdateOtaService.Status`，不含网络/下载代码，也不参与登录判定
+（下载失败照样能开始游戏）。填充条用 `pivot.x=0` + 拉伸锚点，脚本只改 `localScale.x`。
+
+实测（编辑器 + 真实局域网 HTTP）：登录场景自动检查 → 下载 25 个文件期间 `Status.Progress` 到 `0.982`、
+文案显示 `14/25` → 完成后状态文案为「资源已更新到 alpha.0.50+…」、版本行本地与服务器同版本；
+注入 `progress=0.42` 后 `fill.localScale.x` 精确为 `0.420`（482/1148 px）。截图见仓库根 `Screenshots/`（已忽略）。
+
+**4.4 一条必须记住的边界**
+
+本轮改动含 **`TeaGame.App`（AOT）内的新类型**（`SceneCatalog`、`HotUpdateOtaService`、`LoginOtaProgressView` 等），
+AOT 变更**无法热更**：`StreamingAssets/HotUpdate/` 里重导出的 6 个热更 DLL 只覆盖热更程序集，
+真机要生效必须**重新出 APK**。别把「导出了热更 DLL」当成「新代码上机了」。
+
+**4.5 §10.4 待验清单的状态更新**
+
+已由本轮解决：局域网 manifest 能覆盖主菜单场景资源（发布工具 + 真实下载 25 文件通过）；
+「只替换一个 bundle / 一个 DLL」与整套替换（`abSetComplete=true`）两条路都跑通。
+
+仍未验（需出包）：真机真 AB 下 `scene_0002_main` 加载；`allowSceneActivation=false` 真机是否生效；
+HybridCLR 9/9、6/6 真机回归；AOT 新代码随新 APK 生效后的完整回归。

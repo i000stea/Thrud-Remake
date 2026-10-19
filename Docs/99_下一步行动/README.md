@@ -331,7 +331,12 @@
 - [x] 所有场景统一规划为 `scene_0000_xxx` 命名；命名迁移与场景加载代码分开提交。（`99073a2e` 只做改名与引用同步，加载代码在其后的 `2888b054`/`3f492980`/`86c7fb93`）
 - [x] 记录当前包仍携带基线 HotUpdate DLL/ResKit AB；在 OTA 覆盖与回滚验收完成前不得删除包内基线。（包内基线与 OTA 内容并存：`ResKitContentLocator` 默认读包内 AB 清单，只有 `abSetComplete=true` 才切 persistent 全量）
 - [x] 局域网静态 HTTP 后端通过接口替换为 CDN，业务代码不直接依赖服务器地址。（`LocalHttpBackend(baseUrl, channel, platform, timeout)`；UnityWebRequest 只存在于该实现内，`SceneFlow`/面板/业务系统零网络代码）
-- [ ] **S7 待办（真机，需出包）**：真 AB 下 `scene_0002_main` 加载；替换真场景 bundle（56 MB）后主菜单内容变化且无 `missing MonoBehaviour`；`allowSceneActivation=false` 真机是否生效；`abSetComplete=true` 整套替换模式；HybridCLR 日志 9/9、6/6 回归。
+- [x] **构建侧内容发布工具已落地**（2026-10-19，`5ed6eb70`）：菜单 `Thrud/HotUpdate/3. 发布 OTA 内容到局域网服务目录`。把 `StreamingAssets/AssetBundles/<Platform>/` 与 `StreamingAssets/HotUpdate/` 镜像到 `web/LanOtaServer/content/<channel>/<platform>/`（目标先清空），逐文件算 size/sha256 并生成 `manifest.json`（`contentVersion = bundleVersion+时间戳`，完整集合 `abSetComplete=true`）。实测发布 28 文件 / 154.9 MB，sha256 抽查一致，服务端三条路由全 200。
+- [x] **登录场景资源更新进度条已落地**（2026-10-19，`d7ee2f61`）：`scene_0001_login` 的 `MainCanvas` 下 `OTA_ResourcePanel`（状态文案 + 版本对比 + 进度条）+ `LoginOtaProgressView`。OTA 随之拆成「启动只应用缓存（不联网）」与「登录联网检查下载」两段，进度按字节加权。实测下载 25 文件期间进度到 0.982、完成后文案显示新版本；注入 0.42 时 `fill.localScale.x=0.420`。
+- [x] **AB 产物孤儿清理**：删除 `battleteamcatalog_asset`（42.7 MB，2026-09-12 遗留，不在 AB 清单里）。
+- [x] **按最新代码重导热更 DLL**（`f6fd1583`）：`HybridCLR/CompileDll/ActiveBuildTarget` + `Thrud/HotUpdate/1`，`hotfix.json` 仍为 AOT 元数据 9 / 热更程序集 6。
+- [ ] **S7 待办（真机，需出包）**：真 AB 下 `scene_0002_main` 加载；替换真场景 bundle（53.6 MB）后主菜单内容变化且无 `missing MonoBehaviour`；`allowSceneActivation=false` 真机是否生效；HybridCLR 日志 9/9、6/6 回归。
+- [ ] **⚠️ 本轮改动含 AOT 新类型**（`SceneCatalog` / `HotUpdateOtaService` / `LoginOtaProgressView` 等，均在 `TeaGame.App`）：**必须重新出 APK 才在真机生效**，热更 DLL 覆盖不了 AOT。
 ## 4. M2 / M3 备忘（非近期，仅保留方向）
 
 - **M2 外围系统**（`../02_系统与玩法设计/04_外围系统设计.md` + `../04_模块设计/00_模块索引.md`）：存档（多槽/迁移/备份）、配置表工具、2D 主城功能页、三线养成、背包货币、抽卡。
