@@ -341,7 +341,11 @@
 - [x] **局域网服务器自动发现**（2026-10-19，`184b1984`）：PC 的 IP 会变、真机的 `127.0.0.1` 是手机自己，故新增 `LanOtaDiscovery` —— 显式配置 → 本机回环 → PlayerPrefs 缓存 → **UDP 广播**（`THRUD-OTA-DISCOVER/1`，服务端回 `httpPort` + 全部局域网 IPv4），每个候选都用 `HEAD manifest.json` 验真。服务端 UDP 应答在 `web/LanOtaServer/server.js`（`--discovery-port`，默认 8080）。实测广播可用、缓存生效。
 - [x] **明文 HTTP 放行**（同提交）：`PlayerSettings.insecureHttpOption` 默认 `NotAllowed` 会让 Unity 在构造 `UnityWebRequest` 时对**非 localhost** 的 http 直接抛异常（localhost 被豁免，所以之前用 `127.0.0.1` 一直能下）。已改为 `Always allowed`；真机局域网 HTTP 必需。顺带给发现层与下载层的请求构造加了 try/catch，异常不再让状态卡死。
 - [x] **持久层不完整时自动回退包内基线**（`508f5f00`）：`abSetComplete=true` 时逐个点检状态登记的 bundle，缺任何一个整体 `RevertToBaseline()`——保证 OTA 没下全 / 持久层被删过时仍能用包内基线进主菜单。
+- [x] **薄包模式（包内不带 AB，资源全走 OTA）**（2026-10-19）：`scene_0004_battle_graybox` 移出 Build Settings 改走场景 AB；新增 `BuildProfile` 构建画像（`Resources/BuildProfile.txt`，运行时据此判断包内有无基线）与 `Thrud/Demo/Android/8. 构建薄包 APK` 菜单（把 `StreamingAssets/AssetBundles/<Platform>` 改名成 `~thinhold` 让 Unity 忽略，出包后还原）。**包体从 252 MB 降到约 100 MB 量级**（AB 149.8 MB 不再进包）。
+- [x] **薄包首启的启动链**：`ResMgr.InitAsync` 是一次性的（`mResMgrInited` 在读清单前置位），所以无资源时**推迟** ResKit 初始化——由登录场景下载完再补做，`ResKitBootstrap.EnsureInitialized` 加闸拒绝抢跑。登录页在「资源未就绪」时锁住「开始游戏」并把按钮变成「重试下载」。
+- [ ] **薄包真机验收（S7 一并做）**：薄包首次启动必须联网成功；断网 → 停在登录页 + 重试；UDP 广播是否被 AP 隔离拦截；`buildProfile` 标记与实际包是否一致（`package.bundles=false` 却带 AB / 反之）。
 - [ ] **`web/LanOtaServer/` 仍未纳入版本管理**：UDP 应答改动需随该目录一起提交；且**正在跑的服务实例必须重启**才会生效。
+- [ ] **可选进一步瘦包**：`StreamingAssets/HotUpdate` 的 9 个 AOT 元数据（约 4.8 MB）与 6 个热更 DLL（约 250 KB）仍在包内——不建议动 AOT 元数据（与 APK 强绑定）。
 - [ ] **S7 待办（真机，需出包）**：真 AB 下 `scene_0002_main` 加载；替换真场景 bundle（53.6 MB）后主菜单内容变化且无 `missing MonoBehaviour`；`allowSceneActivation=false` 真机是否生效；HybridCLR 日志 9/9、6/6 回归；**真机 UDP 广播是否被路由拦截**（部分 AP 隔离会挡广播，届时需回归手填 `baseUrl`）。
 - [ ] **⚠️ 本轮改动含 AOT 新类型**（`SceneCatalog` / `HotUpdateOtaService` / `LoginOtaProgressView` 等，均在 `TeaGame.App`）：**必须重新出 APK 才在真机生效**，热更 DLL 覆盖不了 AOT。
 ## 4. M2 / M3 备忘（非近期，仅保留方向）

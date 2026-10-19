@@ -624,3 +624,106 @@ localhost 被豁免——这正是「编辑器里用 `127.0.0.1` 一直能下、
   是否还在盘上，缺任何一个就整体 `RevertToBaseline()`，避免「清单在、bundle 缺」导致加载期直接炸。
 
 因此 OTA 失败、被停止、持久层被手工删过，都不影响进主菜单——这是有意的 fail-safe，不是漏网。
+
+### 10.9 追加：薄包模式（包内不带 AB，资源全走 OTA）
+
+> 这一节**反转**了 §10.8 结尾的 fail-safe：薄包首次启动必须联网成功一次，否则进不了主菜单。
+> 这是为减小包体做的明确取舍，胖包（包内带基线）仍然保留并可用。
+
+| 提交 | 内容 |
+|---|---|
+| （本批） | `scene_0004_battle_graybox` 移出 Build Settings 改走场景 AB；`BuildProfile` 构建画像；薄包首启「推迟 ResKit 初始化」；登录页「重试下载」；`Thrud/Demo/Android/8. 构建薄包 APK` |
+
+**9.1 包体现在由什么构成（实测）**
+
+| 项 | 体积 | 处置 |
+|---|---|---|
+| `StreamingAssets/AssetBundles/<Platform>/` | 158.1 MB（12 个 bundle） | 移出 APK，改为 OTA 下发 |
+| `StreamingAssets/HotUpdate/` | 5.1 MB | **保留**（见 9.2） |
+| Build Settings 里的 `scene_0004_battle_graybox` | 场景资产 | 移出 Build Settings，场景改由 AB（`battle_scene_0004_battle_graybox`，7.4 MB）提供 |
+| 其余（IL2CPP 代码、global-metadata、TMP 字体、登录/常驻场景） | ~75 MB | 保留 |
+
+**实测结果**：胖包 234.5 MB → 薄包 **74.8 MB**（APK 内 `AssetBundles` 条目数 **0**）。
+另外删掉了 `battleteamcatalog_asset`（42.7 MB，2026-09-12 遗留的孤儿 bundle，不在 AB 清单里）。
+
+**9.2 为什么不把 HotUpdate 也去掉**
+
+那 5.1 MB 里，**9 个是 AOT 补充元数据**（`mscorlib` / `System.Core` / `UnityEngine.CoreModule` / `QFramework` / `UIKit` / `ResKit` / `DOTween` / `QFramework.CoreKit` / `TeaGame.App`），
+它们是从**当前这个 APK 的 AOT 程序集**切出来的，与 APK 版本强绑定；6 个热更 DLL 只有约 250 KB。
+去掉只能省不到 5 MB，却会让「首次下载失败 = 连框架代码都没有」，风险与收益不对等。
+
+**9.3 关键约束：ResKit 初始化是一次性的**
+
+`ResMgr.InitAsync()`：
+
+```csharp
+if (mResMgrInited) yield break;
+mResMgrInited = true;          // 在读清单之前就置位
+```
+
+所以「先初始化失败、下载完再初始化一次」**走不通**。薄包里资源下载必须发生在第一次 ResKit 初始化**之前**。
+
+**9.4 采用的方案：无资源时把初始化推到登录场景之后**
+
+`AppBootstrapper.Start()` 现在按 `ApplyCachedContentAtBoot()` 的返回值分流：
+
+- **有可用清单**（持久层 OTA 内容自洽，或包内带基线）→ 照旧 `ResKit.InitAsync()`；
+- **薄包首启**（包内无 AB、持久层也没内容）→ **不初始化**，直接加载登录场景。
+
+登录场景本身不需要 ResKit（纯场景内 uGUI + TMP + `TeaGame.App` 的 AOT 脚本），所以能正常显示。
+下载完成后 `HotUpdateOtaService.InitResKitIfDeferred()` 先按新状态切好内容定位（读 persistent 的清单），
+再补做 `InitAsync()`——顺序不能反。
+
+配套闸门：`ResKitBootstrap.EnsureInitialized()` 在「资源未就绪」时**拒绝**补初始化并报错，
+否则任何场景抢先 `ResKit.Init()` 就会把那个一次性标记置位，之后资源下完也读不到清单。
+
+**9.5 运行时怎么知道「这个包带不带资源」**
+
+Android 上 StreamingAssets 在 APK 内，`File.Exists` 恒为 false，运行期没法直接判断。
+所以由**构建侧**写 `Assets/Resources/BuildProfile.txt`：
+
+```
+package.bundles=false      # 薄包
+builtAtUtc=2026-10-19T...
+```
+
+运行时 `BuildProfile.PackageHasAssetBundles` 同步读一行即可；**标记缺失时按胖包处理**（保守）。
+编辑器 `SimulationMode` 恒视为「有资源」（清单来自 AssetDatabase，与包内 AB 无关）。
+
+**9.6 薄包出包（含一个踩过的坑）**
+
+菜单 `Thrud/Demo/Android/8. Build APK (Thin · 包内不含 AB，资源全走 OTA)`：
+
+1. 门禁照旧要求 AB 产物齐备（它们要拿去发布 OTA 内容）；
+2. 写构建画像 `package.bundles=false`；
+3. 把 **整个** `Assets/StreamingAssets/AssetBundles` 目录**移出 `Assets/`**（到 `<工程根>/AssetBundles.thinhold/`），
+   `.meta` 一起搬；
+4. 出包；
+5. `finally` 里搬回来 + 画像写回 `true`，编辑器回到胖包状态。
+
+> ⚠️ **坑：目录改名成 `~` 结尾是没用的。** 第一版把 `AssetBundles/Android` 改成 `Android~thinhold`
+> （以为 Unity 会像资源导入那样忽略 `~` 目录），结果 **APK 反而涨到 257.5 MB**——
+> 解包实测 `assets/AssetBundles/Android~thinhold/main_scene_0002_main` 54 MB 原样躺在里面。
+> 原因：**Unity 打包 StreamingAssets 是按文件系统整目录拷贝，不走资源导入的忽略规则**。
+> 必须真的把它挪出 `Assets/`。
+
+**9.7 薄包首次启动的玩家流程**
+
+定位服务器（UDP 广播/缓存）→ 登录页显示进度条下载 → 期间「开始游戏」锁定、只留「暂停/停止下载」→
+下载并校验通过 → 补做 ResKit 初始化 → 解锁「开始游戏」→ 进主菜单。
+任何一步失败：停在登录页，按钮变成**「重试下载」**，状态行明确写「资源未就绪，无法开始游戏」。
+
+**9.8 与 §9 完成定义的关系**
+
+`scene_0004_battle_graybox` 移出 Build Settings 后，§5 S3 的「无运行时代码依赖 Build Settings 加载玩法场景」对两个玩法场景都成立。
+`scene_0000_config` 仍是 Build Settings[0]（AOT 入口），`scene_0001_login` 仍走 Build Settings（薄包下它也必须是包内场景）。
+
+**9.9 已验证 / 未验证**
+
+已验证（编辑器 + 真实出包）：
+- 战斗场景经 AB 加载：`login → main(AB) → battle(AB)` 往返，8 个根对象、全部 MonoBehaviour 为真实类型（无 MISSING），旧 `ResLoader` 正确回收；
+- 薄包出包：**74.8 MB**，解包确认 `AssetBundles` 条目数 0，`HotUpdate` 15 个文件按预期保留；
+- 出包前后 `AssetBundles` 目录与 `buildProfile` 自动还原（`package.bundles=true`、`asset_bundle_config.bin` 在位）。
+
+未验证（需真机）：薄包首启的完整链路（下载 → 补初始化 ResKit → 进主菜单）；断网停在登录页 + 重试；
+`BuildProfile` 与实际包一致性；UDP 广播在真机是否被 AP 隔离拦截。
