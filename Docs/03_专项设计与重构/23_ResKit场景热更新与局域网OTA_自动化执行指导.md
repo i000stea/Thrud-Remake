@@ -483,3 +483,74 @@ AOT 变更**无法热更**：`StreamingAssets/HotUpdate/` 里重导出的 6 个�
 
 仍未验（需出包）：真机真 AB 下 `scene_0002_main` 加载；`allowSceneActivation=false` 真机是否生效；
 HybridCLR 9/9、6/6 真机回归；AOT 新代码随新 APK 生效后的完整回归。
+
+### 10.7 追加：下载可暂停/停止 + 只热更业务程序集
+
+| 提交 | 内容 |
+|---|---|
+| `031eaaf4` | 下载期间锁住「开始游戏」+ 暂停/停止下载；修复编辑器里 OTA 被误判为未启用 |
+| `9406e63a` | OTA 发布只下发业务热更程序集，剔除 AOT 补充元数据 DLL 并加硬校验 |
+
+**7.1 下载期间的可交互面**
+
+`running`（Checking / Downloading / Paused）期间：面板只显示「暂停下载」（切换式，暂停后变「继续下载」）与
+「停止下载」；`开始游戏` 的 `TeaBaseButton` 组件被 `enabled=false` 并置灰。
+**用组件禁用而不是 CanvasGroup**：`TeaBaseButton` 自己在 `LateUpdate` 里驱动 alpha，
+外部改 alpha 会被它覆盖；禁用组件同时停掉 `IPointerClickHandler`。
+`LoginViewController.OnStartButtonClicked` 里还有一层运行时拦截，防 UI 状态落后一帧。
+
+**7.2 暂停/停止的真实语义（重要）**
+
+服务端不支持 Range（无断点续传），已传的半个文件无法复用，因此：
+
+- **暂停** = 中断当前传输 → 删 `.part` → 挂起（进度冻结）→ 恢复时**该文件从头重下**；
+- **停止** = 中断 → 删 `.part` → 整轮结束 → **不写状态**（新版本不生效，旧文件仍由上一份状态兜住）。
+
+`IHotUpdateContentBackend.DownloadFileAsync` 新增 `shouldAbort` 回调，传输层只负责中断，
+「这是用户暂停还是真失败」由调用方根据自己置的标记判断——这层语义不能塞进传输层。
+
+**7.3 编辑器里「OTA 未启用」的真正原因（排查记录）**
+
+现象：`ota.enabled` 明明是开的，日志却打印 `[HotUpdate] OTA 未启用或未配置服务器地址`，且 `Status.Stage` 停在 `Idle`。
+
+根因是**启动顺序竞争**，不只是默认值：编辑器从 `scene_0001_login` 进 Play 时，ConfigScene 是之后被
+`Editor_ConfigSceneGuard` 拉起的，于是登录场景的 `Start()` **早于** `AppBootstrapper.Start()`，
+`RunCheck` 拿到的 `Settings` 还是 `null` → 直接判定未启用 → 随后 `ApplyCachedContentAtBoot` 又把 `Status` 重置成 `Idle`。
+
+修复：`RunCheck` 先等 `sBootApplied`（上限 5s）再读配置；`ApplyCachedContentAtBoot` 只在 `Stage==Idle` 时写文案，
+不再无条件改写状态；未启用时日志打印 `enabled` / `baseUrl` 与配置位置。
+同时把 `scene_0000_config` 的 `AppBootstrapper.ota` **保存为启用**（`baseUrl=http://127.0.0.1:8080`、`channel=lan`），
+编辑器开箱即可测。
+
+**7.4 哪些 DLL 会热更（回答「HotUpdate 目录里为什么有 QFramework/DOTween」）**
+
+`Assets/StreamingAssets/HotUpdate/` 下有两类东西，容易混：
+
+| 类别 | 例子 | 是否热更 | 用途 |
+|---|---|---|---|
+| `hotfix.json` 的 `hotUpdate`（6 个） | `TeaGame.Menu.dll`、`TeaGame.Battle.dll`… | **是**，`Assembly.Load` | 业务代码热更 |
+| `hotfix.json` 的 `aotMetadata`（9 个） | `mscorlib.dll`、`System.Core.dll`、`QFramework.dll`、`DOTween.dll`、`UIKit.dll`、`ResKit.dll`、`QFramework.CoreKit.dll`、`UnityEngine.CoreModule.dll`、`TeaGame.App.dll` | **否**，只 `RuntimeApi.LoadMetadataForAOTAssembly` | 给 AOT 泛型补元数据 |
+
+`HybridCLR/Settings` 里 `hotUpdateAssemblyDefinitions` 只登记了 6 个 TeaGame asmdef、`hotUpdateAssemblies: []`，
+所以不存在插件被热更的情况。但两者混在同一目录确实容易误解，因此发布侧做了两件事：
+
+1. **AOT 元数据不进 OTA 清单**（`9406e63a`）：它们与已安装 APK 版本强耦合，通过 OTA 换掉会让元数据与 AOT 代码对不上。
+   改为只随 APK 走；客户端读 `hotfix.json` 的 `aotMetadata` 时**逐文件回退到 StreamingAssets** 命中。
+   发布后清单从 28 → 19 个文件，持久层 `HotUpdate` 目录只剩 `hotfix.json` + 6 个 `TeaGame.*.dll`。
+2. **硬校验**：`hotfix.json` 的 `hotUpdate` 只允许 `TeaGame.*` 且不得含 `TeaGame.App`，否则发布直接失败并指向
+   `HybridCLR/Settings` 的 `hotUpdateAssemblyDefinitions`。「只热更自己写的业务程序集」不再靠人记。
+
+**7.5 本轮验证**
+
+用 258 MB 探针文件 + 一个 run_script 装的进度驱动（跨过阈值自动触发）稳定复现，不靠人肉抢时间：
+
+| 项 | 结果 |
+|---|---|
+| 下载中 UI 可交互面 | 暂停按钮可见、`startButton.enabled=false` |
+| 暂停 | 25.1% 暂停 → `stage=Paused`、进度 1.2s 内完全冻结、文案变「继续下载」、开始仍锁定 |
+| 继续 | 点「继续下载」→ 该文件从头重下并完成；完成后开始按钮解锁、按钮隐藏 |
+| 停止 | 30.2% 停止 → `stage=Stopped`、开始立即解锁、`ota-state.json` 仍是旧版本、无残留 `.part` |
+| 清理 | 重发布后再跑一轮，持久层探针被 `DeleteFilesNotIn` 回收 |
+| 发布裁剪 | 清单 19 文件（12 AB + 1 hotfix.json + 6 热更 DLL），日志列出被跳过的 9 个 AOT DLL |
+
+全程无 exception / `error CS`。

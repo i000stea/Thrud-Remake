@@ -333,6 +333,9 @@
 - [x] 局域网静态 HTTP 后端通过接口替换为 CDN，业务代码不直接依赖服务器地址。（`LocalHttpBackend(baseUrl, channel, platform, timeout)`；UnityWebRequest 只存在于该实现内，`SceneFlow`/面板/业务系统零网络代码）
 - [x] **构建侧内容发布工具已落地**（2026-10-19，`5ed6eb70`）：菜单 `Thrud/HotUpdate/3. 发布 OTA 内容到局域网服务目录`。把 `StreamingAssets/AssetBundles/<Platform>/` 与 `StreamingAssets/HotUpdate/` 镜像到 `web/LanOtaServer/content/<channel>/<platform>/`（目标先清空），逐文件算 size/sha256 并生成 `manifest.json`（`contentVersion = bundleVersion+时间戳`，完整集合 `abSetComplete=true`）。实测发布 28 文件 / 154.9 MB，sha256 抽查一致，服务端三条路由全 200。
 - [x] **登录场景资源更新进度条已落地**（2026-10-19，`d7ee2f61`）：`scene_0001_login` 的 `MainCanvas` 下 `OTA_ResourcePanel`（状态文案 + 版本对比 + 进度条）+ `LoginOtaProgressView`。OTA 随之拆成「启动只应用缓存（不联网）」与「登录联网检查下载」两段，进度按字节加权。实测下载 25 文件期间进度到 0.982、完成后文案显示新版本；注入 0.42 时 `fill.localScale.x=0.420`。
+- [x] **下载期间可暂停/停止、并锁住「开始游戏」**（2026-10-19，`031eaaf4`）：`running` 时只留「暂停下载（切换式）」与「停止下载」，开始按钮组件禁用并置灰。语义：服务端无 Range，暂停/停止都是「中断 + 删 `.part` + 从头重下」；暂停进度冻结、恢复重下当前文件；停止不写状态、保持旧版本。实测：25.1% 暂停冻结、恢复完成、30.2% 停止后状态未污染且无残留 `.part`。
+- [x] **编辑器「OTA 未启用」根因修复**（`031eaaf4`）：不是 `enabled` 默认值，而是**启动顺序竞争**——从 `scene_0001_login` 进 Play 时 ConfigScene 由守卫后拉起，登录场景 `Start()` 早于 `AppBootstrapper.Start()`，`Settings` 还是 null → 误判未启用。修复后 `RunCheck` 等待启动完成（≤5s），且 `scene_0000_config` 的 `ota` 保存为启用（`http://127.0.0.1:8080`），编辑器开箱可测。
+- [x] **只热更业务程序集**（`9406e63a`）：`HotUpdate/` 里的 `QFramework.dll`/`DOTween.dll`/`mscorlib.dll` 等 9 个是 `aotMetadata`（只补泛型元数据、从不当程序集加载），现在**不再进 OTA 清单**（与 APK 强耦合，逐文件回退 StreamingAssets）；发布侧新增硬校验，`hotfix.json.hotUpdate` 只允许 `TeaGame.*` 且不得含 `TeaGame.App`。发布结果 28 → 19 个文件。
 - [x] **AB 产物孤儿清理**：删除 `battleteamcatalog_asset`（42.7 MB，2026-09-12 遗留，不在 AB 清单里）。
 - [x] **按最新代码重导热更 DLL**（`f6fd1583`）：`HybridCLR/CompileDll/ActiveBuildTarget` + `Thrud/HotUpdate/1`，`hotfix.json` 仍为 AOT 元数据 9 / 热更程序集 6。
 - [ ] **S7 待办（真机，需出包）**：真 AB 下 `scene_0002_main` 加载；替换真场景 bundle（53.6 MB）后主菜单内容变化且无 `missing MonoBehaviour`；`allowSceneActivation=false` 真机是否生效；HybridCLR 日志 9/9、6/6 回归。
