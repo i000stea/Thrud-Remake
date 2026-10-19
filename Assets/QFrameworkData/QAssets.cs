@@ -61,4 +61,9 @@ namespace QAssetBundle
         public const string BundleName = "main_menupanel_prefab";
         public const string Main_MenuPanel = "Main_MenuPanel";
     }
+    public class Main_scene_0002_main
+    {
+        public const string BundleName = "main_scene_0002_main";
+        public const string scene_0002_main = "scene_0002_main";
+    }
 }
