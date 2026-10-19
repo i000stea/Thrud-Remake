@@ -3,16 +3,42 @@ using System;
 namespace TeaGame.App
 {
    /// <summary>
+   /// 场景来源（23 文档 S4）：决定 <see cref="SceneFlow"/> 走哪条加载通路。
+   /// 刻意放在 AOT 层，任何模块构造请求时都只依赖这个枚举，不依赖具体资源系统。
+   /// </summary>
+   public enum SceneSource
+   {
+      /// <summary>经 <c>SceneManager</c> 按名称加载，要求场景已加入 Build Settings。</summary>
+      BuildSettings = 0,
+
+      /// <summary>
+      /// 经 ResKit 从场景 AssetBundle 加载，要求场景已标记 bundle 名且
+      /// ResKit 清单（asset_bundle_config.bin）里有该 bundle/asset 条目。
+      /// </summary>
+      AssetBundle = 1,
+   }
+
+   /// <summary>
    /// 场景切换请求。
-   /// 场景 key 即**场景名称字符串**（决策 D25）：
-   /// - 玩法场景按名称经 SceneManager 加载（当前 Build Settings 阶段）
-   /// - 热更新新增场景时，按同名 key 从资源系统加载，同一 key 无缝衔接，无需改代码
+   /// 场景 key 即**场景名称字符串**（决策 D25）；统一命名见 <see cref="SceneCatalog"/>。
    /// 目标场景通过 <see cref="SceneFlow.GetPayload{T}"/> 读取跨场景参数。
    /// </summary>
    public sealed class SceneRequest
    {
       /// <summary>场景 key（即场景名称）。</summary>
       public string SceneName;
+
+      /// <summary>
+      /// 场景来源。默认 <see cref="SceneSource.BuildSettings"/>：保持既有调用点行为不变；
+      /// 走资源系统的场景必须显式声明 <see cref="SceneSource.AssetBundle"/>。
+      /// </summary>
+      public SceneSource Source = SceneSource.BuildSettings;
+
+      /// <summary>
+      /// 场景所在 AssetBundle 名（仅 <see cref="SceneSource.AssetBundle"/> 时使用）。
+      /// 由 <see cref="SceneCatalog"/> 统一提供，调用点不要写字面量。
+      /// </summary>
+      public string AssetBundleName;
 
       /// <summary>
       /// 跨场景参数（如关卡 ID、编队数据、回跳目标）。
