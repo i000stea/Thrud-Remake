@@ -57,6 +57,16 @@ namespace TeaGame.App
             return false;
          }
 
+         // 光有清单不够：整套模式下 ResKit 只读 persistent，任何一个 bundle 缺失都会在加载时炸。
+         // 这里按状态里登记的清单逐个点检，不自洽就整体退回包内基线——
+         // 这条保证了「OTA 没下全 / 被手工删过」时，游戏仍能用包内基线正常进主场景。
+         if (!AllBundlesPresent(state, out var missing))
+         {
+            reason = $"持久化 AB 不完整（缺 {missing}），回退包内基线以免加载失败";
+            RevertToBaseline();
+            return false;
+         }
+
          // 整套覆盖：切到 persistent
          AssetBundleSettings.LoadAssetResFromStreamingAssetsPath = false;
          reason = $"整套覆盖模式（contentVersion={state.contentVersion}），AB 清单与 bundle 均读 persistent";
@@ -72,6 +82,32 @@ namespace TeaGame.App
       {
          AssetBundleSettings.LoadAssetResFromStreamingAssetsPath = true;
          Debug.Log("[HotUpdate] ResKit 内容定位：AB 清单读包内基线（StreamingAssets）");
+      }
+
+      /// <summary>
+      /// 点检状态里登记的每个 AB 是否都还在磁盘上。缺失返回 false 并给出第一个缺失的文件名。
+      /// </summary>
+      private static bool AllBundlesPresent(HotUpdateCacheState state, out string missing)
+      {
+         missing = null;
+         if (state?.files == null) return true;
+
+         foreach (var file in state.files)
+         {
+            if (file == null || string.IsNullOrEmpty(file.fileName)) continue;
+            if (!string.Equals(file.kind, HotUpdateFileEntry.KindAssetBundle, System.StringComparison.OrdinalIgnoreCase))
+            {
+               continue;
+            }
+
+            var path = Path.Combine(HotUpdateCacheService.AssetBundleDir, file.fileName);
+            if (File.Exists(path)) continue;
+
+            missing = file.fileName;
+            return false;
+         }
+
+         return true;
       }
    }
 }
