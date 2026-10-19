@@ -71,13 +71,21 @@ namespace TeaGame.Tools.Editor
       }
 
       [MenuItem(MenuRoot + "3. 发布 OTA 内容到局域网服务目录（含 manifest.json）", false, 30)]
-      public static void PublishLanOtaContent()
+      public static void PublishLanOtaContentMenu()
+      {
+         Publish();
+      }
+
+      /// <summary>
+      /// 发布实现（菜单与命令行共用）。返回是否成功——命令行据此给退出码。
+      /// </summary>
+      public static bool Publish()
       {
          var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
          if (string.IsNullOrEmpty(projectRoot))
          {
             Debug.LogError("[OTA-Publish] 无法定位工程根目录。");
-            return;
+            return false;
          }
 
          // 平台名与 ResKit 的 AssetBundlePathHelper.GetPlatformName() 在 Editor 下取值一致
@@ -96,7 +104,7 @@ namespace TeaGame.Tools.Editor
          {
             Debug.LogError($"[OTA-Publish] 找不到 AB 产物目录：{abSource}。" +
                            "先执行「Thrud/Demo/Android/2. Build AssetBundles (Android)」。");
-            return;
+            return false;
          }
 
          var abFiles = Directory.GetFiles(abSource)
@@ -109,14 +117,14 @@ namespace TeaGame.Tools.Editor
          {
             Debug.LogError($"[OTA-Publish] AB 产物缺少 asset_bundle_config.bin：{abSource}。" +
                            "完整集合发布必须带上它（否则客户端只能走逐文件覆盖模式）。");
-            return;
+            return false;
          }
 
          if (!Directory.Exists(hotSource))
          {
             Debug.LogError($"[OTA-Publish] 找不到热更目录：{hotSource}。" +
                            "先执行「Thrud/HotUpdate/1. 导出热更 DLL 与清单到 StreamingAssets」。");
-            return;
+            return false;
          }
 
          var hotFiles = Directory.GetFiles(hotSource)
@@ -128,7 +136,7 @@ namespace TeaGame.Tools.Editor
          if (!File.Exists(hotfixPath))
          {
             Debug.LogError($"[OTA-Publish] 热更目录缺少 hotfix.json：{hotSource}。");
-            return;
+            return false;
          }
 
          // ---- 2. 目标目录先清空，避免上一版残留被服务端照发 ----
@@ -163,7 +171,7 @@ namespace TeaGame.Tools.Editor
          if (!ValidateHotUpdateAssemblies(hotUpdateDllNames, out var assemblyError))
          {
             Debug.LogError("[OTA-Publish] " + assemblyError);
-            return;
+            return false;
          }
 
          var skippedAotMetadata = new System.Collections.Generic.List<string>();
@@ -216,6 +224,7 @@ namespace TeaGame.Tools.Editor
                    $"{totalBytes / 1024f / 1024f:F1} MB（其中 AB {abBytes / 1024f / 1024f:F1} MB）。\n" +
                    $"[OTA-Publish] 内容目录：{targetRoot}\n" +
                    $"[OTA-Publish] 清单路由：/{Channel}/{platform}/manifest.json（真机用服务端控制台打印的 IP）");
+         return true;
       }
 
       /// <summary>

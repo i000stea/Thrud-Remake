@@ -94,7 +94,7 @@ namespace TeaGame.Tools.Editor
          if (!EnsureAndroidPlatform(allowSwitch: false)) return;
          EnsurePlayerSettings();
          if (!Preflight(abRequired: true)) return;
-         BuildPlayerApk(development: false);
+         BuildPlayerApk(development: false, thin: false);
       }
 
       [MenuItem(MenuRoot + "4. Build APK (Development · 联调)", false, 40)]
@@ -103,10 +103,14 @@ namespace TeaGame.Tools.Editor
          if (!EnsureAndroidPlatform(allowSwitch: false)) return;
          EnsurePlayerSettings();
          if (!Preflight(abRequired: true)) return;
-         BuildPlayerApk(development: true);
+         BuildPlayerApk(development: true, thin: false);
       }
 
-      [MenuItem(MenuRoot + "5. Build All (One-Click · 校验 + AB + APK Release)", false, 50)]
+      /// <summary>
+      /// 一键出包（**默认薄包**：包内不含 AB，资源全走 OTA）。
+      /// 这是后续的标准出包路径；需要对照用的胖包请用「3. Build APK (Release)」。
+      /// </summary>
+      [MenuItem(MenuRoot + "5. Build All (One-Click · 校验 + AB + 瘦体 APK)", false, 50)]
       public static void BuildAllMenu()
       {
          if (!EnsureAndroidPlatform(allowSwitch: false)) return;
@@ -114,7 +118,7 @@ namespace TeaGame.Tools.Editor
          if (!Preflight(abRequired: false)) return;
          if (!BuildResKitAssetBundles()) return;   // AB 产物校验不通过就不出包（否则真机必然空屏）
          if (!Preflight(abRequired: true)) return;  // AB 打完后按"产物齐备"的标准再过一次门禁
-         BuildPlayerApk(development: false);
+         BuildPlayerApk(development: false, thin: true);
       }
 
       [MenuItem(MenuRoot + "8. Build APK (Thin · 包内不含 AB，资源全走 OTA)", false, 60)]
@@ -126,39 +130,39 @@ namespace TeaGame.Tools.Editor
          // 仍然要求 AB 产物齐备：这次不出进包，但要拿来发布成 OTA 内容
          if (!Preflight(abRequired: true)) return;
 
-         // 移出的是**整个** AssetBundles 目录（不只当前平台）：别的平台目录哪怕只剩一个
-         // 几百字节的 asset_bundle_config.bin 也会被塞进包，属于白带的体积与误导。
-         var abDir = Path.GetFullPath(Path.Combine(Application.streamingAssetsPath, "AssetBundles"));
-         var holdDir = Path.Combine(ThinHoldRoot, "AssetBundles");
-         var abReady = false;
+         BuildPlayerApk(development: false, thin: true);
+      }
 
-         try
-         {
-            // 1) 先把「包内不带 AB」写进构建画像，运行时才会走薄包首启路径
-            WriteBuildProfile(packageHasBundles: false);
+      // ---------------- 命令行入口用的公共包装（只返回成败，不做任何交互） ----------------
 
-            // 2) 把 AB 产物**移出 Assets**：Unity 打包 StreamingAssets 是按文件系统整目录拷贝，
-            //    目录只改名成 `~` 结尾是**没用**的（实测照样进包），必须真的挪到 Assets 之外。
-            MoveAssetDirectory(abDir, holdDir);
-            abReady = true;
-            AssetDatabase.Refresh();
+      /// <summary>
+      /// 命令行：只重打 ResKit AssetBundle。返回是否成功。
+      /// 供 `-executeMethod` 使用，逻辑与菜单同源。
+      /// </summary>
+      public static bool CliBuildAssetBundles()
+      {
+         EnsurePlayerSettings();
+         return BuildResKitAssetBundles();
+      }
 
-            Debug.LogWarning("[T2] 薄包模式：AB 产物已临时移出 Assets，本次 APK 不含任何资源。" +
-                             "装包后首次启动必须能连上 OTA 服务器，否则进不了主菜单。");
+      /// <summary>命令行：出一份 APK（<paramref name="thin"/>=true 为薄包）。返回是否成功。</summary>
+      public static bool CliBuildApk(bool development, bool thin)
+      {
+         if (!EnsureAndroidPlatform(allowSwitch: false)) return false;
+         EnsurePlayerSettings();
+         if (!Preflight(abRequired: true)) return false;
+         return BuildPlayerApk(development, thin);
+      }
 
-            BuildPlayerApk(development: false);
-         }
-         finally
-         {
-            if (abReady)
-            {
-               MoveAssetDirectory(holdDir, abDir);
-            }
-
-            WriteBuildProfile(packageHasBundles: true);
-            AssetDatabase.Refresh();
-            Debug.Log("[T2] 薄包构建收尾：AB 产物与构建画像已还原（编辑器回到胖包状态）。");
-         }
+      /// <summary>命令行：一键 = 门禁 + AB + 瘦体 APK。返回是否成功。</summary>
+      public static bool CliBuildAllThin(bool development)
+      {
+         if (!EnsureAndroidPlatform(allowSwitch: false)) return false;
+         EnsurePlayerSettings();
+         if (!Preflight(abRequired: false)) return false;
+         if (!BuildResKitAssetBundles()) return false;
+         if (!Preflight(abRequired: true)) return false;
+         return BuildPlayerApk(development, thin: true);
       }
 
       /// <summary>薄包构建期间的产物暂存目录（在 Assets 之外，因此不会被扫进 StreamingAssets）。</summary>
@@ -605,13 +609,54 @@ namespace TeaGame.Tools.Editor
          return true;
       }
 
-      private static void BuildPlayerApk(bool development)
+      /// <summary>
+      /// 出包主流程；<paramref name="thin"/> 时把 AB 产物临时移出 Assets（不进包），出完自动还原。
+      /// 返回是否成功——菜单与命令行都靠它判成败（命令行据此给退出码）。
+      /// </summary>
+      private static bool BuildPlayerApk(bool development, bool thin)
+      {
+         if (!thin)
+         {
+            return BuildPlayerApkCore(development, thin: false);
+         }
+
+         // 移出整个 AssetBundles（含别的平台目录）：只要还在 Assets 里就会被塞进包
+         var abDir = Path.GetFullPath(Path.Combine(Application.streamingAssetsPath, "AssetBundles"));
+         var holdDir = Path.Combine(ThinHoldRoot, "AssetBundles");
+         var moved = false;
+
+         try
+         {
+            WriteBuildProfile(packageHasBundles: false);
+            MoveAssetDirectory(abDir, holdDir);
+            moved = true;
+            AssetDatabase.Refresh();
+
+            Debug.LogWarning("[T2] 薄包模式：AB 产物已临时移出 Assets，本次 APK 不含任何资源。" +
+                             "装包后首次启动必须能连上 OTA 服务器，否则进不了主菜单。");
+
+            return BuildPlayerApkCore(development, thin: true);
+         }
+         finally
+         {
+            if (moved)
+            {
+               MoveAssetDirectory(holdDir, abDir);
+            }
+
+            WriteBuildProfile(packageHasBundles: true);
+            AssetDatabase.Refresh();
+            Debug.Log("[T2] 出包收尾：AB 产物与构建画像已还原（编辑器回到胖包状态）。");
+         }
+      }
+
+      private static bool BuildPlayerApkCore(bool development, bool thin)
       {
          var scenes = EnabledScenes();
          if (scenes.Length == 0)
          {
             Debug.LogError("[T2] Build Settings 无启用的场景，无法出包。");
-            return;
+            return false;
          }
 
          Directory.CreateDirectory(ApkFolderAbsolute);
@@ -619,6 +664,11 @@ namespace TeaGame.Tools.Editor
          var version = PlayerSettings.bundleVersion ?? "0.0.0";
          var verCode = PlayerSettings.Android.bundleVersionCode;
          var mode = development ? "dev" : "release";
+         if (thin)
+         {
+            mode += "-thin";
+         }
+
          var apkPath = Path.Combine(ApkFolderAbsolute, $"ThrudDemo_{version}_{verCode}_{mode}.apk").Replace('\\', '/');
 
          var options = new BuildPlayerOptions
@@ -630,8 +680,8 @@ namespace TeaGame.Tools.Editor
             options = development ? BuildOptions.Development : BuildOptions.None,
          };
 
-         Debug.Log($"[T2] 开始 BuildPlayer → {apkPath}（Development={development}，场景 {scenes.Length} 个，" +
-                   "首次 IL2CPP 编译约 5–15 分钟）…");
+         Debug.Log($"[T2] 开始 BuildPlayer → {apkPath}（Development={development}，Thin={thin}，" +
+                   $"场景 {scenes.Length} 个，首次 IL2CPP 编译约 5–15 分钟）…");
          var report = BuildPipeline.BuildPlayer(options);
 
          if (report.summary.result != BuildResult.Succeeded)
@@ -648,7 +698,7 @@ namespace TeaGame.Tools.Editor
                }
             }
 
-            return;
+            return false;
          }
 
          var sizeBytes = File.Exists(apkPath) ? new FileInfo(apkPath).Length : 0L;
@@ -667,8 +717,15 @@ namespace TeaGame.Tools.Editor
          }
 
          WriteBuildReport(apkPath, sizeMb, mode, scenes);
-         EditorUtility.RevealInFinder(apkPath);
+
+         // 批处理下没有可交互的文件管理器，别在这里浪费一次异常
+         if (!Application.isBatchMode)
+         {
+            EditorUtility.RevealInFinder(apkPath);
+         }
+
          Debug.Log("[T2] 下一步：按 Docs/01_里程碑与执行/15…《真机验收清单 v0》装包逐项验收（A 安装启动 → H 包体分发）。");
+         return true;
       }
 
       /// <summary>把本次构建的门禁结论 + 包体信息落一份文本报告（Build/ 不入库，仅供留档/回报）。</summary>
