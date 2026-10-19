@@ -36,6 +36,11 @@ namespace QAssetBundle
         public const string BundleName = "battle_playercontrol_prefab";
         public const string Battle_PlayerControl = "Battle_PlayerControl";
     }
+    public class Battle_scene_0004_battle_graybox
+    {
+        public const string BundleName = "battle_scene_0004_battle_graybox";
+        public const string scene_0004_battle_graybox = "scene_0004_battle_graybox";
+    }
     public class Battle_touchinputpanel_prefab
     {
         public const string BundleName = "battle_touchinputpanel_prefab";

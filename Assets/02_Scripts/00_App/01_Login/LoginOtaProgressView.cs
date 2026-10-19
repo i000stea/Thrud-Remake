@@ -106,14 +106,22 @@ namespace TeaGame.App
 
       private void OnPauseClicked()
       {
-         if (HotUpdateOtaService.Status.IsPaused)
+         var status = HotUpdateOtaService.Status;
+
+         if (status.IsPaused)
          {
             HotUpdateOtaService.RequestResume();
+            return;
          }
-         else
+
+         if (status.IsRunning)
          {
             HotUpdateOtaService.RequestPause();
+            return;
          }
+
+         // 没在跑且资源没就绪 = 「重试下载」（下载失败/被停止/首次启动没连上服务器）
+         HotUpdateOtaService.TryStartCheck(this);
       }
 
       private void OnStopClicked()
@@ -127,6 +135,11 @@ namespace TeaGame.App
          var status = HotUpdateOtaService.Status;
          var running = status.IsRunning;
 
+         // ResKit 是否可用：薄包首启时资源没下完，ResKit 就还没初始化，主菜单之类一律加载不了，
+         // 所以「开始游戏」必须锁到资源真的就绪为止（不只是「下载协程没在跑」）。
+         var resReady = HotUpdateOtaService.IsResKitReady;
+         var needDownload = !resReady;
+
          if (fill != null)
          {
             var ratio = Mathf.Clamp01(status.Progress);
@@ -135,7 +148,7 @@ namespace TeaGame.App
 
          if (statusText != null)
          {
-            statusText.text = BuildStatusLine(status);
+            statusText.text = BuildStatusLine(status, needDownload);
          }
 
          if (versionText != null)
@@ -143,10 +156,11 @@ namespace TeaGame.App
             versionText.text = BuildVersionLine(status);
          }
 
-         // 下载期间只留「暂停 / 停止」可交互
+         // 下载中：暂停 / 停止；没在跑但资源还没就绪：一个「重试下载」；
+         // 资源已就绪：两个都藏起来。
          if (pauseButton != null)
          {
-            pauseButton.gameObject.SetActive(running);
+            pauseButton.gameObject.SetActive(running || needDownload);
          }
 
          if (stopButton != null)
@@ -156,10 +170,12 @@ namespace TeaGame.App
 
          if (pauseLabel != null)
          {
-            pauseLabel.text = status.IsPaused ? "继续下载" : "暂停下载";
+            pauseLabel.text = running
+               ? (status.IsPaused ? "继续下载" : "暂停下载")
+               : "重试下载";
          }
 
-         SetStartLocked(running);
+         SetStartLocked(running || needDownload);
       }
 
       /// <summary>锁定/解锁「开始游戏」。</summary>
@@ -188,7 +204,7 @@ namespace TeaGame.App
          }
       }
 
-      private static string BuildStatusLine(HotUpdateOtaStatus status)
+      private static string BuildStatusLine(HotUpdateOtaStatus status, bool needDownload)
       {
          switch (status.Stage)
          {
@@ -199,7 +215,8 @@ namespace TeaGame.App
             case HotUpdateOtaStage.Paused:
                return $"已暂停（{Mathf.FloorToInt(Mathf.Clamp01(status.Progress) * 100f)}%）—— 点「继续下载」接着下";
             default:
-               return status.Message;
+               // 资源还没就绪时，把「未就绪」明确说出来，否则玩家会以为是按钮没反应
+               return needDownload ? $"{status.Message}（资源未就绪，无法开始游戏）" : status.Message;
          }
       }
 

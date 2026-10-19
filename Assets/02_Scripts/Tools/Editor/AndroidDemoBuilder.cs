@@ -117,6 +117,114 @@ namespace TeaGame.Tools.Editor
          BuildPlayerApk(development: false);
       }
 
+      [MenuItem(MenuRoot + "8. Build APK (Thin · 包内不含 AB，资源全走 OTA)", false, 60)]
+      public static void BuildApkThinMenu()
+      {
+         if (!EnsureAndroidPlatform(allowSwitch: false)) return;
+         EnsurePlayerSettings();
+
+         // 仍然要求 AB 产物齐备：这次不出进包，但要拿来发布成 OTA 内容
+         if (!Preflight(abRequired: true)) return;
+
+         // 移出的是**整个** AssetBundles 目录（不只当前平台）：别的平台目录哪怕只剩一个
+         // 几百字节的 asset_bundle_config.bin 也会被塞进包，属于白带的体积与误导。
+         var abDir = Path.GetFullPath(Path.Combine(Application.streamingAssetsPath, "AssetBundles"));
+         var holdDir = Path.Combine(ThinHoldRoot, "AssetBundles");
+         var abReady = false;
+
+         try
+         {
+            // 1) 先把「包内不带 AB」写进构建画像，运行时才会走薄包首启路径
+            WriteBuildProfile(packageHasBundles: false);
+
+            // 2) 把 AB 产物**移出 Assets**：Unity 打包 StreamingAssets 是按文件系统整目录拷贝，
+            //    目录只改名成 `~` 结尾是**没用**的（实测照样进包），必须真的挪到 Assets 之外。
+            MoveAssetDirectory(abDir, holdDir);
+            abReady = true;
+            AssetDatabase.Refresh();
+
+            Debug.LogWarning("[T2] 薄包模式：AB 产物已临时移出 Assets，本次 APK 不含任何资源。" +
+                             "装包后首次启动必须能连上 OTA 服务器，否则进不了主菜单。");
+
+            BuildPlayerApk(development: false);
+         }
+         finally
+         {
+            if (abReady)
+            {
+               MoveAssetDirectory(holdDir, abDir);
+            }
+
+            WriteBuildProfile(packageHasBundles: true);
+            AssetDatabase.Refresh();
+            Debug.Log("[T2] 薄包构建收尾：AB 产物与构建画像已还原（编辑器回到胖包状态）。");
+         }
+      }
+
+      /// <summary>薄包构建期间的产物暂存目录（在 Assets 之外，因此不会被扫进 StreamingAssets）。</summary>
+      private static string ThinHoldRoot =>
+         Path.GetFullPath(Path.Combine(Application.dataPath, "../", "AssetBundles.thinhold"));
+
+      /// <summary>
+      /// 把整个目录（连同它的 `.meta`）在文件系统里搬来搬去。
+      /// `.meta` 一起搬是为了还原时 GUID 不变，避免无谓的重新导入。
+      /// </summary>
+      private static void MoveAssetDirectory(string from, string to)
+      {
+         if (!Directory.Exists(from))
+         {
+            Debug.LogWarning($"[T2] 目录不存在，跳过移动：{from}");
+            return;
+         }
+
+         var parent = Path.GetDirectoryName(to);
+         if (!string.IsNullOrEmpty(parent))
+         {
+            Directory.CreateDirectory(parent);
+         }
+
+         if (Directory.Exists(to))
+         {
+            Directory.Delete(to, true);
+         }
+
+         Directory.Move(from, to);
+
+         var metaFrom = from + ".meta";
+         var metaTo = to + ".meta";
+         if (!File.Exists(metaFrom)) return;
+
+         if (File.Exists(metaTo))
+         {
+            File.Delete(metaTo);
+         }
+
+         File.Move(metaFrom, metaTo);
+      }
+
+      /// <summary>
+      /// 写构建画像（`Assets/Resources/BuildProfile.txt`），运行时据此判断本包是否携带 AB 基线。
+      /// </summary>
+      private static void WriteBuildProfile(bool packageHasBundles)
+      {
+         const string assetDir = "Assets/Resources";
+         const string assetPath = assetDir + "/BuildProfile.txt";
+
+         Directory.CreateDirectory(Path.GetFullPath(Path.Combine(Application.dataPath, "../", assetDir)));
+
+         var content =
+            "# 构建画像（自动生成，勿手改）\n" +
+            $"package.bundles={(packageHasBundles ? "true" : "false")}\n" +
+            $"builtAtUtc={System.DateTime.UtcNow:o}\n";
+
+         // 不带 BOM：与热更清单一致，避免运行期解析时多出 U+FEFF
+         File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../", assetPath)), content,
+            new System.Text.UTF8Encoding(false));
+
+         AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+         Debug.Log($"[T2] 构建画像已写入：package.bundles={(packageHasBundles ? "true" : "false")}");
+      }
+
       [MenuItem(MenuRoot + "6. 版本号 +1 (bundleVersion / versionCode 同步)", false, 90)]
       public static void BumpVersionMenu()
       {

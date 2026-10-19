@@ -241,7 +241,14 @@ namespace TeaGame.App
       /// 调用方在 `HotUpdateLoader.LoadAll()` 与 `ResKit.InitAsync()` 之前调用，
       /// 不满足「先落盘后加载」的顺序就会白下。
       /// </summary>
-      public static void ApplyCachedContentAtBoot(HotUpdateOtaSettings settings)
+      /// <returns>
+      /// **现在能不能直接初始化 ResKit**。
+      /// - true：有可用 AB 清单（持久层 OTA 内容自洽，或包内带基线）；
+      /// - false：**薄包首启**——包内没有基线、持久层也还没下下来。
+      ///   此时必须**推迟** `ResKit.InitAsync()`（它在 `ResMgr` 里是一次性的，跑一次就置位，
+      ///   失败后再也补不回来），等登录场景把资源下完再初始化。
+      /// </returns>
+      public static bool ApplyCachedContentAtBoot(HotUpdateOtaSettings settings)
       {
          Settings = settings;
 
@@ -258,11 +265,97 @@ namespace TeaGame.App
             Status.Message = string.IsNullOrEmpty(Status.LocalVersion) ? "当前使用包内基线" : "当前使用已下载内容";
          }
 
-         ResKitContentLocator.Apply(state, out var reason);
-         Debug.Log($"[HotUpdate] 启动内容定位：{reason}" +
-                   $"（本地版本={(string.IsNullOrEmpty(Status.LocalVersion) ? "<包内基线>" : Status.LocalVersion)}）");
+         var persistentReady = ResKitContentLocator.Apply(state, out var reason);
+         var ready = persistentReady || HasPackageBaseline(out var packageReason);
+
+         Debug.Log($"[HotUpdate] 启动内容定位：{reason}（本地版本=" +
+                   $"{(string.IsNullOrEmpty(Status.LocalVersion) ? "<包内基线>" : Status.LocalVersion)}）；" +
+                   $"包内基线={(HasPackageBaseline(out _) ? "有" : "无")}；ResKit 可现在初始化={ready}");
+
+         if (!ready)
+         {
+            Debug.LogWarning("[HotUpdate] 薄包首启：包内没有 AB 基线、持久层也没有可用内容。" +
+                             "本次**推迟** ResKit 初始化，等登录场景下载完成后再 init。");
+            Status.Message = "首次启动：需要先下载资源";
+         }
 
          sBootApplied = true;
+         sBootContentReady = ready;
+         return ready;
+      }
+
+      /// <summary>编辑器中（SimulationMode）ResKit 从 AssetDatabase 建清单，与包内 AB 无关。</summary>
+      private static bool IsSimulationMode => QFramework.AssetBundlePathHelper.SimulationMode;
+
+      /// <summary>
+      /// 包内是否带 AB 基线。由构建画像（`Assets/Resources/BuildProfile.txt`）决定——
+      /// Android 上 StreamingAssets 在 APK 内，运行期没法用 `File.Exists` 判断。
+      /// </summary>
+      private static bool HasPackageBaseline(out string reason)
+      {
+         if (IsSimulationMode)
+         {
+            reason = "编辑器 SimulationMode：清单来自 AssetDatabase";
+            return true;
+         }
+
+         if (!BuildProfile.PackageHasAssetBundles)
+         {
+            reason = "构建画像标注为薄包（包内不含 AB）";
+            return false;
+         }
+
+         reason = "构建画像标注包内带 AB 基线";
+         return true;
+      }
+
+      /// <summary>
+      /// ResKit 是否已经可用（可以加载 AB 场景/面板）。UI 用它决定是否锁住「开始游戏」。
+      /// </summary>
+      public static bool IsResKitReady => IsSimulationMode || QFramework.ResMgr.ResMgrInited;
+
+      /// <summary>启动编排判定过「现在就能初始化 ResKit」（有包内基线或有自洽的持久层内容）。</summary>
+      private static bool sBootContentReady;
+
+      /// <summary>
+      /// 现在能不能初始化 ResKit。供 <see cref="ResKitBootstrap.EnsureInitialized"/> 这类兜底路径用，
+      /// 避免薄包首启被抢先初始化（ResMgr 的初始化一次性，抢跑即毒死整条链路）。
+      /// </summary>
+      public static bool CanInitializeResKitNow()
+      {
+         if (IsResKitReady || sBootContentReady)
+         {
+            return true;
+         }
+
+         // 已经下载完但还没来得及 init（下载完成到 InitAsync 之间的窗口）
+         var state = HotUpdateCacheService.TryLoadState();
+         return ResKitContentLocator.Apply(state, out _) || HasPackageBaseline(out _);
+      }
+
+      /// <summary>
+      /// 薄包首启：资源下载完成后补上被推迟的 ResKit 初始化。
+      /// **顺序不能反**——必须先按新状态切好内容定位（读 persistent 的清单），再 InitAsync。
+      /// </summary>
+      private static IEnumerator InitResKitIfDeferred(HotUpdateCacheState state)
+      {
+         if (QFramework.ResMgr.ResMgrInited)
+         {
+            yield break;
+         }
+
+         if (state == null)
+         {
+            yield break;
+         }
+
+         ResKitContentLocator.Apply(state, out var mode);
+         Debug.Log($"[HotUpdate] 资源已就绪，补做被推迟的 ResKit 初始化（{mode}）");
+
+         yield return QFramework.ResKit.InitAsync();
+
+         Debug.Log($"[HotUpdate] ResKit 初始化完成，IsResKitReady={IsResKitReady}（清单可解析=" +
+                   $"{ResKitBootstrap.TryResolve(QAssetBundle.Main_menupanel_prefab.BundleName, QAssetBundle.Main_menupanel_prefab.Main_MenuPanel)}）");
       }
 
       /// <summary>
@@ -371,6 +464,9 @@ namespace TeaGame.App
             Status.Message = "资源已是最新（" + manifest.contentVersion + "）";
             Debug.Log($"[HotUpdate] 已是最新 contentVersion={manifest.contentVersion}，跳过下载。");
             ResKitContentLocator.Apply(currentState, out _);
+
+            // 内容已齐但 ResKit 可能还没初始化（薄包首启走的就是这条路：启动时没内容 → 推迟 init）
+            yield return InitResKitIfDeferred(currentState);
             yield break;
          }
 
@@ -564,6 +660,9 @@ namespace TeaGame.App
          Status.Stage = HotUpdateOtaStage.Completed;
          Status.Message = "资源已更新到 " + newState.contentVersion +
                           (newState.abSetComplete ? "（整套资源下次启动完整生效）" : "");
+
+         // 薄包首启：启动时没有任何内容 → 推迟了 ResKit 初始化，这里补上
+         yield return InitResKitIfDeferred(newState);
       }
 
       /// <summary>失败收尾：记录原因、回落到当前可用版本。</summary>

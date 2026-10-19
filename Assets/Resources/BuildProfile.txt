@@ -1,0 +1,3 @@
+# 构建画像（自动生成，勿手改）
+package.bundles=true
+builtAtUtc=2026-10-19T14:44:34.0425805Z

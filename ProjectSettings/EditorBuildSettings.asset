@@ -14,9 +14,6 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/01_Scenes/scene_0003_gacha.unity
     guid: 07f8c673bf7e825458ecb689a0b99844
-  - enabled: 1
-    path: Assets/01_Scenes/scene_0004_battle_graybox.unity
-    guid: 5e21a089dab1b3741a55a04216ccce90
   - enabled: 0
     path: Assets/01_Scenes/scene_0005_battle_legacy.unity
     guid: 99c9720ab356a0642a771bea13969a05

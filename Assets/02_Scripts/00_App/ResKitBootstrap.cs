@@ -52,6 +52,16 @@ namespace TeaGame.App
       {
          if (!ResMgr.ResMgrInited)
          {
+            // 薄包首启闸门：资源还没下下来时**绝不能**在这里补初始化——
+            // ResMgr.Init 是一次性的（mResMgrInited 在读清单前置位），抢跑一次就把整条链路毒死，
+            // 之后哪怕资源下完了也再也读不到清单。这种状态下应当由登录场景先下载。
+            if (!HotUpdateOtaService.CanInitializeResKitNow())
+            {
+               Debug.LogError("[ResKit] 首次初始化被拦下：当前包为薄包且资源尚未下载完成。" +
+                              "请先在登录场景完成资源下载（进度面板），不要在此处抢跑 ResKit.Init。");
+               return false;
+            }
+
             if (Application.isEditor)
             {
                Debug.Log("[ResKit] 首次初始化（编辑器：SimulationMode 下正常由 ResKit.CheckAutoInit 自动完成，此处补一次同步 Init）。");

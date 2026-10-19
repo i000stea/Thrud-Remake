@@ -93,6 +93,14 @@ namespace TeaGame.Login
             return;
          }
 
+         // 薄包首启：资源没下完 ResKit 就没初始化，主菜单/面板一律加载不出来。
+         // 这里再拦一层，避免 UI 状态滞后一帧时点进去看到黑屏。
+         if (!HotUpdateOtaService.IsResKitReady)
+         {
+            Debug.LogWarning("[Login] 资源尚未就绪（ResKit 未初始化），暂不能开始游戏——请点「重试下载」。");
+            return;
+         }
+
          Architecture.GetSystem<LoginSystem>().BeginLogin(mainSceneKey);
       }
 

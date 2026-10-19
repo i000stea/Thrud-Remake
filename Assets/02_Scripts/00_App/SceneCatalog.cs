@@ -47,6 +47,12 @@ namespace TeaGame.App
       public const string MainAssetBundle = QAssetBundle.Main_scene_0002_main.BundleName;
 
       /// <summary>
+      /// 灰盒战斗场景的 AssetBundle 名。战斗场景同样移出了 Build Settings，
+      /// 这样它的场景资产不再随 APK 打包，改为从 AB（包内基线或 OTA 内容）加载。
+      /// </summary>
+      public const string BattleGrayboxAssetBundle = QAssetBundle.Battle_scene_0004_battle_graybox.BundleName;
+
+      /// <summary>
       /// 已纳入 AssetBundle 管理的场景：场景 key → bundle 名。
       /// 未登记的场景按 <see cref="SceneSource.BuildSettings"/> 处理。
       /// 新场景要热更时，在这里登记一行 + 在 Editor 里标记 bundle 名即可，加载代码零改动。
@@ -54,6 +60,7 @@ namespace TeaGame.App
       private static readonly Dictionary<string, string> sSceneBundles = new()
       {
          { Main, MainAssetBundle },
+         { BattleGraybox, BattleGrayboxAssetBundle },
       };
 
       /// <summary>
