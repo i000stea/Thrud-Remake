@@ -18,10 +18,10 @@ namespace TeaGame.App
    ///
    /// **解析顺序（先便宜后贵，命中即止）**：
    /// 1. 显式配置的 baseUrl（开发时想固定指向某台机器就用它）；
-   /// 2. `http://127.0.0.1:&lt;discoveryPort&gt;`——编辑器里跑、服务器就在本机，免配置；
-   /// 3. 上次成功解析的地址（PlayerPrefs 缓存，下次启动免探测）；
-   /// 4. **UDP 广播**：向 `255.255.255.255` 与各网卡的子网广播地址发 `THRUD-OTA-DISCOVER/1`，
+   /// 2. 上次成功解析的地址（PlayerPrefs 缓存，下次启动免探测）；
+   /// 3. **UDP 广播**：向 `255.255.255.255` 与各网卡的子网广播地址发 `THRUD-OTA-DISCOVER/1`，
    ///    服务端（`web/LanOtaServer`）回一段带 `httpPort` 的 JSON，据此拼出 `http://&lt;服务端IP&gt;:&lt;端口&gt;`。
+   /// 4. `http://127.0.0.1:&lt;discoveryPort&gt;`——仅作为最后兜底，真机上它指向手机自身。
    ///
    /// 每个候选都用 `HEAD /&lt;channel&gt;/&lt;platform&gt;/manifest.json` 验证——**只认能真的取到清单的地址**，
    /// 不是「能连上」就算命中。这样广播回来的错误地址、残留缓存都能被自动淘汰。
@@ -96,6 +96,16 @@ namespace TeaGame.App
                url => resolved = url, reason => tried.Add("UDP 广播：" + reason));
          }
 
+         // 回环地址只对编辑器/本机服务有意义，必须排在局域网自动发现之后。
+         if (resolved == null && discoveryPort > 0)
+         {
+            var loopback = $"http://127.0.0.1:{discoveryPort}";
+            var ok = false;
+            yield return Validate(loopback, channel, platform, value => ok = value);
+            tried.Add($"{loopback}（本机回环兜底）{(ok ? " 命中" : " 不通")}");
+            if (ok) resolved = loopback;
+         }
+
          if (resolved != null)
          {
             CacheBaseUrl(resolved);
@@ -126,11 +136,6 @@ namespace TeaGame.App
          }
 
          Add(explicitBaseUrl, "显式配置");
-
-         if (discoveryPort > 0)
-         {
-            Add($"http://127.0.0.1:{discoveryPort}", "本机回环");
-         }
 
          Add(CachedBaseUrl, "上次成功地址");
          return list;
