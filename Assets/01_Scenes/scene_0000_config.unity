@@ -294,6 +294,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   firstSceneName: scene_0001_login
+  ota:
+    enabled: 1
+    baseUrl: http://127.0.0.1:8080
+    channel: lan
+    manifestTimeoutSeconds: 10
 --- !u!4 &1636810075
 Transform:
   m_ObjectHideFlags: 0

@@ -15,7 +15,7 @@ namespace TeaGame.App
       public bool enabled;
 
       /// <summary>内容服务器根地址（局域网 `http://192.168.x.x:8080`，将来换成 CDN 地址即可）。</summary>
-      public string baseUrl = "http://127.0.0.1:8080";
+      public string baseUrl = "http://172.29.128.1:8080";
 
       /// <summary>渠道名（服务端路由的第一段）。</summary>
       public string channel = "lan";
@@ -47,6 +47,12 @@ namespace TeaGame.App
 
       /// <summary>失败（网络 / 校验 / 解析），已回落到当前可用版本。</summary>
       Failed = 6,
+
+      /// <summary>用户暂停（当前文件已中断，恢复后该文件从头重下）。</summary>
+      Paused = 7,
+
+      /// <summary>用户停止（本次更新未提交，保持当前可用版本）。</summary>
+      Stopped = 8,
    }
 
    /// <summary>
@@ -77,8 +83,17 @@ namespace TeaGame.App
       public int FilesTotal;
       public int FilesDone;
 
-      /// <summary>是否正在跑（UI 据此决定是否接受重复触发）。</summary>
-      public bool IsRunning => Stage == HotUpdateOtaStage.Checking || Stage == HotUpdateOtaStage.Downloading;
+      /// <summary>是否正在跑（UI 据此决定是否接受重复触发、以及是否锁住「开始游戏」）。</summary>
+      public bool IsRunning =>
+         Stage == HotUpdateOtaStage.Checking ||
+         Stage == HotUpdateOtaStage.Downloading ||
+         Stage == HotUpdateOtaStage.Paused;
+
+      /// <summary>是否被用户暂停。</summary>
+      public bool IsPaused => Stage == HotUpdateOtaStage.Paused;
+
+      /// <summary>是否已经下载完（可用于「开始游戏」判定）。</summary>
+      public bool IsBlockingGameStart => IsRunning;
    }
 
    /// <summary>
@@ -105,6 +120,25 @@ namespace TeaGame.App
 
       /// <summary>当前状态快照（UI 每帧读）。</summary>
       public static HotUpdateOtaStatus Status { get; } = new HotUpdateOtaStatus();
+
+      /// <summary>用户是否请求停止本次更新（中断传输后整轮结束，不提交版本）。</summary>
+      private static bool sStopRequested;
+
+      /// <summary>用户是否请求暂停（中断当前文件后挂起，恢复时该文件从头重下）。</summary>
+      private static bool sPauseRequested;
+
+      /// <summary>启动编排是否已经跑过（<see cref="ApplyCachedContentAtBoot"/> 完成后为 true）。</summary>
+      private static bool sBootApplied;
+
+      /// <summary>
+      /// 等待启动编排交出 <see cref="Settings"/> 的上限（秒）。
+      ///
+      /// **为什么需要等**：编辑器里如果你直接从 `scene_0001_login` 进 Play，ConfigScene 是之后被
+      /// `Editor_ConfigSceneGuard` 拉起来的，于是登录场景的 `Start()` 会**早于** `AppBootstrapper.Start()`。
+      /// 此时 `Settings` 还是 null，`RunCheck` 会直接判定「未启用」——这就是编辑器里看到
+      /// `[HotUpdate] OTA 未启用或未配置服务器地址` 而配置明明是开着的真正原因（跟 enabled 默认值无关）。
+      /// </summary>
+      private const float BootWaitSeconds = 5f;
 
       /// <summary>
       /// OTA 协程的常驻宿主（ConfigScene 的 <c>AppBootstrapper</c>）。
@@ -149,6 +183,43 @@ namespace TeaGame.App
          return true;
       }
 
+      /// <summary>用户请求停止本次更新（中断传输、丢弃半成品、不提交版本）。</summary>
+      public static void RequestStop()
+      {
+         if (!Status.IsRunning)
+         {
+            return;
+         }
+
+         Debug.Log("[HotUpdate] 用户请求停止资源更新。");
+         sStopRequested = true;
+         sPauseRequested = false;   // 停止优先于暂停，解除挂起
+      }
+
+      /// <summary>用户请求暂停（下载中才有效）。</summary>
+      public static void RequestPause()
+      {
+         if (Status.Stage != HotUpdateOtaStage.Downloading)
+         {
+            return;
+         }
+
+         Debug.Log("[HotUpdate] 用户请求暂停资源更新。");
+         sPauseRequested = true;
+      }
+
+      /// <summary>用户请求继续（暂停中才有效）。</summary>
+      public static void RequestResume()
+      {
+         if (!sPauseRequested)
+         {
+            return;
+         }
+
+         Debug.Log("[HotUpdate] 用户请求继续资源更新。");
+         sPauseRequested = false;
+      }
+
       /// <summary>
       /// 启动阶段：清残留临时文件、读缓存、决定 ResKit 内容定位。**不联网。**
       /// 调用方在 `HotUpdateLoader.LoadAll()` 与 `ResKit.InitAsync()` 之前调用，
@@ -163,12 +234,19 @@ namespace TeaGame.App
 
          var state = HotUpdateCacheService.TryLoadState();
          Status.LocalVersion = state?.contentVersion;
-         Status.Stage = HotUpdateOtaStage.Idle;
-         Status.Message = string.IsNullOrEmpty(Status.LocalVersion) ? "当前使用包内基线" : "当前使用已下载内容";
+
+         // 只在还没开始时写文案：登录场景可能已经先跑起检查（编辑器从登录场景进 Play 的顺序），
+         // 这里再无条件改写 Status 会把「正在检查」覆盖回 Idle。
+         if (Status.Stage == HotUpdateOtaStage.Idle)
+         {
+            Status.Message = string.IsNullOrEmpty(Status.LocalVersion) ? "当前使用包内基线" : "当前使用已下载内容";
+         }
 
          ResKitContentLocator.Apply(state, out var reason);
          Debug.Log($"[HotUpdate] 启动内容定位：{reason}" +
                    $"（本地版本={(string.IsNullOrEmpty(Status.LocalVersion) ? "<包内基线>" : Status.LocalVersion)}）");
+
+         sBootApplied = true;
       }
 
       /// <summary>
@@ -177,8 +255,24 @@ namespace TeaGame.App
       /// </summary>
       public static IEnumerator RunCheck()
       {
+         // 等启动编排交出配置：编辑器从登录场景进 Play 时，ConfigScene（以及它的 AppBootstrapper）
+         // 可能比登录场景晚一步初始化。这里等一会儿而不是立刻判定「未启用」。
+         var bootDeadline = Time.realtimeSinceStartup + BootWaitSeconds;
+         while (!sBootApplied && Time.realtimeSinceStartup < bootDeadline)
+         {
+            yield return null;
+         }
+
+         if (!sBootApplied)
+         {
+            Debug.LogWarning("[HotUpdate] 等待启动编排超时（AppBootstrapper 未执行？），本次不检查资源。");
+            yield break;
+         }
+
          var settings = Settings;
 
+         sStopRequested = false;
+         sPauseRequested = false;
          Status.Error = null;
          Status.Progress = 0f;
          Status.FilesDone = 0;
@@ -188,7 +282,10 @@ namespace TeaGame.App
          {
             Status.Stage = HotUpdateOtaStage.Disabled;
             Status.Message = "未启用资源更新（使用包内基线）";
-            Debug.Log("[HotUpdate] OTA 未启用或未配置服务器地址：本次使用包内基线。");
+            Debug.Log("[HotUpdate] OTA 未启用或未配置服务器地址：" +
+                      $"enabled={(settings == null ? "<无配置>" : settings.enabled.ToString())}, " +
+                      $"baseUrl={(settings == null ? "<无配置>" : settings.baseUrl)}。" +
+                      "配置位置：scene_0000_config 的 AppBootstrapper → ota。本次使用包内基线。");
             yield break;
          }
 
@@ -260,40 +357,88 @@ namespace TeaGame.App
 
          foreach (var entry in pending)
          {
-            var partPath = HotUpdateCacheService.PartPathFor(entry);
-            var done = false;
-            string downloadError = null;
-            var lastLoggedStep = -1;
+            if (sStopRequested)
+            {
+               break;
+            }
+
             var entrySize = entry.size > 0 ? entry.size : 1;
             var baseBytes = downloadedBytes;
+            var entryDone = false;
+            string entryError = null;
 
-            Status.Message = $"正在下载 {Status.FilesDone + 1}/{Status.FilesTotal}：{entry.FileName}";
-
-            yield return backend.DownloadFileAsync(entry, partPath, progress =>
+            // 同一个文件可能要重下多次：暂停时当前文件被中断（服务端无 Range 不能续传），恢复后整文件重来
+            while (!entryDone)
             {
-               // 只在跨过 25% 台阶时打日志，避免大文件刷屏
-               var step = Mathf.FloorToInt(Mathf.Clamp01(progress) * 4f);
-               if (step != lastLoggedStep)
+               // 暂停挂起：不发网络请求，也不推进进度，等恢复或停止
+               while (sPauseRequested && !sStopRequested)
                {
-                  lastLoggedStep = step;
-                  Debug.Log($"[HotUpdate] 下载中 {entry.id} ({entry.FileName}) {step * 25}%");
+                  Status.Stage = HotUpdateOtaStage.Paused;
+                  Status.Message = $"已暂停：{entry.FileName}（恢复后该文件从头重下）";
+                  yield return null;
                }
 
-               if (totalBytes > 0)
+               if (sStopRequested)
                {
-                  Status.Progress = Mathf.Clamp01((baseBytes + entrySize * Mathf.Clamp01(progress)) / (float)totalBytes);
+                  break;
                }
-            }, () => done = true, error => downloadError = error);
 
-            if (!done)
-            {
-               // 立刻清掉半成品：不让 .part 留在盘上被人误当可用内容，也不给下次启动留垃圾
+               Status.Stage = HotUpdateOtaStage.Downloading;
+               Status.Message = $"正在下载 {Status.FilesDone + 1}/{Status.FilesTotal}：{entry.FileName}";
+
+               var done = false;
+               string downloadError = null;
+               var lastLoggedStep = -1;
+               var partPath = HotUpdateCacheService.PartPathFor(entry);
+
+               yield return backend.DownloadFileAsync(entry, partPath, progress =>
+               {
+                  // 只在跨过 25% 台阶时打日志，避免大文件刷屏
+                  var step = Mathf.FloorToInt(Mathf.Clamp01(progress) * 4f);
+                  if (step != lastLoggedStep)
+                  {
+                     lastLoggedStep = step;
+                     Debug.Log($"[HotUpdate] 下载中 {entry.id} ({entry.FileName}) {step * 25}%");
+                  }
+
+                  if (totalBytes > 0)
+                  {
+                     Status.Progress = Mathf.Clamp01((baseBytes + entrySize * Mathf.Clamp01(progress)) / (float)totalBytes);
+                  }
+               }, () => done = true, error => downloadError = error,
+                  () => sStopRequested || sPauseRequested);
+
+               if (done)
+               {
+                  entryDone = true;
+                  break;
+               }
+
+               // 半成品一律删掉：它不是可用内容，也不能当断点
                HotUpdateCacheService.DeletePart(entry);
-               Debug.LogWarning($"[HotUpdate] 下载失败 {entry.id} ({entry.FileName})：{downloadError}");
+
+               if (sStopRequested || sPauseRequested)
+               {
+                  Debug.Log($"[HotUpdate] 已中断 {entry.id}（{(sStopRequested ? "停止" : "暂停")}），半成品已删除");
+                  continue;   // 回到 while 顶部：暂停就挂起，停止就跳出
+               }
+
+               entryError = downloadError;
+               Debug.LogWarning($"[HotUpdate] 下载失败 {entry.id} ({entry.FileName})：{entryError}");
+               break;
+            }
+
+            if (sStopRequested)
+            {
+               break;
+            }
+
+            if (!entryDone)
+            {
                if (entry.required)
                {
                   aborted = true;
-                  abortReason = $"必需文件下载失败：{entry.id}（{downloadError}）";
+                  abortReason = $"必需文件下载失败：{entry.id}（{entryError}）";
                   break;
                }
 
@@ -327,6 +472,18 @@ namespace TeaGame.App
             {
                Status.Progress = Mathf.Clamp01(downloadedBytes / (float)totalBytes);
             }
+         }
+
+         if (sStopRequested)
+         {
+            // 用户主动停止：不写状态 = 新版本不生效，已落地的文件由上一份状态兜住（下次仍会重下缺失文件）
+            sPauseRequested = false;
+            Status.Stage = HotUpdateOtaStage.Stopped;
+            Status.Message = "已停止资源更新（保持当前可用版本）";
+            Status.Error = null;
+            Debug.LogWarning("[HotUpdate] 用户已停止资源更新，未提交新版本。");
+            ResKitContentLocator.Apply(currentState, out _);
+            yield break;
          }
 
          if (aborted)

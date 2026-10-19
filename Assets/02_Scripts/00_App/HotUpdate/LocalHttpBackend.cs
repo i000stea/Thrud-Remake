@@ -68,7 +68,7 @@ namespace TeaGame.App
       }
 
       public IEnumerator DownloadFileAsync(HotUpdateFileEntry entry, string destinationPath,
-         Action<float> onProgress, Action onDone, Action<string> onError)
+         Action<float> onProgress, Action onDone, Action<string> onError, Func<bool> shouldAbort = null)
       {
          if (entry == null || string.IsNullOrEmpty(entry.path))
          {
@@ -94,6 +94,15 @@ namespace TeaGame.App
 
             while (!request.isDone)
             {
+               // 暂停/停止：每帧问一次，命中就中断本次传输（半成品由调用方删除，服务端无 Range 不能续传）
+               if (shouldAbort != null && shouldAbort())
+               {
+                  request.Abort();
+                  yield return request;
+                  onError?.Invoke("传输已中止（" + url + "）");
+                  yield break;
+               }
+
                onProgress?.Invoke(request.downloadProgress);
                yield return null;
             }

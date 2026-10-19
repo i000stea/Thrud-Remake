@@ -80,9 +80,19 @@ namespace TeaGame.Login
 
       /// <summary>
       /// 开始按钮点击：转发给 LoginSystem（防重入由 System 保证）。
+      ///
+      /// **资源下载期间直接拦掉**：UI 侧已经把按钮禁用并置灰（<c>LoginOtaProgressView.SetStartLocked</c>），
+      /// 这里再拦一层是因为 UI 状态可能有一帧的滞后（状态来自协程写入）。
+      /// 中途切场景会让用户误以为更新没生效，也更容易撞上「下载到一半被切走」的困惑。
       /// </summary>
       private void OnStartButtonClicked()
       {
+         if (HotUpdateOtaService.Status.IsRunning)
+         {
+            Debug.LogWarning("[Login] 资源下载中，暂不能开始游戏——请等待完成，或点「暂停下载」/「停止下载」。");
+            return;
+         }
+
          Architecture.GetSystem<LoginSystem>().BeginLogin(mainSceneKey);
       }
 

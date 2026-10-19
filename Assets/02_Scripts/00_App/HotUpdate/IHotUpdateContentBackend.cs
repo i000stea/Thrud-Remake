@@ -27,8 +27,14 @@ namespace TeaGame.App
       /// 下载一个文件到 <paramref name="destinationPath"/>（调用方给的是 `.part` 临时路径）。
       /// <paramref name="onProgress"/> 报告 0..1 进度，完成回调 <paramref name="onDone"/>，
       /// 失败回调 <paramref name="onError"/>。传输层不校验 hash——校验属于缓存层。
+      ///
+      /// <paramref name="shouldAbort"/>：**暂停/停止的唯一入口**。传输层每帧问一次，返回 true 就中断本次传输
+      /// 并走 <paramref name="onError"/>（由调用方根据自己置的暂停/停止标记来判断这是「用户操作」还是「真失败」）。
+      /// 之所以不由传输层直接暴露 Pause/Resume：服务端不支持 Range（无断点续传），
+      /// 已传的半个文件无法复用，暂停只能「中断并丢弃当前文件」，恢复时整文件重下——
+      /// 这个语义必须由调用方显式决定，不能藏在传输层里。
       /// </summary>
       IEnumerator DownloadFileAsync(HotUpdateFileEntry entry, string destinationPath,
-         Action<float> onProgress, Action onDone, Action<string> onError);
+         Action<float> onProgress, Action onDone, Action<string> onError, Func<bool> shouldAbort = null);
    }
 }
