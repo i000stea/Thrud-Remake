@@ -32,6 +32,8 @@ namespace TeaGame.Tools.Editor
          // AB 已重打，OTA 内容必须跟着更新，否则真机下到的还是旧集合
          if (ok)
          {
+            // AB 重打后 bundle 名可能变了（新增/取消标记），发布前清掉缓存重新读
+            OtaContentPublisher.InvalidateBundleNameCache();
             ok = OtaContentPublisher.Publish();
          }
 

@@ -88,6 +88,19 @@ namespace TeaGame.Tools.Editor
          BuildResKitAssetBundles();
       }
 
+      /// <summary>
+      /// **一键瘦体出包（编辑器内）**：门禁 → 重打 AB → 瘦体 APK → 发布 OTA 内容。
+      ///
+      /// 与命令行 `build-thin.cmd`（`AndroidBuildCli.BuildAllThin`）**走同一份代码**，
+      /// 所以编辑器点菜单与 CI 跑批处理的结果一致，不存在两条路径漂移的问题。
+      /// 批处理下这条会自己落退出码；编辑器内只打日志、不退出。
+      /// </summary>
+      [MenuItem(MenuRoot + "0. 一键瘦体出包（AB + 瘦体 APK + 发布 OTA）", false, 0)]
+      public static void OneClickThinMenu()
+      {
+         AndroidBuildCli.BuildAllThin();
+      }
+
       [MenuItem(MenuRoot + "3. Build APK (Release · debug keystore)", false, 30)]
       public static void BuildApkReleaseMenu()
       {
@@ -107,8 +120,8 @@ namespace TeaGame.Tools.Editor
       }
 
       /// <summary>
-      /// 一键出包（**默认薄包**：包内不含 AB，资源全走 OTA）。
-      /// 这是后续的标准出包路径；需要对照用的胖包请用「3. Build APK (Release)」。
+      /// 一键出包（**默认薄包**：包内不含 AB，资源全走 OTA），但**不发布** OTA 内容。
+      /// 要连 OTA 内容一起更新，用「0. 一键瘦体出包」或命令行 `build-thin.cmd`。
       /// </summary>
       [MenuItem(MenuRoot + "5. Build All (One-Click · 校验 + AB + 瘦体 APK)", false, 50)]
       public static void BuildAllMenu()

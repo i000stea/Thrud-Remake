@@ -109,6 +109,7 @@ namespace TeaGame.Tools.Editor
 
          var abFiles = Directory.GetFiles(abSource)
             .Where(p => !IsIgnoredBundleFile(p, platform))
+            .Where(p => IsLiveBundleFile(p, platform))
             .OrderBy(p => Path.GetFileName(p), StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
@@ -225,6 +226,39 @@ namespace TeaGame.Tools.Editor
                    $"[OTA-Publish] 内容目录：{targetRoot}\n" +
                    $"[OTA-Publish] 清单路由：/{Channel}/{platform}/manifest.json（真机用服务端控制台打印的 IP）");
          return true;
+      }
+
+      /// <summary>
+      /// 文件是否仍是「活着的」bundle：AB 产物目录里会残留已取消标记的历史 bundle
+      /// （本次实测遇到过一个 42.7 MB 的孤儿，重打 AB 后又出现），
+      /// 它们不在 `AssetDatabase.GetAllAssetBundleNames()` 里，发到 OTA 既浪费带宽也会误导排障。
+      /// `asset_bundle_config.bin` 与平台同名 bundle 是构建产物的一部分，单独放行。
+      /// </summary>
+      private static bool IsLiveBundleFile(string path, string platform)
+      {
+         var name = Path.GetFileName(path);
+         if (string.Equals(name, "asset_bundle_config.bin", StringComparison.OrdinalIgnoreCase)) return true;
+         if (string.Equals(name, platform, StringComparison.OrdinalIgnoreCase)) return true;
+
+         if (sLiveBundleNames == null)
+         {
+            sLiveBundleNames = new HashSet<string>(AssetDatabase.GetAllAssetBundleNames(),
+               StringComparer.OrdinalIgnoreCase);
+         }
+
+         if (sLiveBundleNames.Contains(name)) return true;
+
+         Debug.LogWarning($"[OTA-Publish] 跳过非活 bundle（不在 AB 清单里，疑似历史残留）：{name}");
+         return false;
+      }
+
+      /// <summary>当前工程登记过的 bundle 名（发布内缓存一次）。</summary>
+      private static HashSet<string> sLiveBundleNames;
+
+      /// <summary>清空 bundle 名缓存（重打 AB 后调用；同一次发布内无需重复取）。</summary>
+      public static void InvalidateBundleNameCache()
+      {
+         sLiveBundleNames = null;
       }
 
       /// <summary>

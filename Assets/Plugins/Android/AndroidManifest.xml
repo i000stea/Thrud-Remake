@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  自定义 AndroidManifest。Unity 6.3 仍支持 manifest 合并，但**不再支持** Assets/Plugins/Android/res，
+  所以这里不再引用自定义 theme：沉浸式/全屏改由 Player Settings 承担
+  （Fullscreen Mode = Fullscreen Window、Render outside safe area = true）。
+  若将来必须自定义 theme 或其它资源，请做成 Android Library（AAR）放进 Assets/Plugins/Android/。
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
+  <application>
+    <activity android:name="com.unity3d.player.UnityPlayerActivity"
+              android:screenOrientation="landscape"
+              android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
+              android:exported="true"
+              tools:replace="android:configChanges">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+  </application>
+</manifest>
