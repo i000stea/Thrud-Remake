@@ -52,6 +52,9 @@ namespace TeaGame.App
       /// <summary>热更清单（`hotfix.json`），HotUpdateLoader 按它的顺序装配程序集。</summary>
       public const string KindHotUpdateManifest = "hotUpdateManifest";
 
+      /// <summary>补充元数据用的 AOT 程序集（与热更 DLL 同目录，但归类不同，便于排障时区分）。</summary>
+      public const string KindAotMetadata = "aotMetadata";
+
       /// <summary>稳定标识（日志与状态里用它，而不是文件名）。</summary>
       public string id;
 

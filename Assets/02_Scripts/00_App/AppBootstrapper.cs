@@ -44,10 +44,10 @@ namespace TeaGame.App
       /// </summary>
       private IEnumerator Start()
       {
-         // OTA 内容更新必须在加载任何热更/AB 之前：它要把 DLL 与 bundle 落到 persistentDataPath，
-         // 而 HotUpdateLoader 与 ResKit 都是「persistent 优先、StreamingAssets 回退」。
-         // 方法内部对网络/校验失败一律兜底为「保持当前可用版本」，不会阻断启动。
-         yield return HotUpdateOtaService.RunAtBoot(ota);
+         // 启动阶段只做「应用已下载内容」：清残留 .part、读缓存状态、决定 ResKit 读哪套 AB 清单。
+         // 必须在 ResKit.InitAsync 与 HotUpdateLoader.LoadAll 之前，因为落点由它决定；这里不联网，
+         // 首包无网络也能正常启动。真正的联网检查/下载在登录场景（LoginOtaProgressView），有进度可视化。
+         HotUpdateOtaService.ApplyCachedContentAtBoot(ota);
 
          // 热更装配加载必须最靠前：0ConfigScene 是纯 AOT 场景，从这里往后才允许触碰
          // TeaGame.*（热更程序集）的类型。编辑器下该方法内部直接跳过。

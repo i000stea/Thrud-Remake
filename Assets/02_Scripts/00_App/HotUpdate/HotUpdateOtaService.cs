@@ -24,42 +24,141 @@ namespace TeaGame.App
       public float manifestTimeoutSeconds = 10f;
    }
 
+   /// <summary>OTA 阶段（登录场景的进度条按它显示文案）。</summary>
+   public enum HotUpdateOtaStage
+   {
+      /// <summary>还没开始检查。</summary>
+      Idle = 0,
+
+      /// <summary>未启用或未配置服务器地址。</summary>
+      Disabled = 1,
+
+      /// <summary>正在取清单 / 比对版本。</summary>
+      Checking = 2,
+
+      /// <summary>已是最新内容，无需下载。</summary>
+      UpToDate = 3,
+
+      /// <summary>正在下载。</summary>
+      Downloading = 4,
+
+      /// <summary>下载并校验完成。</summary>
+      Completed = 5,
+
+      /// <summary>失败（网络 / 校验 / 解析），已回落到当前可用版本。</summary>
+      Failed = 6,
+   }
+
+   /// <summary>
+   /// OTA 运行状态快照。UI 只读它，不关心下载细节，也不知道后端是谁。
+   /// 由 <see cref="HotUpdateOtaService"/> 写入。
+   /// </summary>
+   public sealed class HotUpdateOtaStatus
+   {
+      /// <summary>当前阶段。</summary>
+      public HotUpdateOtaStage Stage = HotUpdateOtaStage.Idle;
+
+      /// <summary>给玩家看的短句（进度条上方的文案）。</summary>
+      public string Message = "等待检查资源";
+
+      /// <summary>总进度 0..1（按字节加权，不是文件数）。</summary>
+      public float Progress;
+
+      /// <summary>本地生效的内容版本（空 = 包内基线）。</summary>
+      public string LocalVersion;
+
+      /// <summary>远端内容版本（取到清单后才有）。</summary>
+      public string RemoteVersion;
+
+      /// <summary>失败原因（成功为 null）。</summary>
+      public string Error;
+
+      /// <summary>本次要处理的文件总数 / 已完成数。</summary>
+      public int FilesTotal;
+      public int FilesDone;
+
+      /// <summary>是否正在跑（UI 据此决定是否接受重复触发）。</summary>
+      public bool IsRunning => Stage == HotUpdateOtaStage.Checking || Stage == HotUpdateOtaStage.Downloading;
+   }
+
    /// <summary>
    /// OTA 启动编排（23 文档 §2 / §3 / §7）。
    ///
-   /// **位置**：必须在 `HotUpdateLoader.LoadAll()` 与 `ResKit.InitAsync()` **之前**跑，因为它要
-   /// 1) 把热更 DLL / `hotfix.json` 落到 `persistentDataPath/HotUpdate/`（加载器 persistent 优先）；
-   /// 2) 把 bundle 落到 `persistentDataPath/AssetBundles/&lt;Platform&gt;/`（ResKit persistent 优先）；
-   /// 3) 决定 ResKit 读哪套 AB 清单（<see cref="ResKitContentLocator"/>）。
-   /// 三者都是「先落盘后加载」，顺序反了就白下。
+   /// **两段职责，刻意分开**：
+   /// 1. <see cref="ApplyCachedContentAtBoot"/>——启动时**不联网**，只清残留 `.part`、读缓存状态、
+   ///    决定 ResKit 读哪套 AB 清单。它必须在 `HotUpdateLoader.LoadAll()` 与 `ResKit.InitAsync()`
+   ///    之前跑完，因为热更 DLL 与 AB 清单的落点由它决定。
+   /// 2. <see cref="RunCheck"/>——真正的联网检查与下载，由**登录场景**触发（登录场景本来就承担
+   ///    「热更检查」这一步），这样下载进度可以可视化，也不会把网络等待塞进启动画面。
    ///
-   /// **失败策略（重要）**：任何网络 / 校验 / 解析失败都**不阻断启动**，一律回落到
-   /// 「当前可用版本」（有 OTA 状态就按状态，没有就包内基线）。所以这个方法永远不会让游戏起不来。
+   /// 分成两段还有一个硬理由：`ResKit.InitAsync()` 在启动时就决定了读包内还是读 persistent 的 AB 清单，
+   /// 所以登录阶段才下载到的清单要下次启动才生效；而**单个 bundle 是逐文件解析的**，
+   /// 登录阶段下载完的 bundle 在本次会话后续场景加载里就能命中（详见 <see cref="ResKitContentLocator"/>）。
+   ///
+   /// **失败策略（重要）**：任何网络 / 校验 / 解析失败都**不阻断流程**，一律回落到「当前可用版本」
+   /// （有 OTA 状态就按状态，没有就包内基线）。所以检查失败不会让游戏进不去。
+   /// </summary>
    public static class HotUpdateOtaService
    {
+      /// <summary>启动时传入的配置（登录场景随后复用，避免两处 Inspector 配置打架）。</summary>
+      public static HotUpdateOtaSettings Settings { get; private set; }
+
+      /// <summary>当前状态快照（UI 每帧读）。</summary>
+      public static HotUpdateOtaStatus Status { get; } = new HotUpdateOtaStatus();
+
       /// <summary>
-      /// 启动时执行一次内容更新检查。
-      /// 调用方用 `yield return HotUpdateOtaService.RunAtBoot(settings);` 等待完成。
+      /// 启动阶段：清残留临时文件、读缓存、决定 ResKit 内容定位。**不联网。**
+      /// 调用方在 `HotUpdateLoader.LoadAll()` 与 `ResKit.InitAsync()` 之前调用，
+      /// 不满足「先落盘后加载」的顺序就会白下。
       /// </summary>
-      public static IEnumerator RunAtBoot(HotUpdateOtaSettings settings)
+      public static void ApplyCachedContentAtBoot(HotUpdateOtaSettings settings)
       {
+         Settings = settings;
+
          // 上次中断留下的 .part 一律清掉：它不是可用内容，留着只会占空间并误导排障
          HotUpdateCacheService.CleanupStaleParts();
 
-         var currentState = HotUpdateCacheService.TryLoadState();
-         var platform = HotUpdateCacheService.PlatformName;
+         var state = HotUpdateCacheService.TryLoadState();
+         Status.LocalVersion = state?.contentVersion;
+         Status.Stage = HotUpdateOtaStage.Idle;
+         Status.Message = string.IsNullOrEmpty(Status.LocalVersion) ? "当前使用包内基线" : "当前使用已下载内容";
+
+         ResKitContentLocator.Apply(state, out var reason);
+         Debug.Log($"[HotUpdate] 启动内容定位：{reason}" +
+                   $"（本地版本={(string.IsNullOrEmpty(Status.LocalVersion) ? "<包内基线>" : Status.LocalVersion)}）");
+      }
+
+      /// <summary>
+      /// 联网检查并下载（登录场景调用）。用 `yield return` 等待完成；
+      /// 过程中持续更新 <see cref="Status"/>，UI 据此画进度条。
+      /// </summary>
+      public static IEnumerator RunCheck()
+      {
+         var settings = Settings;
+
+         Status.Error = null;
+         Status.Progress = 0f;
+         Status.FilesDone = 0;
+         Status.FilesTotal = 0;
 
          if (settings == null || !settings.enabled || string.IsNullOrEmpty(settings.baseUrl))
          {
+            Status.Stage = HotUpdateOtaStage.Disabled;
+            Status.Message = "未启用资源更新（使用包内基线）";
             Debug.Log("[HotUpdate] OTA 未启用或未配置服务器地址：本次使用包内基线。");
-            ResKitContentLocator.Apply(currentState, out var skipReason);
-            Debug.Log("[HotUpdate] 内容定位：" + skipReason);
             yield break;
          }
 
+         var currentState = HotUpdateCacheService.TryLoadState();
+         Status.LocalVersion = currentState?.contentVersion;
+         var platform = HotUpdateCacheService.PlatformName;
+
          var backend = new LocalHttpBackend(settings.baseUrl, settings.channel, platform, settings.manifestTimeoutSeconds);
-         Debug.Log($"[HotUpdate] OTA 开始：backend={backend.DisplayName}, channel={settings.channel}, platform={platform}," +
-                   $" 当前内容版本={(string.IsNullOrEmpty(currentState?.contentVersion) ? "<包内基线>" : currentState.contentVersion)}");
+
+         Status.Stage = HotUpdateOtaStage.Checking;
+         Status.Message = "正在检查资源版本…";
+         Debug.Log($"[HotUpdate] OTA 检查开始：backend={backend.DisplayName}, channel={settings.channel}, platform={platform}," +
+                   $" 本地版本={(string.IsNullOrEmpty(Status.LocalVersion) ? "<包内基线>" : Status.LocalVersion)}");
 
          // ---- 1. 取清单 ----
          string manifestText = null;
@@ -68,49 +167,64 @@ namespace TeaGame.App
 
          if (string.IsNullOrEmpty(manifestText))
          {
-            Debug.LogWarning($"[HotUpdate] 获取清单失败，保持当前可用版本：{networkError}");
-            ResKitContentLocator.Apply(currentState, out _);
+            yield return Fail($"获取清单失败：{networkError}", currentState);
             yield break;
          }
 
          // ---- 2. 解析 + 范围校验 ----
          if (!HotUpdateManifestService.TryParse(manifestText, out var manifest, out var parseError))
          {
-            Debug.LogError($"[HotUpdate] 清单不可用，保持当前可用版本：{parseError}");
-            ResKitContentLocator.Apply(currentState, out _);
+            yield return Fail($"清单不可用：{parseError}", currentState);
             yield break;
          }
 
+         Status.RemoteVersion = manifest.contentVersion;
+
          if (!HotUpdateManifestService.ValidateScope(manifest, settings.channel, platform, out var scopeError))
          {
-            Debug.LogError($"[HotUpdate] 清单与当前环境不匹配，保持当前可用版本：{scopeError}");
-            ResKitContentLocator.Apply(currentState, out _);
+            yield return Fail($"清单与当前环境不匹配：{scopeError}", currentState);
             yield break;
          }
 
          if (HotUpdateManifestService.IsUpToDate(manifest, currentState))
          {
+            Status.Stage = HotUpdateOtaStage.UpToDate;
+            Status.Progress = 1f;
+            Status.Message = "资源已是最新（" + manifest.contentVersion + "）";
             Debug.Log($"[HotUpdate] 已是最新 contentVersion={manifest.contentVersion}，跳过下载。");
-            ResKitContentLocator.Apply(currentState, out var upToDateMode);
-            Debug.Log("[HotUpdate] 内容定位：" + upToDateMode);
+            ResKitContentLocator.Apply(currentState, out _);
             yield break;
          }
 
-         // ---- 3. 下载 + 校验 ----
+         // ---- 3. 下载 + 校验（进度按字节加权） ----
          var pending = HotUpdateManifestService.ComputePendingDownloads(manifest);
          var previousVersion = currentState?.contentVersion;
+         long totalBytes = 0;
+         foreach (var entry in pending)
+         {
+            totalBytes += entry.size > 0 ? entry.size : 1;
+         }
+
+         Status.FilesTotal = pending.Count;
+         Status.Stage = HotUpdateOtaStage.Downloading;
+         Status.Message = pending.Count == 0 ? "正在校验已下载内容…" : $"正在下载 {pending.Count} 个文件";
          Debug.Log($"[HotUpdate] 目标 contentVersion={manifest.contentVersion}，清单文件 {manifest.files.Length} 个，" +
                    $"需下载 {pending.Count} 个（上一版本={(string.IsNullOrEmpty(previousVersion) ? "<包内基线>" : previousVersion)}）。");
 
+         long downloadedBytes = 0;
          var aborted = false;
-         var abortReason = (string)null;
+         string abortReason = null;
 
          foreach (var entry in pending)
          {
             var partPath = HotUpdateCacheService.PartPathFor(entry);
             var done = false;
-            var downloadError = (string)null;
+            string downloadError = null;
             var lastLoggedStep = -1;
+            var entrySize = entry.size > 0 ? entry.size : 1;
+            var baseBytes = downloadedBytes;
+
+            Status.Message = $"正在下载 {Status.FilesDone + 1}/{Status.FilesTotal}：{entry.FileName}";
 
             yield return backend.DownloadFileAsync(entry, partPath, progress =>
             {
@@ -120,6 +234,11 @@ namespace TeaGame.App
                {
                   lastLoggedStep = step;
                   Debug.Log($"[HotUpdate] 下载中 {entry.id} ({entry.FileName}) {step * 25}%");
+               }
+
+               if (totalBytes > 0)
+               {
+                  Status.Progress = Mathf.Clamp01((baseBytes + entrySize * Mathf.Clamp01(progress)) / (float)totalBytes);
                }
             }, () => done = true, error => downloadError = error);
 
@@ -131,10 +250,12 @@ namespace TeaGame.App
                if (entry.required)
                {
                   aborted = true;
-                  abortReason = $"必需文件下载失败：{entry.id} ({downloadError})";
+                  abortReason = $"必需文件下载失败：{entry.id}（{downloadError}）";
                   break;
                }
 
+               downloadedBytes += entrySize;
+               Status.FilesDone++;
                continue;
             }
 
@@ -147,29 +268,35 @@ namespace TeaGame.App
                if (entry.required)
                {
                   aborted = true;
-                  abortReason = $"必需文件校验失败：{entry.id} ({commitError})";
+                  abortReason = $"必需文件校验失败：{entry.id}（{commitError}）";
                   break;
                }
 
+               downloadedBytes += entrySize;
+               Status.FilesDone++;
                continue;
             }
 
             Debug.Log($"[HotUpdate] 已落地 {entry.id} -> {HotUpdateCacheService.DestinationFor(entry)}");
+            downloadedBytes += entrySize;
+            Status.FilesDone++;
+            if (totalBytes > 0)
+            {
+               Status.Progress = Mathf.Clamp01(downloadedBytes / (float)totalBytes);
+            }
          }
 
          if (aborted)
          {
             // 关键：不写状态 = 新版本不算生效，旧文件仍由上一份状态兜住
-            Debug.LogError($"[HotUpdate] 本次更新作废，保持当前可用版本：{abortReason}");
-            ResKitContentLocator.Apply(currentState, out _);
+            yield return Fail($"本次更新作废，保持当前可用版本：{abortReason}", currentState);
             yield break;
          }
 
          // ---- 4. 全量复核 + 提交状态 ----
          if (!HotUpdateManifestService.VerifyAllRequiredFiles(manifest, out var verifyError))
          {
-            Debug.LogError($"[HotUpdate] 更新未完整，不切换版本：{verifyError}");
-            ResKitContentLocator.Apply(currentState, out _);
+            yield return Fail($"更新未完整，不切换版本：{verifyError}", currentState);
             yield break;
          }
 
@@ -186,13 +313,31 @@ namespace TeaGame.App
 
          if (!HotUpdateCacheService.SaveState(newState))
          {
-            Debug.LogError("[HotUpdate] 写缓存状态失败：新内容不会在下次启动生效（本次仍按新内容加载）。");
+            Debug.LogError("[HotUpdate] 写缓存状态失败：新内容不会在下次启动生效。");
          }
 
          HotUpdateCacheService.DeleteFilesNotIn(currentState, newState);
+         Status.LocalVersion = newState.contentVersion;
+         Status.Progress = 1f;
 
          ResKitContentLocator.Apply(newState, out var mode);
          Debug.Log($"[HotUpdate] OTA 完成：contentVersion={newState.contentVersion}，内容定位：{mode}");
+
+         Status.Stage = HotUpdateOtaStage.Completed;
+         Status.Message = "资源已更新到 " + newState.contentVersion +
+                          (newState.abSetComplete ? "（整套资源下次启动完整生效）" : "");
+      }
+
+      /// <summary>失败收尾：记录原因、回落到当前可用版本。</summary>
+      private static IEnumerator Fail(string reason, HotUpdateCacheState currentState)
+      {
+         Status.Stage = HotUpdateOtaStage.Failed;
+         Status.Error = reason;
+         Status.Message = "资源更新失败：" + reason;
+         Debug.LogWarning($"[HotUpdate] {reason}");
+
+         ResKitContentLocator.Apply(currentState, out _);
+         yield break;
       }
    }
 }
