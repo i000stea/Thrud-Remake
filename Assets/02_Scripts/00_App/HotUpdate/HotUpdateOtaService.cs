@@ -107,6 +107,49 @@ namespace TeaGame.App
       public static HotUpdateOtaStatus Status { get; } = new HotUpdateOtaStatus();
 
       /// <summary>
+      /// OTA 协程的常驻宿主（ConfigScene 的 <c>AppBootstrapper</c>）。
+      ///
+      /// **为什么不能挂在登录场景上**：登录场景是玩法场景，用户点「开始游戏」就会卸载它，
+      /// 挂在上面的下载协程会被直接杀死——表现为「下载到一半就没了，且没有任何报错」。
+      /// ConfigScene 永不卸载（决策 D20 的入口场景保护），所以协程必须挂它。
+      /// </summary>
+      public static MonoBehaviour Host { get; private set; }
+
+      /// <summary>由启动编排注册常驻宿主。</summary>
+      public static void RegisterHost(MonoBehaviour host)
+      {
+         if (host != null)
+         {
+            Host = host;
+         }
+      }
+
+      /// <summary>
+      /// 在常驻宿主上启动一次检查（已在跑则忽略）。
+      /// </summary>
+      /// <param name="fallbackHost">没有注册常驻宿主时的兜底宿主（编辑器直接从登录场景 Play 的场景）。</param>
+      /// <returns>是否真的启动了。</returns>
+      public static bool TryStartCheck(MonoBehaviour fallbackHost = null)
+      {
+         if (Status.IsRunning)
+         {
+            return false;
+         }
+
+         var host = Host != null ? Host : fallbackHost;
+         if (host == null)
+         {
+            Status.Stage = HotUpdateOtaStage.Failed;
+            Status.Message = "资源检查未能启动：没有可用的常驻宿主";
+            Debug.LogWarning("[HotUpdate] 无法启动检查：常驻宿主未注册，且没有兜底宿主。");
+            return false;
+         }
+
+         host.StartCoroutine(RunCheck());
+         return true;
+      }
+
+      /// <summary>
       /// 启动阶段：清残留临时文件、读缓存、决定 ResKit 内容定位。**不联网。**
       /// 调用方在 `HotUpdateLoader.LoadAll()` 与 `ResKit.InitAsync()` 之前调用，
       /// 不满足「先落盘后加载」的顺序就会白下。

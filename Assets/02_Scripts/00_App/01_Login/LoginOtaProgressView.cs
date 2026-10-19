@@ -34,9 +34,10 @@ namespace TeaGame.App
       {
          Refresh();
 
-         if (autoCheckOnStart && !HotUpdateOtaService.Status.IsRunning)
+         if (autoCheckOnStart)
          {
-            StartCoroutine(HotUpdateOtaService.RunCheck());
+            // 协程跑在常驻宿主上（见 HotUpdateOtaService.Host）：本场景被卸载时下载不会中断
+            HotUpdateOtaService.TryStartCheck(this);
          }
       }
 

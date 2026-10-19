@@ -44,6 +44,9 @@ namespace TeaGame.App
       /// </summary>
       private IEnumerator Start()
       {
+         // 注册 OTA 协程的常驻宿主：登录场景卸载时下载不能被一起杀掉（ConfigScene 永不卸载）
+         HotUpdateOtaService.RegisterHost(this);
+
          // 启动阶段只做「应用已下载内容」：清残留 .part、读缓存状态、决定 ResKit 读哪套 AB 清单。
          // 必须在 ResKit.InitAsync 与 HotUpdateLoader.LoadAll 之前，因为落点由它决定；这里不联网，
          // 首包无网络也能正常启动。真正的联网检查/下载在登录场景（LoginOtaProgressView），有进度可视化。
