@@ -128,3 +128,6 @@ web/data/*
 
 # ---- Unity 截图 / 调试产物（不入库）----
 /Screenshots/
+
+# ---- Unity Android build temp dir (.utmp: CMake/Gradle cache, regenerated per build) ----
+.utmp/
