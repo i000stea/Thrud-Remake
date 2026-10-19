@@ -554,3 +554,73 @@ HybridCLR 9/9、6/6 真机回归；AOT 新代码随新 APK 生效后的完整回
 | 发布裁剪 | 清单 19 文件（12 AB + 1 hotfix.json + 6 热更 DLL），日志列出被跳过的 9 个 AOT DLL |
 
 全程无 exception / `error CS`。
+
+### 10.8 追加：局域网地址不固定 → 服务器自动发现
+
+| 提交 | 内容 |
+|---|---|
+| `184b1984` | `LanOtaDiscovery`（UDP 广播发现）+ 放开明文 HTTP + 网络异常不再卡死状态 |
+| `508f5f00` | 整套覆盖模式点检 AB 完整性，缺文件自动退回包内基线 |
+
+**8.1 为什么需要（现象与根因）**
+
+现象：`[HotUpdate] 获取清单失败：http://127.0.0.1:8080/... -> 0 Cannot connect to destination host`。
+根因是地址写死：**真机的 `127.0.0.1` 是手机自己**，PC 的局域网 IP 又会被 DHCP 换掉，写哪个都不稳。
+
+**8.2 解析顺序（先便宜后贵，命中即止）**
+
+| 顺序 | 候选 | 说明 |
+|---|---|---|
+| 1 | `ota.baseUrl` | 显式配置；想固定指向某台机器 / 将来指向 CDN 时才填 |
+| 2 | `http://127.0.0.1:<discoveryPort>` | 编辑器里服务器就在本机，免配置 |
+| 3 | PlayerPrefs 缓存 | 上次成功解析的地址，下次启动免探测 |
+| 4 | **UDP 广播** | 发 `THRUD-OTA-DISCOVER/1` 到 `255.255.255.255` 与各网卡子网广播地址 |
+
+每个候选都用 `HEAD /{channel}/{platform}/manifest.json` **验真**——只认能真取到清单的地址，
+「能连上」不算命中。这条同时淘汰了残留缓存与广播回来的错地址。
+
+**8.3 服务端应答（`web/LanOtaServer/server.js`）**
+
+UDP 端口与服务端 `--discovery-port`（默认 8080、`0` 关闭）一致；与 HTTP 同端口号不冲突（UDP/TCP 独立）。
+应答内容：
+
+```json
+{"service":"lan-ota","protocol":1,"httpPort":8090,"channel":"lan","platform":"android",
+ "hostname":"i000tea","addresses":["172.29.128.1","192.168.222.11"]}
+```
+
+`addresses` 是**关键**：多网卡机器（Hyper-V / VPN / 虚拟网卡）上，回包的源地址不一定是客户端能连的那个
+（实测本机回包源是 `172.29.128.1` 虚拟网卡，真实 WLAN 是 `192.168.222.11`）。
+所以服务端把全部局域网 IPv4 都回过来，客户端逐个校验，谁通就用谁。
+
+> ⚠️ 服务端目录 `web/LanOtaServer/` 目前**未纳入版本管理**，UDP 应答需随该目录一起提交；
+> 另外**必须重启正在跑的服务实例**才会生效（旧进程没有 UDP 监听）。
+
+**8.4 明文 HTTP 必须显式放行（否则真机一定失败）**
+
+`PlayerSettings.insecureHttpOption` 默认 `NotAllowed` 时，Unity 对**非 localhost** 的 http 地址
+会在**构造 `UnityWebRequest` 时**直接抛 `InvalidOperationException: Insecure connection not allowed`。
+localhost 被豁免——这正是「编辑器里用 `127.0.0.1` 一直能下、换成局域网 IP 就报错」的原因。
+
+已把 `ProjectSettings.asset` 的 `insecureHttpOption` 改为 `2`（Always allowed）。
+对应 UI：**Project Settings → Player → Allow downloads over HTTP → Always allowed**。
+（注意：Unity 只在退出时才把 PlayerSettings 刷盘，改完建议在 UI 里确认一次。）
+
+**8.5 异常不再静默卡死**
+
+上面那个异常若从协程里抛出，`Status` 会永久停在「正在定位资源服务器」。
+现在 `LanOtaDiscovery.Validate` 与 `LocalHttpBackend` 的清单请求/下载都把
+**构造与发送**包在 try/catch 里，异常只会让该候选判失败或该文件判失败，不会打断整条流程。
+
+**8.6 「资源没下也能进主场景」是设计内的回退链**
+
+回答「未下载资源时仍能进 `scene_0002`、包体里还有基线资源」：
+
+- 场景 AB 在包内 `StreamingAssets/AssetBundles/<Platform>/`（基线），OTA 内容在 `persistentDataPath/AssetBundles/<Platform>/`；
+- `AssetBundleSettings.AssetBundleName2Url` 是 **persistent 优先、逐文件回退 StreamingAssets**，所以
+  「没下」、「只下了一部分（逐文件覆盖模式）」、「下全了（整套覆盖）」三种状态都能起；
+- 场景已移出 Build Settings，但仍能加载，是因为它从 AB 来（基线或 OTA），与 Build Settings 无关；
+- 新增 `ResKitContentLocator` 的**完整性点检**（`508f5f00`）：`abSetComplete=true` 时逐个检查状态登记的 bundle
+  是否还在盘上，缺任何一个就整体 `RevertToBaseline()`，避免「清单在、bundle 缺」导致加载期直接炸。
+
+因此 OTA 失败、被停止、持久层被手工删过，都不影响进主菜单——这是有意的 fail-safe，不是漏网。
