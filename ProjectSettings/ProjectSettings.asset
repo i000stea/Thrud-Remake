@@ -75,7 +75,7 @@ PlayerSettings:
   thermalStateCriticalIOSFPS: 15
   disableDepthAndStencilBuffers: 0
   androidStartInFullscreen: 1
-  androidRenderOutsideSafeArea: 0
+  androidRenderOutsideSafeArea: 1
   androidUseSwappy: 1
   androidDisplayOptions: 1
   androidBlitType: 1
@@ -151,7 +151,7 @@ PlayerSettings:
   loadStoreDebugModeEnabled: 0
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
-  bundleVersion: alpha.0.50
+  bundleVersion: alpha.0.51
   preloadedAssets: []
   metroInputSource: 0
   wsaTransparentSwapchain: 0
