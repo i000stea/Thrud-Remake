@@ -40,6 +40,14 @@ namespace TeaGame.App
       /// </summary>
       private IEnumerator Start()
       {
+         // 热更装配加载必须最靠前：0ConfigScene 是纯 AOT 场景，从这里往后才允许触碰
+         // TeaGame.*（热更程序集）的类型。编辑器下该方法内部直接跳过。
+         yield return HotUpdateLoader.LoadAll();
+         if (!HotUpdateLoader.IsReady)
+         {
+            Debug.LogError("[AppBootstrapper] 热更装配未就绪：后续依赖热更程序集的流程会失败。");
+         }
+
          // ResKit 初始化：真机读 StreamingAssets/AssetBundles/<platform>/asset_bundle_config.bin
          //（Android 需异步加载，故用 InitAsync）；编辑器 SimulationMode 已自动 Init，这里立即完成。
          yield return QFramework.ResKit.InitAsync();
