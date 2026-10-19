@@ -208,7 +208,7 @@ adb logcat -v threadtime --pid 30712 | Select-String ' [VWEF] '
 
 ### 已经落盘的日志：用本仓脚本过滤
 
-`Build\_check\filter-unity-log.ps1`（纯 ASCII，PS 5.1 可跑），三档 `-Mode`，实测效果对 `Logs/10191847.log`（1707 行）：
+`Build\_check\filter-unity-log.ps1`（纯 ASCII，PS 5.1 可跑；`Build/` 在 `.gitignore` 内，这个文件是 `git add -f` 强制纳入跟踪的源码工具，不是构建产物），三档 `-Mode`，实测效果对 `Logs/10191847.log`（1707 行）：
 
 | 模式 | 保留 | 用途 |
 |---|---|---|
