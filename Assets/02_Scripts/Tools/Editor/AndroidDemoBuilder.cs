@@ -225,7 +225,6 @@ namespace TeaGame.Tools.Editor
       private static void WriteBuildProfile(bool packageHasBundles)
       {
          const string assetDir = "Assets/Resources";
-         const string assetPath = assetDir + "/BuildProfile.txt";
 
          Directory.CreateDirectory(Path.GetFullPath(Path.Combine(Application.dataPath, "../", assetDir)));
 
@@ -235,10 +234,10 @@ namespace TeaGame.Tools.Editor
             $"builtAtUtc={System.DateTime.UtcNow:o}\n";
 
          // 不带 BOM：与热更清单一致，避免运行期解析时多出 U+FEFF
-         File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../", assetPath)), content,
+         File.WriteAllText(Path.GetFullPath(Path.Combine(Application.dataPath, "../", BuildProfileAssetPath)), content,
             new System.Text.UTF8Encoding(false));
 
-         AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+         AssetDatabase.ImportAsset(BuildProfileAssetPath, ImportAssetOptions.ForceUpdate);
          Debug.Log($"[T2] 构建画像已写入：package.bundles={(packageHasBundles ? "true" : "false")}");
       }
 
@@ -638,6 +637,10 @@ namespace TeaGame.Tools.Editor
          var holdDir = Path.Combine(ThinHoldRoot, "AssetBundles");
          var moved = false;
 
+         // 出包会改写构建画像（含 builtAtUtc），每次都改会让这个入库文件一直显示已修改。
+         // 出包前存一份原文，收尾时**逐字节还原**，仓库里就不会有这种无意义 churn。
+         var profileBackup = ReadBuildProfileText();
+
          try
          {
             WriteBuildProfile(packageHasBundles: false);
@@ -657,9 +660,49 @@ namespace TeaGame.Tools.Editor
                MoveAssetDirectory(holdDir, abDir);
             }
 
-            WriteBuildProfile(packageHasBundles: true);
+            RestoreBuildProfile(profileBackup);
+            RemoveDirectoryIfEmpty(ThinHoldRoot);
             AssetDatabase.Refresh();
             Debug.Log("[T2] 出包收尾：AB 产物与构建画像已还原（编辑器回到胖包状态）。");
+         }
+      }
+
+      /// <summary>构建画像的资产路径（与 <see cref="WriteBuildProfile"/> 一致）。</summary>
+      private const string BuildProfileAssetPath = "Assets/Resources/BuildProfile.txt";
+
+      /// <summary>读构建画像当前文本（不存在返回 null）。</summary>
+      private static string ReadBuildProfileText()
+      {
+         var full = Path.GetFullPath(Path.Combine(Application.dataPath, "../", BuildProfileAssetPath));
+         return File.Exists(full) ? File.ReadAllText(full, System.Text.Encoding.UTF8) : null;
+      }
+
+      /// <summary>把构建画像还原成出包前的原文（没有原文则写回胖包默认值）。</summary>
+      private static void RestoreBuildProfile(string backup)
+      {
+         if (string.IsNullOrEmpty(backup))
+         {
+            WriteBuildProfile(packageHasBundles: true);
+            return;
+         }
+
+         var full = Path.GetFullPath(Path.Combine(Application.dataPath, "../", BuildProfileAssetPath));
+         File.WriteAllText(full, backup, new System.Text.UTF8Encoding(false));
+         AssetDatabase.ImportAsset(BuildProfileAssetPath, ImportAssetOptions.ForceUpdate);
+      }
+
+      /// <summary>临时目录若已空则删掉，别在工程根留个空壳。</summary>
+      private static void RemoveDirectoryIfEmpty(string directory)
+      {
+         try
+         {
+            if (!Directory.Exists(directory)) return;
+            if (Directory.GetFileSystemEntries(directory).Length > 0) return;
+            Directory.Delete(directory, true);
+         }
+         catch (System.Exception e)
+         {
+            Debug.LogWarning($"[T2] 清理临时目录失败（不影响出包）：{directory} -> {e.Message}");
          }
       }
 

@@ -80,8 +80,6 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
     // System.Action<int>
     // System.Action<object,object>
     // System.Action<object>
-    // System.ArraySegment.Enumerator<ushort>
-    // System.ArraySegment<ushort>
     // System.ByReference<ushort>
     // System.Collections.Generic.ArraySortHelper<int>
     // System.Collections.Generic.ArraySortHelper<object>
@@ -165,13 +163,11 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
     // System.Nullable<int>
     // System.Predicate<int>
     // System.Predicate<object>
-    // System.ReadOnlySpan.Enumerator<ushort>
     // System.ReadOnlySpan<ushort>
     // System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>
     // System.Runtime.CompilerServices.ConfiguredTaskAwaitable.ConfiguredTaskAwaiter<System.Threading.Tasks.VoidTaskResult>
     // System.Runtime.CompilerServices.ConfiguredTaskAwaitable<System.Threading.Tasks.VoidTaskResult>
     // System.Runtime.CompilerServices.TaskAwaiter<System.Threading.Tasks.VoidTaskResult>
-    // System.Span.Enumerator<ushort>
     // System.Span<ushort>
     // System.Threading.Tasks.ContinuationTaskFromResultTask<System.Threading.Tasks.VoidTaskResult>
     // System.Threading.Tasks.Task<System.Threading.Tasks.VoidTaskResult>
@@ -224,11 +220,15 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
         // object QFramework.UIKit.GetPanel<object>()
         // object QFramework.UIKit.OpenPanel<object>(QFramework.UILevel,QFramework.IUIData,string,string)
         // object[] System.Array.Empty<object>()
-        // System.Void System.Runtime.CompilerServices.AsyncTaskMethodBuilder.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter,object>(System.Runtime.CompilerServices.TaskAwaiter&,object&)
-        // System.Void System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter,object>(System.Runtime.CompilerServices.TaskAwaiter&,object&)
-        // System.Void System.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start<object>(object&)
-        // System.Void System.Runtime.CompilerServices.AsyncVoidMethodBuilder.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter,object>(System.Runtime.CompilerServices.TaskAwaiter&,object&)
-        // System.Void System.Runtime.CompilerServices.AsyncVoidMethodBuilder.Start<object>(object&)
+        // System.Void System.Runtime.CompilerServices.AsyncTaskMethodBuilder.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter,TeaGame.StaticExpansion.<AudioVolumeLerpAsync>d__1>(System.Runtime.CompilerServices.TaskAwaiter&,TeaGame.StaticExpansion.<AudioVolumeLerpAsync>d__1&)
+        // System.Void System.Runtime.CompilerServices.AsyncTaskMethodBuilder<System.Threading.Tasks.VoidTaskResult>.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter,TeaGame.StaticExpansion.<AudioVolumeLerpAsync>d__1>(System.Runtime.CompilerServices.TaskAwaiter&,TeaGame.StaticExpansion.<AudioVolumeLerpAsync>d__1&)
+        // System.Void System.Runtime.CompilerServices.AsyncTaskMethodBuilder.Start<TeaGame.StaticExpansion.<AudioVolumeLerpAsync>d__1>(TeaGame.StaticExpansion.<AudioVolumeLerpAsync>d__1&)
+        // System.Void System.Runtime.CompilerServices.AsyncVoidMethodBuilder.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter,TeaGame.BattleWeaponMode_AssaultPreciseFrame.<ExecuteBurstAsync>d__1>(System.Runtime.CompilerServices.TaskAwaiter&,TeaGame.BattleWeaponMode_AssaultPreciseFrame.<ExecuteBurstAsync>d__1&)
+        // System.Void System.Runtime.CompilerServices.AsyncVoidMethodBuilder.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter,TeaGame.Gacha_MainControl.<Button_Back>d__40>(System.Runtime.CompilerServices.TaskAwaiter&,TeaGame.Gacha_MainControl.<Button_Back>d__40&)
+        // System.Void System.Runtime.CompilerServices.AsyncVoidMethodBuilder.AwaitUnsafeOnCompleted<System.Runtime.CompilerServices.TaskAwaiter,TeaGame.Gacha_MainControl.<Start>d__24>(System.Runtime.CompilerServices.TaskAwaiter&,TeaGame.Gacha_MainControl.<Start>d__24&)
+        // System.Void System.Runtime.CompilerServices.AsyncVoidMethodBuilder.Start<TeaGame.BattleWeaponMode_AssaultPreciseFrame.<ExecuteBurstAsync>d__1>(TeaGame.BattleWeaponMode_AssaultPreciseFrame.<ExecuteBurstAsync>d__1&)
+        // System.Void System.Runtime.CompilerServices.AsyncVoidMethodBuilder.Start<TeaGame.Gacha_MainControl.<Button_Back>d__40>(TeaGame.Gacha_MainControl.<Button_Back>d__40&)
+        // System.Void System.Runtime.CompilerServices.AsyncVoidMethodBuilder.Start<TeaGame.Gacha_MainControl.<Start>d__24>(TeaGame.Gacha_MainControl.<Start>d__24&)
         // object& System.Runtime.CompilerServices.Unsafe.As<object,object>(object&)
         // System.Void* System.Runtime.CompilerServices.Unsafe.AsPointer<object>(object&)
         // bool TeaGame.UiPanelFlow.CloseAlive<object>()
