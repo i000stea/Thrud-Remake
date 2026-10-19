@@ -321,6 +321,17 @@
 
 ---
 
+### 3.8 ResKit 场景 OTA 与局域网后端（2026-10-19 用户已确认）
+
+- [x] **局域网静态 HTTP 服务 + 控制台已落地**（2026-10-19）：`web/LanOtaServer/`（Node 零依赖，`start-lan-ota.cmd`，默认 `0.0.0.0:8080`）。下发路由 `/<channel>/<platform>/{manifest.json,HotUpdate/*,AssetBundles/*}`；控制台网页 `/` + `/api/{health,tree,logs,stream}`，SSE 实时日志/请求/状态，`POST /api/root`、`/api/root/skeleton` 仅本机可用；root 缺失时服务仍启动、内容路由 503 并在页面引导修复；白名单 + 穿越拒绝。52 项 HTTP 断言实测通过（两套脚本；每次跑前需重启服务，因其为状态型）。待用户肉眼验收控制台视觉呈现。
+- [x] 后端接口层（客户端侧）：`IHotUpdateContentBackend` / `HotUpdateManifestService` / `HotUpdateCacheService` / `ResKitContentLocator`，`LocalHttpBackend` 指向上述服务；`.part` 原子写入、hash 校验、回滚留上一版本。（2026-10-19 已落地 `f2b61977`，代码在 `Assets/02_Scripts/00_App/HotUpdate/`；真实 HTTP 验证：正常更新 / 幂等跳过 / hash 错误保留旧版 / 回滚 / 残留 `.part` 清理，五项全过）
+- [x] 阅读并按 `../03_专项设计与重构/23_ResKit场景热更新与局域网OTA_自动化执行指导.md` 执行 S0–S6；每步单独提交与验收。（S3 因依赖 S5/S6 的退出条件，实际排在 S4–S6 之后；偏差与证据见 23 篇 §10.2 / §10.3）
+- [x] 保留 `HybridCLR + ResKit`，不迁移 YooAsset；增加清单、下载、hash 校验、缓存、回滚和 HTTP 后端抽象。（ResKit 侧零改动：其 `AssetBundleName2Url` 与 `HotUpdateLoader` 本来就是 persistent 优先逐文件回退）
+- [x] 第一阶段只迁移原 `2MainScene` 为 `scene_0002_main` 场景 AssetBundle；`scene_0000_config` 保持 AOT 入口，`scene_0001_login` 暂保留当前链路。（`c25489cb` 标记 AB、`8246519f` 移出 Build Settings；SimulationMode 与真 AB 清单双向回读通过）
+- [x] 所有场景统一规划为 `scene_0000_xxx` 命名；命名迁移与场景加载代码分开提交。（`99073a2e` 只做改名与引用同步，加载代码在其后的 `2888b054`/`3f492980`/`86c7fb93`）
+- [x] 记录当前包仍携带基线 HotUpdate DLL/ResKit AB；在 OTA 覆盖与回滚验收完成前不得删除包内基线。（包内基线与 OTA 内容并存：`ResKitContentLocator` 默认读包内 AB 清单，只有 `abSetComplete=true` 才切 persistent 全量）
+- [x] 局域网静态 HTTP 后端通过接口替换为 CDN，业务代码不直接依赖服务器地址。（`LocalHttpBackend(baseUrl, channel, platform, timeout)`；UnityWebRequest 只存在于该实现内，`SceneFlow`/面板/业务系统零网络代码）
+- [ ] **S7 待办（真机，需出包）**：真 AB 下 `scene_0002_main` 加载；替换真场景 bundle（56 MB）后主菜单内容变化且无 `missing MonoBehaviour`；`allowSceneActivation=false` 真机是否生效；`abSetComplete=true` 整套替换模式；HybridCLR 日志 9/9、6/6 回归。
 ## 4. M2 / M3 备忘（非近期，仅保留方向）
 
 - **M2 外围系统**（`../02_系统与玩法设计/04_外围系统设计.md` + `../04_模块设计/00_模块索引.md`）：存档（多槽/迁移/备份）、配置表工具、2D 主城功能页、三线养成、背包货币、抽卡。
@@ -345,3 +356,4 @@
 ---
 
 *更新规则：完成一项即在对应来源文档勾选 `[x]`，再回来更新本清单与 `../README.md` 状态列，并刷新本文件日期。*
+

@@ -98,7 +98,8 @@ Docs/
 | 19_表现层分层_View与Actor_设计.md | 用户确认的移动/角色/武器/相机 Actor、Aim 绑定与 View 插值、当前调用链和一次性验收；保留旧草案存档 | 2026-09-19 代码已落地；编译 / Play / Editor 资产清理待验 |
 | 20_代码知识图谱可视化工具_设计与实施计划.md | `web/ProgressChaser` 代码关系画布升级方案：两层知识图谱、Cytoscape.js Canvas、ELK Worker、三类 JSON 契约、性能预算、K0–K6 实施与验收 | 2026-09-19 **K0–K5 已实施**：Cytoscape + ELK Worker 落地、10 项测试通过、layout 迁移到 schemaVersion 2；K6 文档同步中，浏览器视觉验收待用户执行（见 `web/ProgressChaser/PERFORMANCE.md`） |
 | 21_战斗场景装配与宿主瘦身_设计与落地指导.md | **`BattleSceneRuntimeHost`（559 行）职责收拢方案**：559 行构成与 32 处 `playerControl` 访问点的实测诊断、**同意做 5 步 / 不同意做 3 条**的评估（附反例）、目标形状（`BattleSceneAssembler` + `BattleSetupSystem`）、五步落地路线与逐步验收口径/回滚；**§8 为落地记录**（结果表、验证证据、4 处偏差、下一步决策、7 项 Play 清单） | 2026-09-19 **步骤 1–4 已落地并提交**（`9b4e7e69`/`a77eb347`/`69f851ab`/`50e509b5`；宿主 559 → 309 行、System 9 → 10）；**步骤 5 待用户决策**；Unity 导入编译与 Play 未验（离线整程序集编译通过） |
-| 22_Battle_MVC职责收口_分批推进方案.md | **Battle MVC 职责错位专项**：仅覆盖 `03_Battle`，按 B0–B6 拆分敌人实体、关卡导演、武器运行时、瞄准数据、UI 入口和文件整理；每批包含实施顺序、禁止事项、验收与回滚点 | 2026-09-21 **B0 基线已完成**（§12.1：79 文件 / 10630 行、依赖与静态扫描基线、六条入口行为、prefab/场景资产基线、回滚锚点 `e731fd62`、13 处范围偏差）；**B1 代码完成待验**（§12.2：敌人实体职责收口，新增 `BattleEnemyActor` + `BattleEnemyViewBinder`，**离线整程序集编译 0 error/0 warning**，prefab/scene/AB 零改动；待 Unity 刷新提交 2 个新 `.cs.meta` + Play 回归 8 项）；B2–B6 未开始 |
+| 22_Battle_MVC职责收口_分批推进方案.md | **Battle MVC 职责错位专项**：仅覆盖 `03_Battle`，按 B0–B6 拆分敌人实体、关卡导演、武器运行时、瞄准数据、UI 入口和文件整理；每批包含实施顺序、禁止事项、验收与回滚点 | 2026-09-21 B0 基线已完成；B1 代码完成待验；B2–B6 未开始 |
+| 23_ResKit场景热更新与局域网OTA_自动化执行指导.md | **ResKit 场景 OTA 执行规格**：保留 ResKit，`scene_0002_main` 场景 AssetBundle，HybridCLR 代码热更，局域网 HTTP → CDN 后端抽象，统一 `scene_0000_xxx` 命名；含 S0–S7 闸门、清单格式、缓存/回滚、AI 工作流纪律 | 2026-10-19 **S0–S6 + 客户端 OTA 层已落地**（`99073a2e`…`f2b61977`）：场景统一改名、场景 AB 标记、移出 Build Settings、SceneFlow AB 通路 + ResLoader 生命周期、登录入口、清单/sha256/缓存/回滚/后端抽象；编辑器 SimulationMode 与真实 HTTP 五项规则验证通过。**S7 真机真 AB 与整套替换待验**（§10.4）；服务端见 §7.1（52 项断言） |
 
 ### 04_模块设计（原 `Modules/`）
 
