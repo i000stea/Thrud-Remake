@@ -205,7 +205,23 @@ namespace TeaGame.App
       {
          byte[] bytes = null;
          yield return ReadBytes(fileName, data => bytes = data);
-         onDone(bytes == null || bytes.Length == 0 ? null : Encoding.UTF8.GetString(bytes));
+         onDone(bytes == null || bytes.Length == 0 ? null : DecodeTextStrippingBom(bytes));
+      }
+
+      /// <summary>
+      /// UTF-8 解码并**剥掉 BOM**。
+      /// 必须剥：JsonUtility 不接受以 U+FEFF 开头的文本，会直接报
+      /// `JSON parse error: Invalid value`（第一版导出工具就是踩了这个）。
+      /// </summary>
+      private static string DecodeTextStrippingBom(byte[] bytes)
+      {
+         int offset = 0;
+         if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+         {
+            offset = 3;
+         }
+
+         return Encoding.UTF8.GetString(bytes, offset, bytes.Length - offset);
       }
 
       /// <summary> 读字节：persistentDataPath 优先，回退 streamingAssetsPath。 </summary>

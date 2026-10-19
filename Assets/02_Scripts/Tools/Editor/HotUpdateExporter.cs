@@ -116,7 +116,10 @@ namespace TeaGame.Tools.Editor
             aotMetadata = aotFiles.ToArray(),
             hotUpdate = hotFiles.ToArray()
          };
-         File.WriteAllText(Path.Combine(OutputDir, ManifestName), JsonUtility.ToJson(manifest, true), Encoding.UTF8);
+         // 注意：**不要用 Encoding.UTF8**（它会写 BOM），JsonUtility 收到带 BOM 的文本会报
+         // "JSON parse error: Invalid value"。加载器侧也做了剥 BOM 的兜底。
+         File.WriteAllText(Path.Combine(OutputDir, ManifestName), JsonUtility.ToJson(manifest, true),
+            new UTF8Encoding(false));
          AssetDatabase.Refresh();
 
          Debug.Log("[HotUpdate] 导出完成（目标平台 " + target + "）：热更程序集 " + hotFiles.Count +
