@@ -296,9 +296,12 @@ MonoBehaviour:
   firstSceneName: scene_0001_login
   ota:
     enabled: 1
-    baseUrl: http://127.0.0.1:8080
+    baseUrl: 
     channel: lan
     manifestTimeoutSeconds: 10
+    autoDiscover: 1
+    discoveryPort: 8080
+    discoveryTimeoutSeconds: 1.5
 --- !u!4 &1636810075
 Transform:
   m_ObjectHideFlags: 0

@@ -45,10 +45,36 @@ namespace TeaGame.App
       {
          var url = PlatformUrl + "/manifest.json";
 
-         using (var request = UnityWebRequest.Get(url))
+         UnityWebRequest request;
+         try
+         {
+            // Unity 在 `Allow downloads over HTTP = Not allowed`（默认）时会在这里抛
+            // `InvalidOperationException: Insecure connection not allowed`，必须兜住，
+            // 否则调用方协程会被静默打断、状态卡在中途。
+            request = UnityWebRequest.Get(url);
+         }
+         catch (Exception e)
+         {
+            onError?.Invoke($"{url} -> {e.Message}");
+            yield break;
+         }
+
+         using (request)
          {
             request.timeout = Mathf.CeilToInt(mManifestTimeoutSeconds);
-            yield return request.SendWebRequest();
+
+            UnityWebRequestAsyncOperation operation;
+            try
+            {
+               operation = request.SendWebRequest();
+            }
+            catch (Exception e)
+            {
+               onError?.Invoke($"{url} -> {e.Message}");
+               yield break;
+            }
+
+            yield return operation;
 
             if (request.result != UnityWebRequest.Result.Success)
             {
@@ -86,13 +112,33 @@ namespace TeaGame.App
          // DownloadHandlerFile 直接写盘，避免把几十 MB 的 AssetBundle 先读进内存。
          // 不设 timeout：总超时会把「大文件但在正常下载」误判为失败；
          // 卡死由调用方的整体流程与 .part 机制兜住（失败即丢弃临时文件，旧版本不受影响）。
-         using (var request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET))
+         UnityWebRequest request;
+         try
          {
+            request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET);
             // handler 的所有权交给 request（request.Dispose 时会释放它），不要再单独 using
             request.downloadHandler = new DownloadHandlerFile(destinationPath, true);
-            request.SendWebRequest();
+         }
+         catch (Exception e)
+         {
+            onError?.Invoke($"{url} -> {e.Message}");
+            yield break;
+         }
 
-            while (!request.isDone)
+         using (request)
+         {
+            UnityWebRequestAsyncOperation operation;
+            try
+            {
+               operation = request.SendWebRequest();
+            }
+            catch (Exception e)
+            {
+               onError?.Invoke($"{url} -> {e.Message}");
+               yield break;
+            }
+
+            while (!operation.isDone)
             {
                // 暂停/停止：每帧问一次，命中就中断本次传输（半成品由调用方删除，服务端无 Range 不能续传）
                if (shouldAbort != null && shouldAbort())

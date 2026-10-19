@@ -14,14 +14,30 @@ namespace TeaGame.App
       /// <summary>是否启用 OTA 内容更新。</summary>
       public bool enabled;
 
-      /// <summary>内容服务器根地址（局域网 `http://192.168.x.x:8080`，将来换成 CDN 地址即可）。</summary>
-      public string baseUrl = "http://172.29.128.1:8080";
+      /// <summary>
+      /// 内容服务器根地址。**推荐留空**：留空时由 <see cref="LanOtaDiscovery"/> 自动定位
+      /// （本机回环 → 上次成功地址 → UDP 广播），PC 换 IP 也不用改配置。
+      /// 开发时要固定指向某台机器（或将来指向 CDN）才填这里。
+      /// </summary>
+      public string baseUrl = string.Empty;
 
       /// <summary>渠道名（服务端路由的第一段）。</summary>
       public string channel = "lan";
 
       /// <summary>清单请求超时（秒）。下载不设总时长上限。</summary>
       public float manifestTimeoutSeconds = 10f;
+
+      /// <summary>
+      /// 是否允许自动发现内容服务器（UDP 广播应答）。
+      /// 关掉后只认 <see cref="baseUrl"/> 与本机回环，取不到就按「保持当前可用版本」处理。
+      /// </summary>
+      public bool autoDiscover = true;
+
+      /// <summary>UDP 广播端口，必须与服务端 `--discovery-port` 一致（0 = 关闭广播）。</summary>
+      public int discoveryPort = 8080;
+
+      /// <summary>广播等待上限（秒）。到点没有可用应答就回落到「保持当前可用版本」。</summary>
+      public float discoveryTimeoutSeconds = 1.5f;
    }
 
    /// <summary>OTA 阶段（登录场景的进度条按它显示文案）。</summary>
@@ -278,14 +294,21 @@ namespace TeaGame.App
          Status.FilesDone = 0;
          Status.FilesTotal = 0;
 
-         if (settings == null || !settings.enabled || string.IsNullOrEmpty(settings.baseUrl))
+         if (settings == null || !settings.enabled)
          {
             Status.Stage = HotUpdateOtaStage.Disabled;
             Status.Message = "未启用资源更新（使用包内基线）";
-            Debug.Log("[HotUpdate] OTA 未启用或未配置服务器地址：" +
-                      $"enabled={(settings == null ? "<无配置>" : settings.enabled.ToString())}, " +
-                      $"baseUrl={(settings == null ? "<无配置>" : settings.baseUrl)}。" +
+            Debug.Log("[HotUpdate] OTA 未启用：" +
+                      $"enabled={(settings == null ? "<无配置>" : settings.enabled.ToString())}。" +
                       "配置位置：scene_0000_config 的 AppBootstrapper → ota。本次使用包内基线。");
+            yield break;
+         }
+
+         if (!settings.autoDiscover && string.IsNullOrEmpty(settings.baseUrl))
+         {
+            Status.Stage = HotUpdateOtaStage.Disabled;
+            Status.Message = "未配置服务器地址，且未开启自动发现";
+            Debug.LogWarning("[HotUpdate] ota.baseUrl 为空且 autoDiscover=false：无从定位服务器，本次使用包内基线。");
             yield break;
          }
 
@@ -293,9 +316,24 @@ namespace TeaGame.App
          Status.LocalVersion = currentState?.contentVersion;
          var platform = HotUpdateCacheService.PlatformName;
 
-         var backend = new LocalHttpBackend(settings.baseUrl, settings.channel, platform, settings.manifestTimeoutSeconds);
-
+         // ---- 0. 定位内容服务器（PC 的局域网 IP 会变，不能写死） ----
          Status.Stage = HotUpdateOtaStage.Checking;
+         Status.Message = "正在定位资源服务器…";
+
+         string baseUrl = null;
+         string discoverError = null;
+         yield return LanOtaDiscovery.ResolveAsync(settings.baseUrl, settings.channel, platform,
+            settings.discoveryPort, settings.discoveryTimeoutSeconds, settings.autoDiscover,
+            url => baseUrl = url, reason => discoverError = reason);
+
+         if (string.IsNullOrEmpty(baseUrl))
+         {
+            yield return Fail($"定位内容服务器失败：{discoverError}", currentState);
+            yield break;
+         }
+
+         var backend = new LocalHttpBackend(baseUrl, settings.channel, platform, settings.manifestTimeoutSeconds);
+
          Status.Message = "正在检查资源版本…";
          Debug.Log($"[HotUpdate] OTA 检查开始：backend={backend.DisplayName}, channel={settings.channel}, platform={platform}," +
                    $" 本地版本={(string.IsNullOrEmpty(Status.LocalVersion) ? "<包内基线>" : Status.LocalVersion)}");
