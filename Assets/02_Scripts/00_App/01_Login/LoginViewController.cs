@@ -1,5 +1,6 @@
 using DG.Tweening;
 using QFramework;
+using TeaGame.App;
 using UnityEngine;
 
 namespace TeaGame.Login
@@ -18,7 +19,7 @@ namespace TeaGame.Login
       [SerializeField] private AnimationCurve lerpCurve;
 
       [Header("登录目标")]
-      [SerializeField] private string mainSceneKey = "scene_0002_main";
+      [SerializeField] private string mainSceneKey = SceneCatalog.Main;
 
       /// <summary>
       /// 登录完成事件反注册句柄。

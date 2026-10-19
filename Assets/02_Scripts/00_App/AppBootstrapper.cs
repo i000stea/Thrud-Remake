@@ -12,7 +12,7 @@ namespace TeaGame.App
    public sealed class AppBootstrapper : MonoBehaviour
    {
       /// <summary> 首个玩法场景 key（场景名称，可在 Inspector 调整）。 </summary>
-      [SerializeField] private string firstSceneName = "scene_0001_login";
+      [SerializeField] private string firstSceneName = SceneCatalog.Login;
 
       /// <summary> 场景切换控制器引用。  </summary>
       private SceneFlow mSceneFlow;
