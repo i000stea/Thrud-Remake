@@ -125,3 +125,6 @@ Assets/StreamingAssets/AssetBundles/
 Assets/StreamingAssets/AssetBundles.meta
 
 web/data/*
+
+# ---- Unity 截图 / 调试产物（不入库）----
+/Screenshots/
