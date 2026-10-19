@@ -1,0 +1,21 @@
+﻿{
+    "aotMetadata": [
+        "DOTween.dll",
+        "QFramework.CoreKit.dll",
+        "QFramework.dll",
+        "ResKit.dll",
+        "System.Core.dll",
+        "TeaGame.App.dll",
+        "UIKit.dll",
+        "UnityEngine.CoreModule.dll",
+        "mscorlib.dll"
+    ],
+    "hotUpdate": [
+        "TeaGame.Data.dll",
+        "TeaGame.Tools.dll",
+        "TeaGame.Battle.Contracts.dll",
+        "TeaGame.Battle.dll",
+        "TeaGame.Menu.dll",
+        "TeaGame.Gacha.dll"
+    ]
+}
