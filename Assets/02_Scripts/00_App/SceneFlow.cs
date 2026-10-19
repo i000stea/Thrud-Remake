@@ -1,4 +1,7 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using QFramework;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -12,6 +15,18 @@ namespace TeaGame.App
    /// 可按请求保留旧场景（SceneRequest.KeepPrevious）。
    /// 场景 key 即场景名称字符串（决策 D25），按名称加载，热更新可按同名 key 无缝接入。
    /// Loading 过渡（用户确认）：渐显 → 预加载(allowSceneActivation=false) → 保持 ≥minHoldDuration → 激活 → 渐隐。
+   ///
+   /// **两条加载通路（23 文档 S4/S5）**：
+   /// - <see cref="SceneSource.BuildSettings"/>：<c>SceneManager.LoadSceneAsync</c>，要求场景在 Build Settings；
+   /// - <see cref="SceneSource.AssetBundle"/>：ResKit 场景 AssetBundle（<c>ResLoader.LoadSceneAsync</c>），
+   ///   场景可以不在 Build Settings，因而可由远端下发整包替换。
+   /// 选择哪条通路只由请求的 <see cref="SceneRequest.Source"/> 决定，本类不含任何场景名特判。
+   ///
+   /// **ResKit 的一个硬约束**：<c>LoadSceneAsync</c> 不暴露 <c>allowSceneActivation</c>，
+   /// 但它把 <see cref="AsyncOperation"/> 通过 onStartLoading 回调抛出来——本类在回调里
+   /// 立刻置 <c>allowSceneActivation=false</c>，把「加载」与「激活」重新拆开，才能保住
+   /// 既有的 Loading 过渡时序。回调是同步触发的（SimulationMode 与真机分支都是），
+   /// 因此不存在「操作已经跑过 0.9 才被关掉激活」的竞态。
    /// </summary>
    public sealed class SceneFlow : MonoBehaviour
    {
@@ -20,6 +35,9 @@ namespace TeaGame.App
       /// 常驻于 ConfigScene，任何模块可经此请求场景切换。
       /// </summary>
       public static SceneFlow Instance { get; private set; }
+
+      /// <summary>等待 ResKit 交出 AsyncOperation 的上限（秒）。超时按加载失败处理，避免永久卡住切换。</summary>
+      private const float AssetBundleStartTimeout = 20f;
 
       /// <summary>
       /// 全局 Loading 遮罩根节点（由 ConfigScene 场景内置，C4 后接管）。
@@ -50,6 +68,18 @@ namespace TeaGame.App
       private TMP_Text mProgressText;
 
       /// <summary>
+      /// 每个由 AssetBundle 加载的场景所持有的 <see cref="ResLoader"/>（场景名 → loader）。
+      /// 生命周期必须覆盖场景生命周期：场景还活着就不能回收它的 loader，否则资源被提前卸载。
+      /// </summary>
+      private readonly Dictionary<string, ResLoader> mSceneLoaders = new();
+
+      /// <summary> AssetBundle 通路捕获到的 AsyncOperation（由 onStartLoading 回调写入）。 </summary>
+      private AsyncOperation mPendingOperation;
+
+      /// <summary> AssetBundle 通路的失败原因（回调无法返回值，用字段传出）。 </summary>
+      private string mAssetBundleError;
+
+      /// <summary>
       /// 全局 Loading 遮罩根节点（编辑器与运行时均可设置）。
       /// </summary>
       public Transform LoadingGroupRoot
@@ -72,6 +102,8 @@ namespace TeaGame.App
          {
             Instance = null;
          }
+
+         RecycleAllSceneLoaders();
       }
 
       /// <summary>
@@ -148,13 +180,30 @@ namespace TeaGame.App
                yield return UnloadPlayScenes(default);
             }
 
-            // 当前阶段按场景名经 Build Settings 加载；热更新接入后按同名 key 走资源系统
-            var operation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
-            if (operation == null)
+            // 按请求来源选择加载通路：Build Settings（SceneManager）或场景 AssetBundle（ResKit）
+            AsyncOperation operation;
+            if (request.Source == SceneSource.AssetBundle)
             {
-               Debug.LogError($"[SceneFlow] 场景加载失败，请确认已加入 Build Settings：{sceneName}");
-               yield return FinishWithError(showLoading);
-               yield break;
+               yield return LoadAssetBundleScene(request);
+               if (mPendingOperation == null)
+               {
+                  Debug.LogError("[SceneFlow] 加载失败原因：" + (mAssetBundleError ?? "未知（AssetBundle 通路未产出 AsyncOperation）"));
+                  yield return FinishWithError(showLoading);
+                  yield break;
+               }
+
+               operation = mPendingOperation;
+               mPendingOperation = null;
+            }
+            else
+            {
+               operation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+               if (operation == null)
+               {
+                  Debug.LogError($"[SceneFlow] 场景加载失败，请确认已加入 Build Settings：{sceneName}");
+                  yield return FinishWithError(showLoading);
+                  yield break;
+               }
             }
 
             // 预加载：进度到 0.9 前不激活场景，遮罩保持
@@ -224,7 +273,117 @@ namespace TeaGame.App
       }
 
       /// <summary>
+      /// 经 ResKit 加载场景 AssetBundle（23 文档 S5）。
+      /// 成功时把 <see cref="AsyncOperation"/> 写入 <see cref="mPendingOperation"/>，
+      /// 失败时把原因写入 <see cref="mAssetBundleError"/> 并保证不泄漏 ResLoader。
+      /// </summary>
+      private IEnumerator LoadAssetBundleScene(SceneRequest request)
+      {
+         mPendingOperation = null;
+         mAssetBundleError = null;
+
+         var sceneName = request.SceneName;
+         var bundleName = request.AssetBundleName;
+
+         Debug.Log($"[SceneFlow] AssetBundle 场景请求 -> bundle={bundleName ?? "<空>"}, scene={sceneName}");
+
+         if (string.IsNullOrEmpty(bundleName))
+         {
+            // 调用点没给 bundle 名时退回场景目录的统一映射，避免把 bundle 名散落到各处
+            if (SceneCatalog.TryGetAssetBundle(sceneName, out var catalogBundle))
+            {
+               bundleName = catalogBundle;
+               Debug.Log($"[SceneFlow] 请求未携带 bundle 名，改用场景目录映射：{bundleName}");
+            }
+            else
+            {
+               mAssetBundleError = $"场景未登记 AssetBundle 且请求未携带 bundle 名：{sceneName}";
+               yield break;
+            }
+         }
+
+         if (!TryResolveSceneInBundle(bundleName, sceneName, out var resolveError))
+         {
+            Debug.LogError($"[SceneFlow] bundle 命中 scene 未命中 -> bundle={bundleName}, scene={sceneName}：{resolveError}");
+            mAssetBundleError = resolveError;
+            yield break;
+         }
+
+         var loader = ResLoader.Allocate();
+         AsyncOperation captured = null;
+
+         // 回调里立刻关闭自动激活：这是把「加载」和「激活」拆开的唯一时机。
+         loader.LoadSceneAsync(bundleName, sceneName, LoadSceneMode.Additive, LocalPhysicsMode.None,
+            operation =>
+            {
+               if (operation == null)
+               {
+                  return;
+               }
+
+               operation.allowSceneActivation = false;
+               captured = operation;
+            });
+
+         // 等待 ResKit 把 AsyncOperation 交回来（bundle 加载完成才会回调）
+         var deadline = Time.realtimeSinceStartup + AssetBundleStartTimeout;
+         while (captured == null && Time.realtimeSinceStartup < deadline)
+         {
+            yield return null;
+         }
+
+         if (captured == null)
+         {
+            loader.Recycle2Cache();
+            mAssetBundleError = $"等待 ResKit 交出 AsyncOperation 超时（{AssetBundleStartTimeout:0}s），bundle={bundleName}";
+            yield break;
+         }
+
+         // loader 的所有权交给场景：场景卸载后由 UnloadPlayScenes 回收
+         mSceneLoaders[sceneName] = loader;
+         mPendingOperation = captured;
+         Debug.Log($"[SceneFlow] scene asset 命中 -> bundle={bundleName}, scene={sceneName}");
+      }
+
+      /// <summary>
+      /// 在 ResKit 清单（asset_bundle_config.bin，SimulationMode 下为 AssetDatabase 实时快照）里
+      /// 确认 (bundle, scene) 存在且类型是场景，用于给出比 ResKit 默认日志更准确的失败原因。
+      /// </summary>
+      private static bool TryResolveSceneInBundle(string bundleName, string sceneName, out string error)
+      {
+         error = null;
+         var keys = ResSearchKeys.Allocate(sceneName, bundleName);
+         try
+         {
+            var data = AssetBundleSettings.AssetBundleConfigFile.GetAssetData(keys);
+            if (data == null)
+            {
+               error = "bundle 未命中：ResKit 清单里没有该 bundle/asset 条目（检查场景是否已标记 AB、是否重打过 AB）";
+               return false;
+            }
+
+            if (data.AssetType != ResLoadType.ABScene)
+            {
+               error = $"条目存在但不是场景资源（AssetType={data.AssetType}），该场景可能没被标为 ABScene";
+               return false;
+            }
+
+            return true;
+         }
+         catch (Exception e)
+         {
+            error = "查询 ResKit 清单异常：" + e.Message;
+            return false;
+         }
+         finally
+         {
+            keys.Recycle2Cache();
+         }
+      }
+
+      /// <summary>
       /// 卸载除「入口常驻场景」与「目标场景」之外的已加载玩法场景，并逐个等待卸载完成。
+      /// 由 AssetBundle 加载的场景在卸载完成后回收其 ResLoader（23 文档 S5 的生命周期要求）。
       /// </summary>
       private IEnumerator UnloadPlayScenes(Scene keepScene)
       {
@@ -237,12 +396,43 @@ namespace TeaGame.App
             if (!string.IsNullOrEmpty(entrySceneName) && scene.name == entrySceneName) continue;
             if (scene == keepScene) continue;
 
+            // 场景销毁后拿不到名字，先存下来用于回收它持有的 loader
+            var unloadingSceneName = scene.name;
+
             var operation = SceneManager.UnloadSceneAsync(scene);
             if (operation != null)
             {
                yield return operation;
             }
+
+            RecycleSceneLoader(unloadingSceneName);
          }
+      }
+
+      /// <summary>
+      /// 回收指定场景持有的 ResLoader（没有则无操作）。
+      /// </summary>
+      private void RecycleSceneLoader(string sceneName)
+      {
+         if (string.IsNullOrEmpty(sceneName)) return;
+         if (!mSceneLoaders.TryGetValue(sceneName, out var loader)) return;
+
+         mSceneLoaders.Remove(sceneName);
+         loader.Recycle2Cache();
+         Debug.Log($"[SceneFlow] 已回收场景 ResLoader -> {sceneName}");
+      }
+
+      /// <summary>
+      /// 回收全部场景 ResLoader（控制器销毁时调用）。
+      /// </summary>
+      private void RecycleAllSceneLoaders()
+      {
+         foreach (var pair in mSceneLoaders)
+         {
+            pair.Value.Recycle2Cache();
+         }
+
+         mSceneLoaders.Clear();
       }
 
       /// <summary>
