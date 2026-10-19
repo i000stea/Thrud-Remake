@@ -745,7 +745,9 @@ builtAtUtc=2026-10-19T...
 | `BuildAssetBundles` | 只重打 ResKit AB |
 | `PublishOtaContent` | 只把现有产物发布成 OTA 内容（重写 `web/LanOtaServer/content` + `manifest.json`） |
 
-编辑器菜单「5. Build All」也已改成**瘦体**，与命令行同源（都走 `BuildPlayerApk(development, thin: true)`）。
+编辑器菜单里**「0. 一键瘦体出包（AB + 瘦体 APK + 发布 OTA）」**就是这套 CLI 的编辑器入口，
+与 `build-thin.cmd`（`BuildAllThin`）**调同一份代码**；菜单「5. Build All」是同一流程的子集（不发布 OTA 内容）。
+所以两条路径不会漂移：**不想关编辑器就点菜单，要 CI 就用命令行。**
 
 **10.2 脚本**
 
