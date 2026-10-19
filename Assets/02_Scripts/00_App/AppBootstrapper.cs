@@ -14,6 +14,10 @@ namespace TeaGame.App
       /// <summary> 首个玩法场景 key（场景名称，可在 Inspector 调整）。 </summary>
       [SerializeField] private string firstSceneName = SceneCatalog.Login;
 
+      [Header("OTA 内容更新（23 文档：局域网 HTTP → CDN）")]
+      [Tooltip("关闭时完全不联网，直接使用包内基线（首包默认态）。")]
+      [SerializeField] private HotUpdateOtaSettings ota = new HotUpdateOtaSettings();
+
       /// <summary> 场景切换控制器引用。  </summary>
       private SceneFlow mSceneFlow;
 
@@ -40,6 +44,11 @@ namespace TeaGame.App
       /// </summary>
       private IEnumerator Start()
       {
+         // OTA 内容更新必须在加载任何热更/AB 之前：它要把 DLL 与 bundle 落到 persistentDataPath，
+         // 而 HotUpdateLoader 与 ResKit 都是「persistent 优先、StreamingAssets 回退」。
+         // 方法内部对网络/校验失败一律兜底为「保持当前可用版本」，不会阻断启动。
+         yield return HotUpdateOtaService.RunAtBoot(ota);
+
          // 热更装配加载必须最靠前：0ConfigScene 是纯 AOT 场景，从这里往后才允许触碰
          // TeaGame.*（热更程序集）的类型。编辑器下该方法内部直接跳过。
          yield return HotUpdateLoader.LoadAll();
