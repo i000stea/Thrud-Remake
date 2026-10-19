@@ -206,6 +206,27 @@ adb logcat -v threadtime --pid 30712 > Logs\pid.log
 adb logcat -v threadtime --pid 30712 | Select-String ' [VWEF] '
 ```
 
+### 在 Android Studio 的 Logcat 里筛（日常就在这儿看）
+
+Studio 的 Logcat 有**自己的 query DSL**（不是 adb 的 filterspec）：`tag:` / `package:` / `level:` / `message:`，取反加 `-` 前缀，`|` 是或、`&` 是与、可用括号。把下面几条存成 **Saved Query**（Logcat 左侧 `Saved Queries` → `+`），以后一键切换：
+
+| 档 | 查询表达式 | 等价于 |
+|---|---|---|
+| **日常（最省噪）** | `tag:Unity \| tag:UnityPlayer \| tag:CRASH \| tag:AndroidRuntime \| tag:IL2CPP \| tag:mono \| tag:il2cpp` | 脚本的 `-Mode unity` |
+| **本应用全量** | `package:mine` | 脚本的 `-Mode pid` |
+| **本应用 警告及以上** | `package:mine level:WARN` | 脚本的 `-Mode piderr` |
+| 只钉我们的关键日志 | `tag:Unity message~:\[(HotUpdate\|AppBootstrapper\|ResKit\|SceneFlow\|BattleAssets)\]` | — |
+| 只要崩溃 | `is:crash` 或 `tag:CRASH \| tag:AndroidRuntime` | — |
+| 排除法（仅在正向匹配看过后用） | `package:mine -tag:SnapAlloc -tag:qdgralloc -tag:gameoptHal -tag:oplus_nfc -level:verbose -level:debug` | — |
+
+要点：
+
+- **`package:mine` 是最省事的正向匹配**——自动跟随当前 Run/Debug 配置启动的应用进程，换了 pid 也不用改表达式（比手写 `process:` 稳）。
+- 我们自己的 `Debug.Log` / `Debug.LogError` **全部落在 tag `Unity` 下**（Unity Android 播放器就这么打），所以 `tag:Unity` 一条就能覆盖 `[HotUpdate]` / `[AppBootstrapper]` / `[ResKit]` / `[SceneFlow]` / `[BattleAssets]` 全部自研日志。
+- `tag~:` 是正则版（`tag~:^(Unity|IL2CPP)$`）；`message:` 匹配正文，`message~:` 是正文正则。
+- `level:` 在部分版本按"该级别及以上"处理；若发现警告漏了，改成 `(level:WARN | level:ERROR | level:ASSERT)` 明确列举。
+- 筛完在 Logcat 里右键 → **Export to text file**，得到的就是一份可以贴给别人/会话的小日志，比整份 logcat 干净得多。
+
 ### 已经落盘的日志：用本仓脚本过滤
 
 `Build\_check\filter-unity-log.ps1`（纯 ASCII，PS 5.1 可跑；`Build/` 在 `.gitignore` 内，这个文件是 `git add -f` 强制纳入跟踪的源码工具，不是构建产物），三档 `-Mode`，实测效果对 `Logs/10191847.log`（1707 行）：
