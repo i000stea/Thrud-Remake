@@ -42,7 +42,7 @@ namespace TeaGame
             return;
          }
 
-         flow.RequestLoad(new SceneRequest { SceneName = sceneName, ShowLoading = true, OnComplete = onComplete });
+         flow.RequestLoad(BuildRequest(sceneName, onComplete));
       }
 
       /// <summary>
@@ -70,13 +70,25 @@ namespace TeaGame
             return;
          }
 
-         flow.RequestLoad(new SceneRequest
-         {
-            SceneName = sceneName,
-            ShowLoading = true,
-            UnloadFirst = true,
-            OnComplete = onComplete,
-         });
+         var request = BuildRequest(sceneName, onComplete);
+         request.UnloadFirst = true;
+         flow.RequestLoad(request);
+      }
+
+      /// <summary>
+      /// 构造带遮罩的切换请求。
+      ///
+      /// 必须经 <see cref="SceneCatalog.CreateRequest"/> 而不是直接 new：主菜单已移出 Build Settings
+      /// 改走场景 AssetBundle，而本类的调用点里既有「进战斗」（Build Settings 场景）也有
+      /// 「回主菜单」（AssetBundle 场景，来自 <see cref="BattleTeamSession.ReturnSceneName"/>）。
+      /// 由场景目录决定通路，回跳路径才不会因为场景在不在 Build Settings 而时好时坏。
+      /// </summary>
+      private static SceneRequest BuildRequest(string sceneName, Action onComplete)
+      {
+         var request = SceneCatalog.CreateRequest(sceneName);
+         request.ShowLoading = true;
+         request.OnComplete = onComplete;
+         return request;
       }
    }
 }

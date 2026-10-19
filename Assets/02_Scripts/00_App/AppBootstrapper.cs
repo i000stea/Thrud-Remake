@@ -67,7 +67,11 @@ namespace TeaGame.App
             yield break;
          }
 
-         mSceneFlow.RequestLoad(new SceneRequest { SceneName = firstSceneName, ShowLoading = false });
+         // 经场景目录构造请求：登录场景未登记 AssetBundle，仍走 Build Settings，
+         // 通道选择统一由 SceneCatalog 决定，这里不写死来源。
+         var loginRequest = SceneCatalog.CreateRequest(firstSceneName);
+         loginRequest.ShowLoading = false;
+         mSceneFlow.RequestLoad(loginRequest);
       }
    }
 }

@@ -64,23 +64,16 @@ namespace TeaGame.Login
       /// <summary>
       /// 构造主菜单场景请求（23 文档 S6）。
       /// 已登记在 <see cref="SceneCatalog"/> 里的场景走场景 AssetBundle——这是「整包替换主菜单」的前提；
-      /// 未登记的场景退回 Build Settings，保持老路径可用。判定完全由场景目录给出，
+      /// 未登记的场景退回 Build Settings。判定完全由场景目录给出，
       /// 因此 LoginScene 的 mainSceneKey 在 Inspector 里怎么改，加载通路都自动跟随。
       /// </summary>
       private static SceneRequest BuildMainSceneRequest(string mainSceneKey)
       {
-         var request = new SceneRequest { SceneName = mainSceneKey };
+         var request = SceneCatalog.CreateRequest(mainSceneKey);
 
-         if (SceneCatalog.TryGetAssetBundle(mainSceneKey, out var bundleName))
-         {
-            request.Source = SceneSource.AssetBundle;
-            request.AssetBundleName = bundleName;
-            Debug.Log($"[LoginSystem] 主菜单走场景 AssetBundle：bundle={bundleName}, scene={mainSceneKey}");
-         }
-         else
-         {
-            Debug.Log($"[LoginSystem] 主菜单走 Build Settings：scene={mainSceneKey}");
-         }
+         Debug.Log(request.Source == SceneSource.AssetBundle
+            ? $"[LoginSystem] 主菜单走场景 AssetBundle：bundle={request.AssetBundleName}, scene={mainSceneKey}"
+            : $"[LoginSystem] 主菜单走 Build Settings：scene={mainSceneKey}");
 
          return request;
       }

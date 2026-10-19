@@ -67,5 +67,27 @@ namespace TeaGame.App
          assetBundleName = null;
          return !string.IsNullOrEmpty(sceneName) && sSceneBundles.TryGetValue(sceneName, out assetBundleName);
       }
+
+      /// <summary>
+      /// 按场景目录构造一次切换请求：登记过 bundle 的场景走 <see cref="SceneSource.AssetBundle"/>，
+      /// 其余走 <see cref="SceneSource.BuildSettings"/>。
+      ///
+      /// **所有调用点都应经此构造**，不要自己 new SceneRequest 再填 SceneName。
+      /// 原因很具体：主菜单移出 Build Settings 之后，任何「只传场景名」的请求
+      /// （典型是战斗结束回主菜单的 <c>ReturnSceneName</c>）都会当场失效，
+      /// 而这类回跳路径散落在暂停/结算/编队多个面板里，逐个补源字段必漏。
+      /// </summary>
+      public static SceneRequest CreateRequest(string sceneName)
+      {
+         var request = new SceneRequest { SceneName = sceneName };
+
+         if (TryGetAssetBundle(sceneName, out var assetBundleName))
+         {
+            request.Source = SceneSource.AssetBundle;
+            request.AssetBundleName = assetBundleName;
+         }
+
+         return request;
+      }
    }
 }
