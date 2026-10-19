@@ -727,3 +727,86 @@ builtAtUtc=2026-10-19T...
 
 未验证（需真机）：薄包首启的完整链路（下载 → 补初始化 ResKit → 进主菜单）；断网停在登录页 + 重试；
 `BuildProfile` 与实际包一致性；UDP 广播在真机是否被 AP 隔离拦截。
+
+### 10.10 追加：命令行自动化出包（默认瘦体）
+
+**约定：后续打包一律瘦体，且走命令行，不依赖编辑器里点菜单、也不依赖 AI 代跑。**
+
+**10.1 入口**
+
+`Assets/02_Scripts/Tools/Editor/AndroidBuildCli.cs`，全部为无参静态方法（`-executeMethod` 只吃这种）：
+
+| 方法 | 作用 |
+|---|---|
+| `BuildAllThin` | **默认**：门禁 + 重打 AB + 瘦体 APK + 发布 OTA 内容 |
+| `BuildAllThinDev` | 同上，Development 包（联调） |
+| `BuildThinApkOnly` | 只出瘦体 APK（AB 没变时用） |
+| `BuildFatApk` | 胖包（对照/离线演示，非默认） |
+| `BuildAssetBundles` | 只重打 ResKit AB |
+| `PublishOtaContent` | 只把现有产物发布成 OTA 内容（重写 `web/LanOtaServer/content` + `manifest.json`） |
+
+编辑器菜单「5. Build All」也已改成**瘦体**，与命令行同源（都走 `BuildPlayerApk(development, thin: true)`）。
+
+**10.2 脚本**
+
+仓库根 `build-thin.cmd`：
+
+```bat
+build-thin.cmd            :: 默认：门禁 + AB + 瘦体 APK + 发布 OTA
+build-thin.cmd apk        :: 只出瘦体 APK
+build-thin.cmd ab         :: 只重打 AB
+build-thin.cmd publish    :: 只发布 OTA 内容
+build-thin.cmd dev        :: 瘦体 Development 包
+build-thin.cmd fat        :: 胖包（对照用）
+```
+
+等价手工命令：
+
+```bat
+"%UNITY_EDITOR%" -batchmode -quit -nographics ^
+  -projectPath "<工程根>" -buildTarget Android ^
+  -executeMethod TeaGame.Tools.Editor.AndroidBuildCli.BuildAllThin ^
+  -logFile "Build/Android/logs/build-all-thin.log"
+```
+
+**10.3 退出码**
+
+`0` = 成功，`1` = 失败（门禁 / AB / 出包任一步不过），由 `EditorApplication.Exit(code)` 落定；
+CI 直接看退出码。失败时脚本会打印日志尾部 60 行。
+
+**10.4 前置条件（容易踩）**
+
+1. **必须先关掉正在用本工程的 Unity 编辑器** —— 工程被锁时批处理直接失败。
+2. 目标平台 Android：脚本已带 `-buildTarget Android`。
+3. `-nographics` 不影响出包（IL2CPP 不需要 GPU）。
+4. 首次 IL2CPP 编译 5–15 分钟；只改脚本后走 Bee 缓存约 1–3 分钟。
+
+**10.5 出包顺序（别搞反）**
+
+```
+门禁 → 重打 AB → 瘦体 APK → 发布 OTA 内容
+```
+
+- AB 变了就必须重新发布 OTA 内容（`BuildAllThin` 已内置），否则真机下到的是旧 AB 集合；
+- 薄包构建会把 `Assets/StreamingAssets/AssetBundles` 整体移出 `Assets/`，出包后 `finally` 还原——
+  所以**发布 OTA 必须在出包之后**，`BuildAllThin` 的顺序就是按这个排的。
+
+**10.6 已知遗留：AOT 元数据的时序**
+
+`StreamingAssets/HotUpdate` 是在出包时被拷进 APK 的，其中 9 个 **AOT 补充元数据** 来自**上一次** il2cpp 剥离结果。
+所以**改了 `TeaGame.App`（AOT 代码）之后**，严格顺序是：
+
+```
+出一次包（或 HybridCLR/Generate/StrippedAotDlls）
+  → HybridCLR/Generate/All（重新生成 AOT 元数据）
+  → Thrud/HotUpdate/1（导出热更 DLL 与 hotfix.json）
+  → 再出一次包（此时包内 HotUpdate 与本次 AOT 匹配）
+```
+
+暂未做成一键（`Generate/All` 依赖 il2cpp 产物且耗时）。**只改热更程序集（`TeaGame.Battle`/`TeaGame.Menu` 等）时不受影响**，
+`build-thin.cmd apk` + `build-thin.cmd publish` 即可。
+
+**10.7 服务端配套**
+
+`web/LanOtaServer/` 仍未纳入版本管理；其中 UDP 发现应答需随该目录一起提交，
+且**正在跑的服务实例必须重启**才生效（HTTP 下发不用重启，内容目录改了即时生效）。
