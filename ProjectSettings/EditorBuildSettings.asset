@@ -11,9 +11,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/01_Scenes/scene_0001_login.unity
     guid: 950ec15a9c6e21447b8843dd69dce5fa
-  - enabled: 1
-    path: Assets/01_Scenes/scene_0002_main.unity
-    guid: 3c251be4ef1189040bf3ce5b812dbf09
   - enabled: 0
     path: Assets/01_Scenes/scene_0003_gacha.unity
     guid: 07f8c673bf7e825458ecb689a0b99844
