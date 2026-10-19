@@ -20,6 +20,14 @@ namespace TeaGame.Tools.Editor
    ///
    /// 服务端（`web/LanOtaServer`）只按路径下发、不生成也不改写清单——清单由这里产出。
    ///
+   /// **只发布业务热更程序集**：`StreamingAssets/HotUpdate/` 里除了 6 个 `TeaGame.*` 热更 DLL，
+   /// 还有一批 AOT 补充元数据（`mscorlib.dll` / `System.Core.dll` / `QFramework.dll` / `DOTween.dll`
+   /// / `UnityEngine.CoreModule.dll` / `UIKit.dll` / `ResKit.dll` / `QFramework.CoreKit.dll` / `TeaGame.App.dll`）。
+   /// 那些 DLL **从来不作为程序集加载**，只被 `RuntimeApi.LoadMetadataForAOTAssembly` 读来补泛型元数据；
+   /// 而且它们与**已安装的 APK** 是版本强耦合的，通过 OTA 换掉会让元数据与 AOT 代码对不上。
+   /// 所以它们随 APK 走（StreamingAssets），**不进 OTA 清单**：
+   /// 客户端读 `hotfix.json` 里的 aotMetadata 时会从 StreamingAssets 逐文件回退命中。
+   ///
    /// 菜单：`Thrud/HotUpdate/3. 发布 OTA 内容到局域网服务目录（含 manifest.json）`
    /// </summary>
    public static class OtaContentPublisher
@@ -45,7 +53,12 @@ namespace TeaGame.Tools.Editor
       private const string KindAssetBundle = "assetBundle";
       private const string KindHotUpdateDll = "hotUpdateDll";
       private const string KindHotUpdateManifest = "hotUpdateManifest";
-      private const string KindAotMetadata = "aotMetadata";
+
+      /// <summary>允许热更的程序集名前缀（只热更自己写的业务程序集）。</summary>
+      private const string HotUpdateAssemblyPrefix = "TeaGame.";
+
+      /// <summary>AOT 程序集：永远不能出现在热更列表里。</summary>
+      private const string AotAssemblyName = "TeaGame.App";
 
       /// <summary>不做 OTA 下发的文件：Unity 的 AB 依赖清单、meta、以及平台级 manifest bundle。</summary>
       private static bool IsIgnoredBundleFile(string path, string platform)
@@ -147,29 +160,35 @@ namespace TeaGame.Tools.Editor
 
          // hotfix.json 里的 hotUpdate 列表决定哪些 DLL 是热更程序集；其余 DLL 是 AOT 补充元数据
          var hotUpdateDllNames = ReadHotUpdateDllNames(hotfixPath);
+         if (!ValidateHotUpdateAssemblies(hotUpdateDllNames, out var assemblyError))
+         {
+            Debug.LogError("[OTA-Publish] " + assemblyError);
+            return;
+         }
+
+         var skippedAotMetadata = new System.Collections.Generic.List<string>();
 
          foreach (var source in hotFiles)
          {
             var name = Path.GetFileName(source);
+            var isHotfixJson = string.Equals(name, "hotfix.json", StringComparison.OrdinalIgnoreCase);
+            var isHotUpdateDll = !isHotfixJson &&
+                                 hotUpdateDllNames.Contains(Path.GetFileNameWithoutExtension(name));
+
+            if (!isHotfixJson && !isHotUpdateDll)
+            {
+               // AOT 补充元数据：与 APK 强耦合，随包走，不做 OTA 下发
+               skippedAotMetadata.Add(name);
+               continue;
+            }
+
             var destination = Path.Combine(targetHot, name);
             File.Copy(source, destination, true);
 
             var size = new FileInfo(destination).Length;
             totalBytes += size;
 
-            string kind;
-            if (string.Equals(name, "hotfix.json", StringComparison.OrdinalIgnoreCase))
-            {
-               kind = KindHotUpdateManifest;
-            }
-            else if (hotUpdateDllNames.Contains(Path.GetFileNameWithoutExtension(name)))
-            {
-               kind = KindHotUpdateDll;
-            }
-            else
-            {
-               kind = KindAotMetadata;
-            }
+            var kind = isHotfixJson ? KindHotUpdateManifest : KindHotUpdateDll;
 
             entries.Add(new ManifestEntry
             {
@@ -182,6 +201,12 @@ namespace TeaGame.Tools.Editor
             });
          }
 
+         if (skippedAotMetadata.Count > 0)
+         {
+            Debug.Log($"[OTA-Publish] 跳过 {skippedAotMetadata.Count} 个 AOT 补充元数据 DLL（随 APK 走，不参与 OTA）：" +
+                      string.Join(", ", skippedAotMetadata.ToArray()));
+         }
+
          // ---- 4. 写清单 ----
          var contentVersion = BuildContentVersion();
          WriteManifest(Path.Combine(targetRoot, ManifestName), contentVersion, platform, entries);
@@ -191,6 +216,45 @@ namespace TeaGame.Tools.Editor
                    $"{totalBytes / 1024f / 1024f:F1} MB（其中 AB {abBytes / 1024f / 1024f:F1} MB）。\n" +
                    $"[OTA-Publish] 内容目录：{targetRoot}\n" +
                    $"[OTA-Publish] 清单路由：/{Channel}/{platform}/manifest.json（真机用服务端控制台打印的 IP）");
+      }
+
+      /// <summary>
+      /// 校验 hotfix.json 声明的热更程序集集合：**只允许 `TeaGame.*`，且不能是 AOT 的 `TeaGame.App`**。
+      ///
+      /// 这是把「只热更自己写的业务程序集」变成硬约束，而不是靠人记得：
+      /// 一旦 `HybridCLR/Settings` 或导出配置把 `QFramework` / `DOTween` / `mscorlib` 之类
+      /// 插件或引擎程序集列进 hotUpdate，插件就会被当作热更程序集加载，出现双份类型、
+      /// 帧回调重复触发等极难排查的问题——宁可在发布这一步直接失败。
+      /// </summary>
+      private static bool ValidateHotUpdateAssemblies(HashSet<string> hotUpdateDllNames, out string error)
+      {
+         error = null;
+
+         if (hotUpdateDllNames.Count == 0)
+         {
+            error = "hotfix.json 的 hotUpdate 为空：没有任何热更程序集。先执行「Thrud/HotUpdate/1. 导出热更 DLL 与清单」。";
+            return false;
+         }
+
+         foreach (var name in hotUpdateDllNames)
+         {
+            if (string.Equals(name, AotAssemblyName, StringComparison.OrdinalIgnoreCase))
+            {
+               error = $"hotfix.json 把 AOT 程序集 {name} 当成热更程序集——AOT 程序集无法热更，" +
+                       "请检查 HybridCLR 的 hotUpdateAssemblyDefinitions。";
+               return false;
+            }
+
+            if (!name.StartsWith(HotUpdateAssemblyPrefix, StringComparison.Ordinal))
+            {
+               error = $"hotfix.json 的 hotUpdate 里出现非业务程序集 {name}。" +
+                       $"本工程只允许 {HotUpdateAssemblyPrefix}*（{AotAssemblyName} 除外）热更；" +
+                       "插件/框架/引擎程序集必须留在 AOT。请检查 HybridCLR 的 hotUpdateAssemblyDefinitions。";
+               return false;
+            }
+         }
+
+         return true;
       }
 
       /// <summary>清空并重建目录（服务端内容必须与本次发布完全一致）。</summary>
