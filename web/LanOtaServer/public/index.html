@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thrud · 局域网 OTA 控制台</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header>
+  <div class="title">
+    <h1>局域网 OTA 控制台</h1>
+    <span class="sub">Thrud Remake · 23 文档 §7 第一期后端</span>
+  </div>
+  <div class="status">
+    <span id="conn" class="pill pill-warn" title="控制台与服务的 SSE 连接状态">连接中…</span>
+    <span id="uptime" class="pill pill-muted">运行 —</span>
+    <span id="portPill" class="pill pill-muted">:—</span>
+  </div>
+</header>
+
+<main>
+  <!-- 内容就绪状态 -->
+  <section class="card" id="card-ready">
+    <div class="card-head">
+      <h2>内容目录</h2>
+      <span id="readyBadge" class="badge badge-warn">检测中</span>
+    </div>
+    <dl class="kv">
+      <dt>root</dt><dd><code id="rootPath">—</code></dd>
+      <dt>清单版本</dt><dd id="contentVersion">—</dd>
+      <dt>可下发文件</dt><dd id="servedFiles">—</dd>
+      <dt>channel / platform</dt><dd id="channels">—</dd>
+    </dl>
+
+    <div id="rootProblem" class="alert alert-error" hidden>
+      <strong>内容未就绪：</strong><span id="rootProblemText"></span>
+      <p class="hint">客户端此刻请求会拿到 <code>503</code>。按下面的结构补齐，或一键创建空目录骨架。</p>
+    </div>
+
+    <details class="structure">
+      <summary>期望的目录结构（channel 目前约定 <code>lan</code>）</summary>
+      <pre id="layout">—</pre>
+      <p class="hint">AB 与 DLL 必须保持原始文件名（工程产物<b>没有</b> <code>.bundle</code> 后缀）；拷贝时跳过 <code>.meta</code>。</p>
+    </details>
+
+    <div class="row">
+      <input id="rootInput" type="text" spellcheck="false" placeholder="D:\ota-content（留空表示当前 root）">
+      <button id="btnApplyRoot" class="btn">切换 root</button>
+      <button id="btnSkeleton" class="btn btn-primary">创建空目录骨架</button>
+      <label class="check"><input id="createWithRoot" type="checkbox" checked> 切换时若不存在则创建</label>
+    </div>
+    <p id="rootResult" class="hint"></p>
+  </section>
+
+  <!-- 真机地址 -->
+  <section class="card">
+    <div class="card-head"><h2>真机取用地址</h2><span class="badge badge-muted">同网段可达</span></div>
+    <ul id="addresses" class="addresses"><li class="hint">检测中…</li></ul>
+    <p class="hint">手机与 PC 需在同一网段；Windows 首次运行可能弹防火墙授权，请允许「专用网络」。</p>
+  </section>
+
+  <!-- 内容树 -->
+  <section class="card">
+    <div class="card-head">
+      <h2>内容树</h2>
+      <button id="btnRefreshTree" class="btn btn-ghost">刷新</button>
+    </div>
+    <div id="tree" class="tree"><p class="hint">载入中…</p></div>
+  </section>
+
+  <!-- 实时日志 -->
+  <section class="card card-wide">
+    <div class="card-head">
+      <h2>实时日志</h2>
+      <div class="tools">
+        <select id="logLevel" class="select">
+          <option value="all">全部级别</option>
+          <option value="info">info</option>
+          <option value="warn">warn</option>
+          <option value="error">error</option>
+        </select>
+        <label class="check"><input id="autoScroll" type="checkbox" checked> 自动滚动</label>
+        <button id="btnClearLogs" class="btn btn-ghost">清空</button>
+      </div>
+    </div>
+    <div id="logs" class="logs"></div>
+  </section>
+
+  <!-- 请求 -->
+  <section class="card card-wide">
+    <div class="card-head">
+      <h2>最近请求</h2>
+      <label class="check"><input id="showNoisy" type="checkbox"> 显示控制台自身请求</label>
+    </div>
+    <div class="table-wrap">
+      <table class="req-table">
+        <thead><tr><th>时间</th><th>方法</th><th>路径</th><th>状态</th><th>耗时</th><th>大小</th></tr></thead>
+        <tbody id="requests"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>内容下发路由：<code>/&lt;channel&gt;/&lt;platform&gt;/manifest.json</code> · <code>…/HotUpdate/*</code> · <code>…/AssetBundles/*</code></span>
+  <span id="clientStats" class="hint"></span>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

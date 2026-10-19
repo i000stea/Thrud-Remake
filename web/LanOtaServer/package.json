@@ -1,0 +1,9 @@
+{
+  "name": "thrud-lan-ota",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Thrud Remake 局域网 OTA 静态内容服务（第一期 HTTP 后端，零依赖）",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

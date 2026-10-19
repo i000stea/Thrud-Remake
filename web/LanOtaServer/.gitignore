@@ -1,0 +1,5 @@
+# 内容目录是构建产物副本（DLL / AssetBundle），随时可重新拷贝，不入库
+content/
+
+# 运行日志
+*.log
