@@ -17,7 +17,7 @@ MonoBehaviour:
   Intro: "\u4E09\u79CD\u6D4B\u8BD5\u73A9\u6CD5\u4E4B\u4E00\uFF1A\u6E05\u527F\u3002\nT3.1C
     \u9636\u6BB5\u6CBF\u7528\u73B0\u6CE2\u6B21\u89C4\u5219\uFF0C\u6B63\u5F0F\u6E05\u527F\u6A21\u5F0F\u89C4\u5219\u4E8E
     T3.2 \u63A5\u5165\u3002"
-  ArtSceneName: BattleGraybox
+  ArtSceneName: scene_0004_battle_graybox
   PlayerSpawnPosition: {x: 0, y: 2, z: 0}
   PlayerSpawnEuler: {x: 0, y: 0, z: 0}
   Mode: 0

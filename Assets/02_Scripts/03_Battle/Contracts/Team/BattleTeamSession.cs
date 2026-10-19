@@ -48,17 +48,17 @@ namespace TeaGame
    /// </summary>
    public static class BattleTeamSession
    {  
-      /// <summary>0ConfigScene 主入口（无来源时的兜底返回目标，v1.0 A3）。</summary>
-      public const string ConfigSceneName = "0ConfigScene";
+      /// <summary>scene_0000_config 主入口（无来源时的兜底返回目标，v1.0 A3）。</summary>
+      public const string ConfigSceneName = "scene_0000_config";
 
       /// <summary>
-      /// 出战编队入口场景名（v1.3 起主路径 = 2MainScene 的「选关 → 编队」覆盖层；旧 `M1_TeamSelect` 场景已删除）。
+      /// 出战编队入口场景名（v1.3 起主路径 = scene_0002_main 的「选关 → 编队」覆盖层；旧 `M1_TeamSelect` 场景已删除）。
       /// 仅用于错误提示指引；实际进出场景由 <c>BattleSceneGate</c> + <see cref="ReturnSceneName"/> 决定。
       /// </summary>
-      public const string FormationEntrySceneName = "2MainScene";
+      public const string FormationEntrySceneName = "scene_0002_main";
 
       /// <summary>灰盒战斗场景名（选队确认后加载；后续关卡接入可换）。</summary>
-      public const string BattleSceneName = "BattleGraybox";
+      public const string BattleSceneName = "scene_0004_battle_graybox";
 
       /// <summary>编队人数上限（=切人上限）。</summary>
       public const int MaxTeamSize = 4;

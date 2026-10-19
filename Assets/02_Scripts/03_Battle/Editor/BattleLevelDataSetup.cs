@@ -14,7 +14,7 @@ namespace TeaGame.Battle.Editor
    public static class BattleLevelDataSetup
    {
       private const string AssetFolder = "Assets/Data/BattleLevels";
-      private const string ArtSceneName = "BattleGraybox";
+      private const string ArtSceneName = "scene_0004_battle_graybox";
       private const string StageConfigPath = "Assets/04_Prefabs/Enemy/StageConfig_Demo.asset";
       private const string EnemyCatalogPath = "Assets/04_Prefabs/Enemy/EnemyCatalog.asset";
       private const string PlayerRigPrefabPath = "Assets/04_Prefabs/Battle_PlayerControl.prefab";

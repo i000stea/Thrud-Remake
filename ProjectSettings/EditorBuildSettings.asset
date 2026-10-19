@@ -6,27 +6,28 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/01_Scenes/0ConfigScene.unity
+    path: Assets/01_Scenes/scene_0000_config.unity
     guid: ed773ea555e3a8e45b37633f0b786fc6
   - enabled: 1
-    path: Assets/01_Scenes/1LoginScene.unity
+    path: Assets/01_Scenes/scene_0001_login.unity
     guid: 950ec15a9c6e21447b8843dd69dce5fa
   - enabled: 1
-    path: Assets/01_Scenes/2MainScene.unity
+    path: Assets/01_Scenes/scene_0002_main.unity
     guid: 3c251be4ef1189040bf3ce5b812dbf09
   - enabled: 0
-    path: Assets/01_Scenes/3GachaScene.unity
+    path: Assets/01_Scenes/scene_0003_gacha.unity
     guid: 07f8c673bf7e825458ecb689a0b99844
   - enabled: 1
-    path: Assets/01_Scenes/BattleGraybox.unity
+    path: Assets/01_Scenes/scene_0004_battle_graybox.unity
     guid: 5e21a089dab1b3741a55a04216ccce90
   - enabled: 0
-    path: Assets/01_Scenes/4BattleScene.unity
+    path: Assets/01_Scenes/scene_0005_battle_legacy.unity
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 0
-    path: Assets/01_Scenes/5BattleScene-Test0.unity
+    path: Assets/01_Scenes/scene_0006_battle_test0.unity
     guid: 8144cefe4fa83c547b071bf18cd5c362
   - enabled: 0
-    path: Assets/01_Scenes/5BattleScene-Test1.unity
+    path: Assets/01_Scenes/scene_0007_battle_test1.unity
     guid: 4c73c0d82a7d070479f143287b47cf7d
   m_configObjects: {}
+  m_UseUCBPForAssetBundles: 0

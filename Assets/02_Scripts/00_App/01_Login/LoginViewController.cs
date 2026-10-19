@@ -18,7 +18,7 @@ namespace TeaGame.Login
       [SerializeField] private AnimationCurve lerpCurve;
 
       [Header("登录目标")]
-      [SerializeField] private string mainSceneKey = "2MainScene";
+      [SerializeField] private string mainSceneKey = "scene_0002_main";
 
       /// <summary>
       /// 登录完成事件反注册句柄。

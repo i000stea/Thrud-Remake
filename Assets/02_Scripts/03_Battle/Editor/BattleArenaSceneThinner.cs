@@ -22,7 +22,7 @@ namespace TeaGame.Battle.Editor
    /// </summary>
    public static class BattleArenaSceneThinner
    {
-      private const string ScenePath = "Assets/01_Scenes/BattleGraybox.unity";
+      private const string ScenePath = "Assets/01_Scenes/scene_0004_battle_graybox.unity";
       private const string RigPrefabPath = "Assets/04_Prefabs/Battle_PlayerControl.prefab";
       private const string RigInstanceName = "PlayerControl";
       private const string DamageTextsName = "Damage-Texts";
