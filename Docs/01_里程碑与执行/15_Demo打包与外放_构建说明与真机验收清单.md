@@ -183,6 +183,74 @@
 
 ---
 
+## 7.5 真机日志怎么筛（正向匹配 + 本机脚本）
+
+整机 logcat 里 Unity 的日志占比不到 3%（实测一份 1707 行的 ColorOS 日志里 `tag=Unity` 只有 31 行），
+其余是 `gameoptHal` / `oplus_nfc` / `SnapAlloc` / `qdgralloc` / `BufferQueue*` / `CCodec*` 之类的系统噪声。
+**优先用正向匹配，不要靠 ignore 列表——漏掉一个 tag 就漏掉一条错误。**
+
+### 采集（保留可筛选的格式）
+
+```powershell
+# 先拿到应用 pid（进程活着时）
+adb shell pidof com.i000stea.thrudremark        # 例：30712
+
+# A. 只看 Unity 相关 tag（最省噪，日常首选）
+adb logcat -v threadtime -s Unity:V UnityPlayer:V CRASH:V AndroidRuntime:V DEBUG:V mono:V il2cpp:V > Logs\unity.log
+#   说明：-s 等价于「列出这些 tag + 末尾 *:S」，即"正向匹配，其余全静音"
+
+# B. 只看本应用进程（任何 tag）——查原生渲染/编解码/音频问题时用
+adb logcat -v threadtime --pid 30712 > Logs\pid.log
+
+# C. 应用进程 + 只要 V/W/E/F（B 太吵时的折中）
+adb logcat -v threadtime --pid 30712 | Select-String ' [VWEF] '
+```
+
+### 已经落盘的日志：用本仓脚本过滤
+
+`Build\_check\filter-unity-log.ps1`（纯 ASCII，PS 5.1 可跑），三档 `-Mode`，实测效果对 `Logs/10191847.log`（1707 行）：
+
+| 模式 | 保留 | 用途 |
+|---|---|---|
+| `unity`（默认） | **33** | 只有 `Unity` / `IL2CPP` tag —— 日常看这个 |
+| `piderr` | 113 | 本进程的 V/W/E/F + 全部 Unity 行 —— "能跑但不对"时看这个 |
+| `pid` | 472 | 本进程全量 —— 查渲染/编解码/音频时看这个 |
+
+```powershell
+# 直接把筛出来的行打屏
+powershell -NoProfile -ExecutionPolicy Bypass -File Build\_check\filter-unity-log.ps1 -Path Logs\10191847.log
+
+# 摘要模式：按 tag 计数 + 列出全部 ERROR/WARN + 被丢掉噪声的 top10（一眼看出漏了什么）
+powershell -NoProfile -ExecutionPolicy Bypass -File Build\_check\filter-unity-log.ps1 -Path Logs\10191847.log -Mode piderr -Summary
+
+# 落盘成小文件，再贴给他人/会话
+powershell -NoProfile -ExecutionPolicy Bypass -File Build\_check\filter-unity-log.ps1 -Path Logs\10191847.log -Mode unity -Out Logs\10191847.unity.log
+```
+
+脚本的匹配逻辑（也是自己写过滤时的口径）：
+
+1. **PID 自动识别**：这段日志里第一条 `tag=Unity` 的行的 PID 就是应用 pid（无需手工找）；
+2. **PID 正向匹配**：`unity` 模式不看 pid，`pid`/`piderr` 模式只保留该 pid 的行——比 tag 白名单更不容易漏（Unity 的崩溃/日志也会以 `CRASH`/`DEBUG`/`AndroidRuntime`/`libc` 出现，且这些 tag 来自同一 pid）；
+3. **tag 白名单**：`Unity` / `UnityPlayer` / `CRASH` / `DEBUG` / `AndroidRuntime` / `mono` / `il2cpp` / `MonoDroid` + 应用包名本身；
+4. **格式**：`-v threadtime` 变体 `日期 时间 PID-TID tag 进程名 级别 消息`（部分 OEM ROM 多一列进程名，脚本的正则已兼容）。
+
+### 如果确实想用 ignore 列表（排除法）
+
+只在"已经把正向匹配跑过、确认还剩哪几类噪声"时才用，且**排除项要写在日志尾部**而不是日志头部：
+
+```powershell
+# logcat 侧：正向匹配 + 逐个静音（等价写法，*:S 必须在最后）
+adb logcat -v threadtime Unity:V UnityPlayer:V CRASH:V *:S
+
+# 文件侧：用实测噪声 tag 表排除（本机 ColorOS 实测 top）
+$noise = 'gameoptHal|oplus_|Oplus[A-Z]|SnapAlloc|qdgralloc|\[UAH_CLIENT\]|COSA->|statsd|vendor\.qti|BufferQueue|BLASTBufferQueue|SurfaceView|Surface\b|CCodec|Codec2|AudioStream|AudioTrack|AudioSystem|Adreno|vulkan|ReflectedParamUpdater|InsetsController|ViewRootImpl|ResourcesManagerExtImpl'
+Get-Content Logs\10191847.log | Select-String -Pattern $noise -NotMatch
+```
+
+⚠️ 排除法的固有风险：**新增一类噪声就永远看不见它**；而正向匹配的失败方式是"少看一条"，排除法的失败方式是"漏掉一条真错误"。真机排障一律用前者。
+
+---
+
 ## 8. 交付记录（每出一版填一行）
 
 | 版本 | versionCode | 构建时间 | APK 体积 | 门禁 | 真机验收 | 结论 / 已知问题 |
